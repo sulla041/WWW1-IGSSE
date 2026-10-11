@@ -1,0 +1,191 @@
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Questions and protocol}
+We ask: (Q1) does the declared point set retain links and node content; (Q2) does
+it support Web relation tasks; (Q3) which encoder and readout components account
+for task utility; (Q4) can the set state free-grow beyond the training scale
+without a step-wise rule teacher; and (Q5) how do graph semantics and output
+level affect the result?  Each dataset trains its own encoder, decoders, and
+head.  Validation metrics select checkpoints and test splits report results.
+We do not interpret the independent task instances as a single zero-shot model.
+
+The listed baselines are MLP, GCN, GraphSAGE, GAT, GIN, APPNP, SGFormer,
+Polynormer, Graph-Mamba, and PST.  Each row fixes its input convention, split,
+and primary metric.  The \emph{Emb} column is a structural separability probe;
+it is not a substitute for direct pair-decoder recovery.  Before submission, the
+camera-ready recovery table must report link F1/AUC/AP and feature R$^2$/cosine
+for each primary graph family, together with optimization steps and wall time.
+
+\begin{table*}[t]
+\caption{Task coverage and the role of each dataset.  Web-relation rows establish
+track relevance.  The remaining rows stress the same representation interface
+under changed semantics and do not imply cross-domain zero-shot transfer.}
+\label{tab:tasks}
+\centering
+\scriptsize
+\begin{tabular}{llll}
+\toprule
+Group & Dataset & Output and metric & Evidence role \\
+\midrule
+Web relation & Amazon Photo & Product node class, accuracy & Co-purchase content and relations \\
+Web relation & Coauthor-CS & Research-area node class, accuracy & Collaboration graph \\
+Web relation & Cora public & Topic node class, accuracy & Citation graph and public split \\
+Web relation & Photo interact & Node class, accuracy & Reader schedule and frozen-$\Hset$ context \\
+Program & HiGraph IID & Graph class, Macro-F1 & Hierarchical program-graph stress test \\
+Circuit & OCB Ckt-Bench-101 & Graph FoM, Pearson $r$ & Set-level continuous readout \\
+Timing & TimingPredict & Node delay, $R^2$ & Point-level continuous readout \\
+Molecule/social & AIDS, IMDB-MULTI, IMDB-BINARY & Graph class, accuracy & Changed attributes and weak features \\
+Autoregression & Planar, chordal, bipartite & Valid, Emb F1 & Set expansion under graph rules \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\paragraph{Baseline alignment.}
+The prediction comparison uses the same split, input attributes, and task metric
+within a row.  MLP tests attributes without graph structure.  GCN, GraphSAGE,
+GAT, and GIN represent neighborhood aggregation; APPNP, SGFormer, Polynormer,
+and Graph-Mamba add different propagation or long-range mechanisms; PST tests a
+graph-to-set route.  The comparison answers a row-level question: whether the
+declared \method{} configuration improves the task metric under that protocol.
+
+\subsection{Aligned prediction comparison}
+Table~\ref{tab:prediction} compresses the full result workbook into the strongest
+listed baseline and \method{} result for each task.  \method{} exceeds the
+listed comparison set in all ten aligned rows.  The result spans co-purchase,
+collaboration, citation, program, circuit, timing, molecular, and social graph
+settings.  This statement is table-scoped: it applies to the frozen inputs,
+splits, schedules, and baseline set in the table.
+
+\begin{table*}[t]
+\caption{Aligned prediction results.  ``Best listed'' is the strongest non-\method{}
+task score in the complete comparison table.  Every row uses its own metric; the
+magnitudes are not compared across rows.}
+\label{tab:prediction}
+\centering
+\scriptsize
+\begin{tabular}{llccc}
+\toprule
+Domain and task & Dataset & Metric & Best listed & \method{} \\
+\midrule
+Malware CFG classification & HiGraph IID & Macro-F1 & 0.6160 & \textbf{0.8622} \\
+Analog circuit regression & OCB Ckt-Bench-101 & Pearson $r$ & 0.7136 & \textbf{0.9015} \\
+Timing-net delay regression & TimingPredict & $R^2$ & 0.7578 & \textbf{0.9473} \\
+Product node classification & Amazon Photo & Accuracy & 0.9475 & \textbf{0.9510} \\
+Academic collaboration classification & Coauthor-CS & Accuracy & 0.9455 & \textbf{0.9484} \\
+Product classification, interact & Amazon Photo & Accuracy & 0.9375 & \textbf{0.9420} \\
+Citation topic classification & Cora public & Accuracy & 0.7970 & \textbf{0.8227} \\
+Molecular activity classification & AIDS & Accuracy & 0.8420 & \textbf{0.9930} \\
+Social ego-graph classification & IMDB-MULTI & Accuracy & 0.4120 & \textbf{0.5233} \\
+Social ego-graph classification & IMDB-BINARY & Accuracy & 0.5480 & \textbf{0.7475} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\paragraph{Web relation tasks.}
+Amazon Photo, Coauthor-CS, and Cora respectively represent product co-purchase,
+academic collaboration, and citation relations \cite{shchur2018,sen2008,yang2016}.
+\method{} is best among the listed baselines in all four Web rows, including the
+Photo interact protocol.  The gains on Photo and Coauthor-CS are narrow, which
+is consistent with strong aligned baselines; the Cora row has a larger gap.
+We therefore use the table to support Web-task utility, not to infer an
+unmeasured transfer property.
+
+\paragraph{Cross-semantic stress tests.}
+HiGraph, OCB, and TimingPredict change graph semantics and output granularity,
+while AIDS and IMDB add molecular and weak-feature social graph conditions
+\cite{chen2025higraph,dong2023cktgnn,guo2022timing,morris2020,yang2015}.
+The point and set interfaces remain available in each setting, but parameters are
+trained separately.  The tests establish architectural coverage under changed
+semantics, not a claim that one checkpoint transfers across all domains.
+
+\subsection{Constrained autoregressive growth}
+\label{sec:ar-results}
+The generation experiment trains set expansion with graph-family rule supervision,
+then freezes parameters and removes the step-wise rule teacher for free growth.
+Table~\ref{tab:ar} reports terminal validity and the Emb F1 probe at the target
+size.  Legal and Net use distinct live-state gates, so their validity values must
+be interpreted separately.
+
+\paragraph{Protocol boundary.}
+The training phase supplies a graph-family legality signal at the training
+scale.  The evaluation phase fixes the learned parameters, increases the target
+size, and does not query a rule teacher after each expansion.  A Legal gate keeps
+states satisfying the declared predicate, whereas a Net gate uses the learned
+network score to select live states.  The protocol records the target size,
+number of samples, maximum live-state capacity, gate type, and random seed.
+These details matter because a high terminal validity can otherwise be caused by
+filtering, beam capacity, or a teacher that remains active at test time.
+
+\begin{table}[t]
+\caption{Constrained free growth at target size 64.  The listed baselines are
+mechanism proxies under a common evaluator, not official retrainings of every
+named method.}
+\label{tab:ar}
+\centering
+\scriptsize
+\begin{tabular}{lrrrr}
+\toprule
+Family & Best listed Valid & \method{} Valid & \method{} Emb F1 \\
+\midrule
+Planar, Legal & 0.8521 & \textbf{0.9404} & 0.9845 \\
+Planar, Net   & 0.8496 & \textbf{0.9678} & 0.9853 \\
+Chordal       & 0.2432 & \textbf{0.8330} & 0.9863 \\
+Bipartite    & 0.1758 & \textbf{0.7406} & 0.9291 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The planar result shows that gate choice changes terminal validity.  The chordal
+and bipartite rows test changed graph rules rather than a new Web application.
+The result supports constrained legal growth against the listed mechanism
+proxies.  It does not establish distributional fidelity: before making that
+claim, the appendix must add degree or clustering statistics, an appropriate
+MMD, uniqueness and novelty, and node-order sensitivity.
+
+\subsection{Ablation and evidence boundaries}
+Table~\ref{tab:ablation} separates recovery losses, noise, the frozen
+representation, and readout choices.  The Full column comes from the main
+comparison; the variants come from a common ablation suite.  The absolute values
+are therefore not a second implementation of the main table.  Their directional
+changes identify which components the suite attributes to the observed utility.
+
+\begin{table*}[t]
+\caption{Representative ablations.  Full values match the main results; variants
+are from the common ablation suite.  A dash means that a graph-level pooling
+ablation does not apply.}
+\label{tab:ablation}
+\centering
+\scriptsize
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Task & Full & $-\mathcal L_{feat}$ & $-\psi$ & $-\mathcal L_{link}$ &
+$-\mathcal L_{emb}$ & frozen $\Hset$ & mean pool & point MLP \\
+\midrule
+OCB Pearson $r$ & .9015 & .6183 & .6301 & .6395 & .6395 & .4959 & .6247 & .6243 \\
+Photo accuracy & .9510 & .9242 & .9307 & .9320 & .9307 & .7203 & -- & .9235 \\
+Cora accuracy & .8227 & .5330 & .5470 & .5550 & .5510 & .3810 & -- & .5230 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+Removing a recovery term degrades either task utility, the structural probe, or
+both in the full suite.  Frozen-$\Hset$ creates the largest drop in the displayed
+Photo and Cora rows, while replacing set-aware readout also reduces the scores.
+These ablations support component attribution within the stated suite; they do
+not replace the missing direct recovery table.
+
+\subsection{Reproducibility, cost, and limits}
+The released package provides pretrained checkpoints, an end-to-end toy test,
+and checks for OCB, HiGraph, and planar metadata.  Link training samples point
+pairs rather than materializing a dense adjacency prediction.  This describes
+the implementation cost but is not an efficiency claim.  Before submission, we
+will report parameter count, effective optimization steps, wall time,
+per-step time, peak memory, and inference time for each primary graph family.
+
+The present evidence has three boundaries.  First, all task instances are
+independently trained.  Second, the recovery target only covers declared links
+and node content; an application that requires edge attributes needs an explicit
+edge decoder and target.  Third, terminal validity depends on the graph-family
+predicate, live-state capacity, and gate.  The generation results should not be
+read as evidence for untested graph rules.

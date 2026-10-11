@@ -1,0 +1,28 @@
+\section{Background and Positioning}
+\label{sec:related}
+
+\paragraph{Graph encoders and structural representations.}
+GCN, GraphSAGE, GAT, and GIN use different neighborhood aggregation rules
+\cite{kipf2017,hamilton2017,velickovic2018,xu2019}; APPNP, SGFormer,
+Polynormer, and graph state-space models extend propagation or global interaction
+\cite{gasteiger2019,wu2023sgformer,deng2024polynormer,wang2024graphmamba}.
+\method{} differs in the object that downstream modules consume: it treats
+$\Hset$ as the auditable representation and uses edges to construct structural
+deviations and to supervise recovery.
+
+DeepWalk and node2vec learn coordinates from walk contexts
+\cite{perozzi2014,grover2016}; Graph as Point Set maps a graph into an
+information-preserving point set \cite{wang2024graphpointset}.  GFSE pretrains a
+positional and structural encoding that augments multiple downstream models
+\cite{chen2026gfse}.  \method{} does not claim a universal pretrained encoder.
+It learns a task-instance point set and evaluates whether its declared relation
+and content targets remain readable.
+
+\paragraph{Set functions and graph generation.}
+Deep Sets and Set Transformer provide invariant aggregation and attention over
+sets \cite{zaheer2017,lee2019}.  Autoregressive, flow, and diffusion generators
+factor graph generation in different state spaces
+\cite{you2018,liao2019,dai2020,shi2020,vignac2023,jo2022}.  \method{} uses a
+continuous set state for expansion and a separate pairwise relation decoder for
+the discrete graph.  This separation permits independent observation of state
+readability and terminal rule validity.

@@ -1,0 +1,25 @@
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[font=\small, node distance=8mm and 9mm, >=Latex,
+  box/.style={draw, rounded corners=2pt, align=center, minimum height=9mm,
+              minimum width=25mm, fill=#1},
+  arrow/.style={->, thick}]
+  \node[box=gray!12] (graph) {$G=(\mathbf A,\mathbf X)$\\labels excluded};
+  \node[box=blue!10, right=of graph] (base) {feature baseline\\$\mathbf H^{(0)}$};
+  \node[box=cyan!12, right=of base] (fsde) {feature--structure\\deviation encoder};
+  \node[box=green!12, right=of fsde] (h) {node-aligned\\point set $\Hset$};
+  \node[box=orange!14, below left=14mm and 18mm of h] (recover) {pair decoder: $\Ahat$\\content decoder: $\Xhat$};
+  \node[box=purple!12, below=14mm of h, minimum width=34mm] (task) {point head / attention pooling\\node or graph prediction};
+  \node[box=red!10, below right=14mm and 18mm of h] (grow) {set expansion\\$\Hset_s\rightarrow\Hset_{s+1}$};
+  \draw[arrow] (graph) -- (base);
+  \draw[arrow] (base) -- (fsde);
+  \draw[arrow] (fsde) -- (h);
+  \draw[arrow] (h) -- (recover);
+  \draw[arrow] (h) -- (task);
+  \draw[arrow] (h) -- (grow);
+\end{tikzpicture}
+\caption{\method{} writes an attributed graph into a node-aligned point set.
+The recovery paths audit declared relation and content targets; point, set, and
+growth modules consume the same representation interface.}
+\label{fig:overview}
+\end{figure*}

@@ -1,0 +1,23 @@
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[font=\scriptsize, >=Latex, node distance=5mm and 5mm,
+  box/.style={draw, rounded corners=2pt, align=center, minimum height=7mm,
+              minimum width=19mm, fill=#1}, arrow/.style={->, thick}]
+  \node[box=blue!10] (x) {$\mathbf x_i$};
+  \node[box=blue!18, right=of x] (ho) {$\mathbf h^{(0)}_i$\\feature baseline};
+  \node[box=cyan!15, below=of ho] (qkv) {$\mathbf q,\mathbf k,\mathbf v$\\on $E_{\rm enc}$};
+  \node[box=cyan!25, right=of qkv] (o) {$\mathbf o_i$\\structural deviation};
+  \node[box=green!15, right=of ho] (h) {$\mathbf h_i$\\residual fusion};
+  \node[box=orange!15, right=of h] (dec) {$D_A(\mathbf h_i,\mathbf h_j)$\\$D_C(\mathbf h_i)$};
+  \draw[arrow] (x) -- (ho);
+  \draw[arrow] (ho) -- (qkv);
+  \draw[arrow] (qkv) -- node[above]{softmax} (o);
+  \draw[arrow] (ho) -- (h);
+  \draw[arrow] (o) -| (h);
+  \draw[arrow] (h) -- (dec);
+\end{tikzpicture}
+\caption{Feature--structure deviation encoding.  The baseline is computed
+without edges; the deviation records relation-conditioned correction; the two
+decoders audit the final point state.}
+\label{fig:fsde}
+\end{figure}

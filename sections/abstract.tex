@@ -1,0 +1,20 @@
+Web relation graphs combine entity attributes with interactions, while graph
+learning tasks range from node decisions to graph-level prediction and structural
+growth.  Existing encoders often optimize a task-specific hidden state, which
+makes it difficult to determine whether the state still preserves the input
+content and relations.  We introduce \method{} (Invertible Graph Set-Space
+Embedding), a node-aligned point-set representation for attributed graphs.
+\method{} first maps each node attribute to an edge-free content baseline, then
+writes relation-conditioned deviations through a feature--structure deviation
+encoder.  Pairwise and pointwise decoders define a recovery gate for links and
+non-label attributes, while node and set readouts consume the learned point set.
+The same representation interface also supports constrained autoregressive
+growth: a set-expansion operator adds points and a pairwise decoder recovers the
+resulting graph.  We evaluate aligned node and graph tasks on co-purchase,
+collaboration, citation, program, circuit, timing, molecular, and social graphs,
+and evaluate free growth on planar, chordal, and bipartite graph families.
+Across ten aligned prediction comparisons, \method{} exceeds every listed
+baseline.  The generation study separates terminal validity from representation
+readability and reports both quantities.  We state each result relative to its
+split, input convention, and baseline set, rather than aggregating incomparable
+tasks into an overall ranking.

@@ -1,0 +1,47 @@
+\documentclass[sigconf,anonymous,review]{acmart}
+
+\settopmatter{printacmref=false,printfolios=true}
+\setcopyright{none}
+\acmConference[WWW '27]{The ACM Web Conference 2027}{May 10--14, 2027}{Dublin, Ireland}
+\acmBooktitle{Proceedings of The ACM Web Conference 2027 (WWW '27)}
+
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{makecell}
+\usepackage{amsmath,mathtools}
+\usepackage{microtype}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc}
+\newcommand{\method}{\textsc{Igsse}}
+\newcommand{\Hset}{\mathbf{H}}
+\newcommand{\Ahat}{\widehat{\mathbf{A}}}
+\newcommand{\Xhat}{\widehat{\mathbf{X}}}
+
+\begin{document}
+
+\title{IGSSE: Recoverable Graph Set-Space Embedding for Relational Modeling}
+
+\begin{abstract}
+\input{sections/abstract}
+\end{abstract}
+
+\keywords{graph representation learning, set modeling, graph recovery, constrained autoregression, Web graphs}
+
+\input{sections/intro}
+\input{sections/related}
+\input{sections/method}
+\input{sections/experiments}
+\input{sections/conclusion}
+
+\begin{acks}
+Omitted for anonymous review.
+\end{acks}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+
+\appendix
+\input{sections/appendix}
+
+\end{document}

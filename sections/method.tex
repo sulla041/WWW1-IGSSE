@@ -1,0 +1,448 @@
+\section{IGSSE}
+\label{sec:method}
+
+\subsection{Problem boundary and representation target}
+\label{sec:setup}
+Let $G=(V,E,\mathbf X)$ be an attributed graph with adjacency $\mathbf A$ and
+$n$ nodes.  The task label $y$ is a node class, graph label, or continuous
+target, but never enters the embedding path.  \method{} produces
+$\Hset\in\mathbb R^{n\times d}$, where row $i$ remains associated with node
+$i$.  This row correspondence is essential: a content decoder must read a node
+target from one point, while a relation decoder must read a graph relation from a
+pair of points.
+
+We distinguish the embedding target from the prediction target.  The recovery
+target is $T(G)=(\mathbf A,\mathbf C)$, where
+$\mathbf C=\operatorname{sg}(\operatorname{Enc}_{X}(\mathbf X))$ and
+$\operatorname{sg}$ stops gradients.  A configuration may instead recover a
+standardized raw feature target.  In either case, labels are excluded.  The
+stopped encoded target prevents the feature decoder from reducing reconstruction
+to a shortcut through the target encoder.
+
+\begin{table}[t]
+\caption{State separation in \method{}.  The distinction prevents a task reader
+from silently changing the object audited by the recovery losses.}
+\label{tab:states}
+\centering
+\scriptsize
+\begin{tabular}{lll}
+\toprule
+Symbol & Role & Consumed by \\
+\midrule
+$\mathbf H^{(0)}$ & Edge-free attribute baseline & Encoder layers \\
+$\Hset_{\mathrm{dec}}$ & Final point set & Pair and content decoders \\
+$\Hset_{\mathrm{task}}$ & Final or jump-concatenated points & Node reader \\
+$\mathbf C$ & Stopped content target & $\mathcal L_{\mathrm{feat}}$ only \\
+$y$ & Task label & $\mathcal L_{\mathrm{pred}}$ on train mask \\
+$E_{\mathrm{enc}}$ & Encoder edges with self loops & Deviation computation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Feature--structure deviation encoding}
+\label{sec:fsde}
+Figure~\ref{fig:fsde} expands the encoder.  First, a shared attribute map forms
+an edge-free baseline:
+\begin{equation}
+  \mathbf h^{(0)}_i=\operatorname{Enc}_X(\mathbf x_i).
+  \label{eq:baseline}
+\end{equation}
+In the default implementation, $\operatorname{Enc}_X$ applies input layer
+normalization, a linear map to a hidden space, GELU and dropout, a second linear
+map, and output normalization.  Formally,
+\begin{align}
+ \widetilde{\mathbf x}_i&=\operatorname{LN}_{\mathrm{in}}(\mathbf x_i),\\
+ \mathbf z_i&=\operatorname{Dropout}\bigl(
+ \operatorname{GELU}(\widetilde{\mathbf x}_i\mathbf W_1+\mathbf b_1)\bigr),\\
+ \mathbf h^{(0)}_i&=\operatorname{LN}_{\mathrm{out}}(\mathbf z_i\mathbf W_2+\mathbf b_2).
+ \label{eq:feature-encoder}
+\end{align}
+This encoder has no access to $E$, so its output provides an explicit content
+reference for the subsequent structural correction and for the content target.
+The baseline gives a concrete location for node content before the graph changes
+it.  At layer $\ell$, the encoding edge set includes self loops,
+$E_{\mathrm{enc}}=E\cup\{(i,i):i\in V\}$.  Multi-head projections produce
+$\mathbf q_i$, $\mathbf k_i$, and $\mathbf v_i$.  For source $s$, target $t$,
+and head $m$, \method{} computes
+\begin{equation}
+ e_{st}^{(m)}=\operatorname{LeakyReLU}\left(
+ (\mathbf a_{\mathrm{src}}^{(m)})^\top\mathbf q_s^{(m)}+
+ (\mathbf a_{\mathrm{dst}}^{(m)})^\top\mathbf k_t^{(m)}\right).
+ \label{eq:energy}
+\end{equation}
+
+\paragraph{Noise curriculum.}
+The noise network $\psi$ receives the mean head energy and a normalized training
+progress $u$.  It predicts a nonnegative scale $\sigma_{st}^{(m)}$, and training
+uses
+\begin{equation}
+ \widetilde e_{st}^{(m)}=e_{st}^{(m)}+
+ \sigma_{st}^{(m)}\max(0,1-u)\epsilon_{st}^{(m)},\qquad
+ \epsilon_{st}^{(m)}\sim\mathcal N(0,1).
+ \label{eq:noise}
+\end{equation}
+More specifically, the mean energy $\bar e_{st}=M^{-1}\sum_m e_{st}^{(m)}$
+and progress $u$ enter a two-layer MLP.  Its output is added to a learned global
+log-scale, transformed by softplus, lower bounded for numerical stability, and
+clipped to a configured maximum.  Each head therefore receives its own
+edge-dependent perturbation scale.  The survival term in Eq.~\eqref{eq:objective}
+prevents this scale from trivially vanishing during the noise phase.
+Evaluation sets $\widetilde e=e$.  The curriculum perturbs early relation
+weights, then removes the perturbation before selection and test evaluation.
+The noise is a training configuration rather than a separate graph encoder.
+
+For each target, a softmax over incoming encoding edges gives
+$\alpha_{st}^{(m)}$.  The structural deviation is the projected multi-head sum
+\begin{equation}
+ \mathbf o_t=\mathbf W_O\left\Vert_m
+ \sum_{s:(s,t)\in E_{\mathrm{enc}}}\alpha_{st}^{(m)}\mathbf v_s^{(m)}
+ \right\Vert.
+ \label{eq:deviation}
+\end{equation}
+Residual fusion then updates the point state:
+\begin{align}
+ \mathbf r_t^{(\ell)}&=\mathbf h_t^{(\ell-1)}+
+ \operatorname{Dropout}(\mathbf o_t^{(\ell)}),\\
+ \widehat{\mathbf h}_t^{(\ell)}&=\operatorname{LN}(\mathbf r_t^{(\ell)}),\\
+ \mathbf h_t^{(\ell)}&=\widehat{\mathbf h}_t^{(\ell)}+
+ \operatorname{FFN}(\widehat{\mathbf h}_t^{(\ell)}).
+ \label{eq:fusion}
+\end{align}
+After $L$ layers, $\Hset_{\mathrm{dec}}=\mathbf H^{(L)}$ is used for recovery.
+Node tasks may use this final state or a jump-concatenated state
+$\mathbf h^{(0)}_i\Vert\cdots\Vert\mathbf h^{(L)}_i$.
+
+\input{figures/fsde}
+
+\subsection{Two recovery paths}
+\label{sec:recovery}
+The pair decoder scores sampled positive and negative pairs:
+\begin{equation}
+ \widehat A_{ij}=\sigma(D_A(\mathbf h_i,\mathbf h_j)),\qquad
+ \mathcal L_{\mathrm{link}}=
+ \operatorname{BCEWithLogits}(D_A(\mathbf h_i,\mathbf h_j),A_{ij}).
+ \label{eq:link}
+\end{equation}
+The implementation offers an MLP score on concatenated point features,
+differences, and products, or an attention-based pair score.  Both use the same
+link supervision interface.  A separate content decoder gives
+\begin{equation}
+ \widehat{\mathbf C}=D_C(\Hset_{\mathrm{dec}}),\qquad
+ \mathcal L_{\mathrm{feat}}=\operatorname{MSE}(\widehat{\mathbf C},\mathbf C).
+ \label{eq:feat}
+\end{equation}
+The two losses impose different requirements: link recovery tests the relation
+geometry of point pairs, whereas feature recovery tests the information readable
+from an individual point.  We call their joint evaluation the \emph{recovery
+gate}.  A task score cannot replace this gate because a head may exploit a small
+subset of a representation.
+
+\paragraph{Pair sampling and target hygiene.}
+Materializing every non-edge is unnecessary and can dominate the objective on a
+sparse graph.  At each update, we sample positive pairs from the complete input
+edge set and sample an equal-size set of non-edges, excluding self loops and
+known positives.  If edge dropout is active in the encoder, it affects only the
+computation graph $E_{\mathrm{enc}}$; link positives still come from the
+un-dropped input graph.  This distinguishes an input perturbation from a changed
+reconstruction target.  The decoder therefore learns whether a point set
+constructed under perturbation can still distinguish the declared relations.
+
+The content target has the same hygiene requirement.  In the default
+configuration, $\mathbf C=\operatorname{sg}(\operatorname{Enc}_X(\mathbf X))$
+uses clean attributes even when the encoder receives an input perturbation.  A
+direct-feature configuration replaces $\mathbf C$ by standardized $\mathbf X$.
+Both variants preserve the label boundary: $y$ appears only in
+$\mathcal L_{\mathrm{pred}}$ over the training mask.  This boundary prevents
+the recovery path from observing the target that a downstream task is meant to
+predict.
+
+\paragraph{Decoder parameterizations.}
+The default pair decoder is an MLP over complementary point-pair features,
+\begin{equation}
+ s_{ij}=\operatorname{MLP}_{\mathrm{link}}
+ \left([\mathbf h_i;\mathbf h_j;\mathbf h_i-\mathbf h_j;
+ \mathbf h_i\odot\mathbf h_j]\right).
+ \label{eq:pairmlp}
+\end{equation}
+Concatenation preserves endpoint-specific content, the difference exposes a
+directed displacement, and the product exposes coordinate agreement.  The MLP
+returns a logit, so the sampling distribution rather than a fixed threshold
+defines the training objective.  For undirected graphs, evaluation scores both
+orientations or uses the configured symmetrization rule.
+
+An attention-based decoder provides the alternate parameterization.  It projects
+each point into head-specific queries and keys, scores their scaled inner product,
+averages the two endpoint directions when the relation is undirected, and applies
+a learned scale and bias.  The choice changes the relation function but not the
+declared target, pair sampler, loss, or recovery metrics.  We therefore treat
+decoder choice as a relation-geometry ablation rather than as a different
+embedding problem.
+
+For completeness, the attention score for an undirected candidate can be written
+as
+\begin{equation}
+ s_{ij}=\left(\operatorname{softplus}(\gamma)+0.5\right)
+ \frac{1}{2M}\sum_m\left[
+ \frac{(\mathbf q_i^{(m)})^\top\mathbf k_j^{(m)}}{\sqrt{d_h}}+
+ \frac{(\mathbf q_j^{(m)})^\top\mathbf k_i^{(m)}}{\sqrt{d_h}}
+ \right]+\beta .
+ \label{eq:pairattn}
+\end{equation}
+Here $\gamma$ and $\beta$ calibrate score scale and offset.  This decoder is
+permutation equivariant because point rows, queries, and keys permute together.
+It does not use a fixed adjacency after $\Hset_{\mathrm{dec}}$ is constructed.
+
+The content decoder is a layer-normalized pointwise MLP.  It cannot aggregate
+neighbors after $\Hset_{\mathrm{dec}}$ has been formed.  Feature reconstruction
+therefore tests information readable from each final point, rather than a second
+message-passing computation over the graph.  When edge attributes are required,
+the interface extends with $D_E(\mathbf h_i,\mathbf h_j)$ and an explicit
+edge-attribute loss; no current result claims that unmodeled edge attributes are
+preserved.
+
+\subsection{Training schedule and evaluation protocol}
+\label{sec:training}
+The optimization schedule separates three quantities that otherwise become easy
+to conflate: a noisy encoder state during training, a clean deterministic state
+for validation and test, and a task label visible only on training examples.
+For a node task, the normalized progress is
+\begin{equation}
+ u=\min\left(1,\frac{\mathrm{epoch}}{0.4\,\mathrm{epochs}}\right).
+ \label{eq:curriculum}
+\end{equation}
+The first 40\% of training therefore anneals Eq.~\eqref{eq:noise}; later
+updates and all selection passes use unperturbed relation energies.  Gradient
+clipping bounds the joint update, and the validation metric chooses a checkpoint.
+The test split is read once from the selected checkpoint.
+
+\begin{figure}[t]
+\small
+\centering
+\fbox{\begin{minipage}{0.92\linewidth}
+\textbf{One joint update.}
+\begin{enumerate}\itemsep1pt
+  \item Construct $\mathbf H^{(0)}=\operatorname{Enc}_X(\mathbf X)$ and
+  apply $L$ feature--structure deviation layers using the training edge view.
+  \item Decode clean content targets from $\Hset_{\mathrm{dec}}$ and sample
+  positive and negative relation pairs from the complete input edge set.
+  \item Compute $\mathcal L_{\mathrm{feat}}$, $\mathcal L_{\mathrm{link}}$,
+  $\mathcal L_{\mathrm{alive}}$, and the training-mask prediction loss.
+  \item Backpropagate their weighted sum, clip the gradient, and update all
+  encoder, decoder, and reader parameters together.
+  \item For validation or test, disable encoder noise, set $u=1$, and evaluate
+  the selected checkpoint without exposing test labels to the embedding path.
+\end{enumerate}
+\end{minipage}}
+\caption{Joint optimization protocol.  The recovery floor remains active during
+task learning; an embedding-only run sets $\lambda_{\mathrm{pred}}=0$.}
+\label{fig:procedure}
+\end{figure}
+
+\begin{table}[t]
+\caption{Default node-task configuration.  Dataset-specific values and complete
+training commands are recorded in the reproducibility material.}
+\label{tab:defaults}
+\centering
+\scriptsize
+\begin{tabular}{lr@{\quad}lr}
+\toprule
+Point dimension & 64 & Encoder layers & 3 \\
+Attention heads & 4 & Hidden dimension & 256 \\
+Dropout & 0.4 & Optimizer & Adam \\
+Learning rate & $10^{-3}$ & Weight decay & $5\times10^{-4}$ \\
+$\lambda_{pred}$ & 1.0 & $\lambda_{link}$ & 0.5 \\
+$\lambda_{feat}$ & 0.3 & $\lambda_{alive}$ & 0.02 \\
+Positive/negative pairs & 4096/4096 & Gradient clip & 1.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The reported embedding probe and direct recovery metrics have different roles.
+The probe asks whether a standardized structural feature can predict links from
+the learned state.  The direct recovery gate instead evaluates $D_A$ and $D_C$.
+The paper reports them separately: a high probe score cannot certify feature
+recovery, and a high task score cannot certify either target.  This distinction
+also determines the experimental order: a data family first passes the recovery
+gate, then opens a point or set prediction comparison.
+
+\subsection{Loss attachment and gradient routes}
+\label{sec:losses}
+The joint objective in Eq.~\eqref{eq:objective} has four distinct attachment
+points.  The prediction term supervises a task reader.  The link term sends
+gradients through the pair decoder and the final point set.  The feature term
+sends gradients through the content decoder and final point set, but not through
+the stopped target encoder.  The survival term reaches the scale network and the
+attention-energy path.  Thus, the representation is not trained by a single
+``reconstruction loss'': relation geometry, node content, task relevance, and
+the training perturbation receive separate signals.
+
+\begin{table}[t]
+\caption{Loss terms and their information boundary.  ``Train labels'' means the
+loss is evaluated only on the training mask.}
+\label{tab:losses}
+\centering
+\scriptsize
+\begin{tabular}{llll}
+\toprule
+Term & Input to loss & Direct modules & Label access \\
+\midrule
+$\mathcal L_{pred}$ & $\widehat y,y$ & reader, encoder & train labels only \\
+$\mathcal L_{link}$ & pair logits, $A_{ij}$ & pair decoder, encoder & none \\
+$\mathcal L_{feat}$ & $\widehat{\mathbf C},\mathbf C$ & content decoder, encoder & none \\
+$\mathcal L_{alive}$ & $\overline\sigma$ & $\psi$, energy path & none \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For an embedding-only run, $\lambda_{pred}=0$ and the three representation terms
+train a point set without a task label.  A task run restores
+$\mathcal L_{pred}$ but retains the other terms.  This schedule makes two
+experimental modes explicit: a recovery gate assesses the representation alone,
+and a joint task run assesses the representation-reader system while keeping the
+declared information constraints active.
+
+\subsection{Point, set, and growth interfaces}
+\label{sec:interfaces}
+A shared point head maps each $\mathbf h_i$ to a node label or value.  A graph
+task uses invariant attention pooling,
+\begin{equation}
+ \mathbf g=\sum_i\beta_i\mathbf U_V\mathbf h_i,\qquad
+ \widehat Y_G=R_{\mathrm{graph}}(\mathbf g),
+ \label{eq:pool}
+\end{equation}
+where $\beta_i$ is normalized over the graph.  The readout receives points only;
+it does not reopen the original adjacency as a task message-passing graph.  The
+frozen-$\Hset$ and readout-replacement ablations isolate this interface choice.
+
+\paragraph{Output-level choice.}
+For node classification and regression, the head is shared over point rows and
+preserves node alignment.  When a node needs task context, a set-attention block
+updates the entire point set before the shared head reads its row.  For graph
+classification and regression, attention pooling or PMA maps a variable-cardinality
+set to one invariant state.  Mean pooling is included only as an ablation because
+it removes learned selection among points.  These output choices do not alter the
+recovery target, so a change in task score can be attributed to the reader of
+$\Hset$ rather than a different embedding object.
+
+\paragraph{Concrete readers.}
+For node classification, a shared MLP returns class logits
+$\widehat{\mathbf z}_i=R_{\mathrm{node}}(\mathbf h_i)$ and optimizes masked
+cross entropy.  Class weights and label smoothing, when configured, apply only
+to training nodes.  For node regression, the same row-wise reader returns a
+scalar or vector and uses Huber or squared error; validation selects the stated
+regression metric.  These readers retain row alignment, so an input permutation
+permutes their outputs in the same way.
+
+For graph tasks, a learned query or attention weight reads a set state.  A PMA
+configuration uses one or more seed queries; a simpler attention configuration
+uses $\beta_i\propto\exp(\mathbf w^\top\mathbf h_i)$.  Both preserve invariance
+to node ordering.  The graph head then maps $\mathbf g$ to a class distribution
+or continuous property.  Graph-level recovery losses are averaged over graphs in
+the batch, so a high graph score cannot silence the representation objective for
+individual graphs.
+
+For constrained autoregression, a set-expansion operator evolves the current
+state:
+\begin{equation}
+ \Hset_{s+1}=\operatorname{StepSet}(\Hset_s,\boldsymbol\epsilon_s),
+ \qquad E_{s+1}=\{(i,j):\sigma(D_A(\mathbf h_i,\mathbf h_j))\geq\tau\}.
+ \label{eq:grow}
+\end{equation}
+Training may use a graph-family legality signal.  At evaluation, parameters are
+fixed and the model free-grows without a step-wise rule teacher.  We report
+terminal validity together with an embedding probe, because a legal output alone
+does not establish that the state remains relationally readable.
+
+\paragraph{State expansion, candidates, and live states.}
+At a growth depth $s$, the expansion operator proposes one or more candidate
+states from each live $\Hset_s$.  The relation decoder maps every candidate to
+an edge score representation, and the graph-family predicate labels it legal or
+illegal during training.  Candidate states can be ranked either by the declared
+legality route (Legal) or by a learned continuation score (Net).  A live-state
+capacity prevents the candidate tree from growing without bound; the capacity is
+recorded as $\texttt{max\_live}$ in the generation protocol.
+
+The distinction between construction and evaluation is deliberate.  Training
+uses legality supervision to make the set transition sensitive to the graph
+family.  Free-growth evaluation fixes all learned parameters, disables a
+step-wise rule teacher, and evaluates terminal graphs at a larger target size.
+Thus, the final legality predicate measures an output property while Emb F1
+measures whether the resulting point state retains a usable relation geometry.
+Neither quantity alone establishes the other.  The reported Legal and Net rows
+therefore use the same target size and decoder interface but make their live-state
+selection rule explicit.
+
+\paragraph{Growth objective.}
+For a candidate graph $G_s$ produced from $\Hset_s$, let
+$c_s=\mathbb{I}[\operatorname{legal}(G_s)]$ be the family predicate.  A
+legality head can optimize a binary loss $\mathcal L_{\mathrm{legal}}$ during
+training, while the relation decoder continues to score the candidate graph.
+The full generator objective combines the set-transition signal, pairwise
+recovery, and legality signal according to the active graph-family protocol.
+At test time, $c_s$ is never used as a step-wise teacher.  It is evaluated only
+after the free-growth rollout to compute Valid.  This train--test separation is
+what makes Legal and Net results evidence about a learned growth process rather
+than a rule-filtered trajectory.
+
+\subsection{Symmetry and objective}
+\label{sec:objective}
+Shared point maps and relation scoring preserve the intended permutation
+structure.  For a consistent node permutation $\mathbf P$,
+\begin{equation}
+ \operatorname{Enc}(\mathbf P\mathbf A\mathbf P^\top,\mathbf P\mathbf X)
+ =\mathbf P\operatorname{Enc}(\mathbf A,\mathbf X),\quad
+ D_A(\mathbf P\Hset)=\mathbf P D_A(\Hset)\mathbf P^\top,
+ \quad \operatorname{Pool}(\mathbf P\Hset)=\operatorname{Pool}(\Hset).
+ \label{eq:symmetry}
+\end{equation}
+\paragraph{Why the symmetry holds.}
+The attribute map is shared across rows, so it commutes with a node permutation.
+For a fixed target, permuting the incoming edge order permutes the softmax
+arguments and values but preserves their weighted sum.  Residual maps, layer
+normalization, and pointwise feed-forward layers then preserve row alignment by
+induction over encoder layers.  The pair decoder receives both point rows and
+therefore transforms on both adjacency axes; attention pooling permutes weights
+and values together, leaving the sum unchanged.  The argument assumes that any
+edge dropout and noise sample are permuted consistently with the graph.
+
+\paragraph{Recovery implication.}
+Let $D$ be a deterministic decoder and let $d_T$ be a distance on declared
+targets.  If $d_T(D(\operatorname{Enc}(G)),T(G))\leq\epsilon$ on the evaluation
+domain, then two graphs $G_1,G_2$ with the same representation satisfy
+\begin{equation}
+ d_T(T(G_1),T(G_2))\leq 2\epsilon.
+ \label{eq:recoverability}
+\end{equation}
+Indeed, both targets lie within $\epsilon$ of the same decoded representation,
+so the result follows from the triangle inequality.  The statement explains why
+direct recovery metrics matter: they bound how much declared input information a
+shared embedding can merge.  It does not claim exact inversion at finite error,
+reconstruction of unmodeled attributes, or a graph-isomorphism guarantee.
+If a fixed decoder reconstructs the declared target with error at most
+$\epsilon$, two graphs mapped to the same representation have target distance at
+most $2\epsilon$ by the triangle inequality.  This is a recovery statement, not
+a Weisfeiler--Lehman expressiveness claim.
+
+Each task instance jointly optimizes
+\begin{equation}
+ \mathcal L=\lambda_{\mathrm{pred}}\mathcal L_{\mathrm{pred}}+
+ \lambda_{\mathrm{link}}\mathcal L_{\mathrm{link}}+
+ \lambda_{\mathrm{feat}}\mathcal L_{\mathrm{feat}}+
+ \lambda_{\mathrm{alive}}\mathcal L_{\mathrm{alive}},
+ \label{eq:objective}
+\end{equation}
+where $\mathcal L_{\mathrm{alive}}=-\log(\max(\overline\sigma,10^{-4}))$
+keeps the learned training-noise scale active.  The prediction loss only accesses
+training labels.  The recovery terms remain active in task mode, preserving an
+embedding floor while the readout learns the task.
+
+\paragraph{Computational boundary.}
+The encoder aggregates only over $E_{\mathrm{enc}}$, so its layer cost is linear
+in the number of encoded edges up to the head and hidden dimensions.  Relation
+training uses sampled pairs, whereas a complete recovery evaluation may score a
+larger specified pair set.  Set attention and unrestricted pair decoding can
+become quadratic in the number of live points.  We therefore treat sampled-pair
+training, chunked decoding, and live-state capacity as explicit protocol choices
+rather than claiming graph-scale efficiency from small-graph results.  The
+experiments report task accuracy and validity; measured time and memory remain a
+separate evidence requirement.
