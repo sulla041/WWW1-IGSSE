@@ -1,5 +1,6 @@
 \begin{figure}[t]
 \centering
+\resizebox{\columnwidth}{!}{%
 \begin{tikzpicture}[font=\scriptsize, >=Latex, node distance=5mm and 5mm,
   box/.style={draw, rounded corners=2pt, align=center, minimum height=7mm,
               minimum width=19mm, fill=#1}, arrow/.style={->, thick}]
@@ -16,8 +17,12 @@
   \draw[arrow] (o) -| (h);
   \draw[arrow] (h) -- (dec);
 \end{tikzpicture}
+}
 \caption{Feature--structure deviation encoding.  The baseline is computed
 without edges; the deviation records relation-conditioned correction; the two
 decoders audit the final point state.}
+\Description{Node features form an edge-free baseline. Query, key, and value
+projections over encoding edges form a structural deviation. Residual fusion
+creates a point state consumed by relation and content decoders.}
 \label{fig:fsde}
 \end{figure}

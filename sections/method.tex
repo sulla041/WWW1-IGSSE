@@ -118,9 +118,11 @@ $\mathbf h^{(0)}_i\Vert\cdots\Vert\mathbf h^{(L)}_i$.
 \label{sec:recovery}
 The pair decoder scores sampled positive and negative pairs:
 \begin{equation}
- \widehat A_{ij}=\sigma(D_A(\mathbf h_i,\mathbf h_j)),\qquad
- \mathcal L_{\mathrm{link}}=
+ \begin{aligned}
+ \widehat A_{ij}&=\sigma(D_A(\mathbf h_i,\mathbf h_j)),\\
+ \mathcal L_{\mathrm{link}}&=
  \operatorname{BCEWithLogits}(D_A(\mathbf h_i,\mathbf h_j),A_{ij}).
+ \end{aligned}
  \label{eq:link}
 \end{equation}
 The implementation offers an MLP score on concatenated point features,
@@ -181,11 +183,14 @@ embedding problem.
 For completeness, the attention score for an undirected candidate can be written
 as
 \begin{equation}
- s_{ij}=\left(\operatorname{softplus}(\gamma)+0.5\right)
+ \begin{aligned}
+ s_{ij}&=\left(\operatorname{softplus}(\gamma)+0.5\right)
  \frac{1}{2M}\sum_m\left[
- \frac{(\mathbf q_i^{(m)})^\top\mathbf k_j^{(m)}}{\sqrt{d_h}}+
+ \frac{(\mathbf q_i^{(m)})^\top\mathbf k_j^{(m)}}{\sqrt{d_h}}\right.\\
+ &\hspace{18mm}\left.+
  \frac{(\mathbf q_j^{(m)})^\top\mathbf k_i^{(m)}}{\sqrt{d_h}}
  \right]+\beta .
+ \end{aligned}
  \label{eq:pairattn}
 \end{equation}
 Here $\gamma$ and $\beta$ calibrate score scale and offset.  This decoder is
@@ -235,6 +240,9 @@ The test split is read once from the selected checkpoint.
 \end{minipage}}
 \caption{Joint optimization protocol.  The recovery floor remains active during
 task learning; an embedding-only run sets $\lambda_{\mathrm{pred}}=0$.}
+\Description{Five optimization steps construct point states, decode content and
+sample relation pairs, compute four loss terms, update all modules jointly, and
+evaluate a deterministic selected checkpoint.}
 \label{fig:procedure}
 \end{figure}
 
@@ -389,10 +397,12 @@ than a rule-filtered trajectory.
 Shared point maps and relation scoring preserve the intended permutation
 structure.  For a consistent node permutation $\mathbf P$,
 \begin{equation}
+ \begin{aligned}
  \operatorname{Enc}(\mathbf P\mathbf A\mathbf P^\top,\mathbf P\mathbf X)
- =\mathbf P\operatorname{Enc}(\mathbf A,\mathbf X),\quad
- D_A(\mathbf P\Hset)=\mathbf P D_A(\Hset)\mathbf P^\top,
- \quad \operatorname{Pool}(\mathbf P\Hset)=\operatorname{Pool}(\Hset).
+ &=\mathbf P\operatorname{Enc}(\mathbf A,\mathbf X),\\
+ D_A(\mathbf P\Hset)&=\mathbf P D_A(\Hset)\mathbf P^\top,\\
+ \operatorname{Pool}(\mathbf P\Hset)&=\operatorname{Pool}(\Hset).
+ \end{aligned}
  \label{eq:symmetry}
 \end{equation}
 \paragraph{Why the symmetry holds.}

@@ -1,9 +1,13 @@
 \documentclass[sigconf,anonymous,review]{acmart}
 
-\settopmatter{printacmref=false,printfolios=true}
-\setcopyright{none}
+\settopmatter{printacmref=false,printccs=false,printfolios=true}
 \acmConference[WWW '27]{The ACM Web Conference 2027}{May 10--14, 2027}{Dublin, Ireland}
 \acmBooktitle{Proceedings of The ACM Web Conference 2027 (WWW '27)}
+\setcopyright{none}
+\acmYear{}
+\copyrightyear{}
+\acmDOI{}
+\acmISBN{}
 
 \usepackage{booktabs}
 \usepackage{multirow}
@@ -11,6 +15,7 @@
 \usepackage{makecell}
 \usepackage{amsmath,mathtools}
 \usepackage{microtype}
+\setlength{\emergencystretch}{1em}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,calc}
 \newcommand{\method}{\textsc{Igsse}}
@@ -27,6 +32,9 @@
 \end{abstract}
 
 \keywords{graph representation learning, set modeling, graph recovery, constrained autoregression, Web graphs}
+\ccsdesc[500]{Computing methodologies~Machine learning}
+
+\maketitle
 
 \input{sections/intro}
 \input{sections/related}
