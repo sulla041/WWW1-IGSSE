@@ -23,6 +23,23 @@ $\Hset_{\mathrm{task}}$ for a final-state or jump-concatenated reader input.
 This separation keeps a task reader from silently changing the object constrained
 by recovery.
 
+\paragraph{Core-path correspondence.}
+The core computation first forms original coordinates $\mathbf h_{o,i}$; source
+queries, target keys, and source values produce $e_{si}$ and $\alpha_{si}$;
+their weighted value sum forms the offset $\mathbf o_i$; and the offset is fused
+with the original coordinate before the feed-forward map produces $\mathbf h_i$.
+The first-layer path is
+\begin{equation}
+ \mathbf x_i\rightarrow\mathbf h_{o,i}\rightarrow
+ (\mathbf q_s,\mathbf k_i,\mathbf v_s)\rightarrow e_{si}\rightarrow
+ \alpha_{si}\rightarrow\mathbf o_i\rightarrow
+ \mathbf r_i=\mathbf h_{o,i}+\mathbf o_i\rightarrow\mathbf h_i.
+ \label{eq:visual-core}
+\end{equation}
+Later layers repeat this path with the preceding point state in place of
+$\mathbf h_o$.  Noise is a training configuration: it perturbs attention
+energies but does not alter this deterministic inference path.
+
 \subsection{Feature--structure deviation encoding}
 \label{sec:fsde}
 First, a shared attribute map forms an edge-free baseline:
@@ -45,26 +62,26 @@ reference for the subsequent structural correction and for the content target.
 The baseline gives a concrete location for node content before the graph changes
 it.  At layer $\ell$, the encoding edge set includes self loops,
 $E_{\mathrm{enc}}=E\cup\{(i,i):i\in V\}$.  Multi-head projections produce
-$\mathbf q_i$, $\mathbf k_i$, and $\mathbf v_i$.  For source $s$, target $t$,
+$\mathbf q_i$, $\mathbf k_i$, and $\mathbf v_i$.  For source $s$, target $i$,
 and head $m$, \method{} computes
 \begin{equation}
- e_{st}^{(m)}=\operatorname{LeakyReLU}\left(
+ e_{si}^{(m)}=\operatorname{LeakyReLU}\left(
  (\mathbf a_{\mathrm{src}}^{(m)})^\top\mathbf q_s^{(m)}+
- (\mathbf a_{\mathrm{dst}}^{(m)})^\top\mathbf k_t^{(m)}\right).
+ (\mathbf a_{\mathrm{dst}}^{(m)})^\top\mathbf k_i^{(m)}\right).
  \label{eq:energy}
 \end{equation}
 
 \paragraph{Noise curriculum.}
 The noise network $\psi$ receives the mean head energy and a normalized training
-progress $u$.  It predicts a nonnegative scale $\sigma_{st}^{(m)}$, and training
+progress $u$.  It predicts a nonnegative scale $\sigma_{si}^{(m)}$, and training
 uses
 \begin{equation}
- \widetilde e_{st}^{(m)}=e_{st}^{(m)}+
- \sigma_{st}^{(m)}\max(0,1-u)\epsilon_{st}^{(m)},\qquad
- \epsilon_{st}^{(m)}\sim\mathcal N(0,1).
+ \widetilde e_{si}^{(m)}=e_{si}^{(m)}+
+ \sigma_{si}^{(m)}\max(0,1-u)\epsilon_{si}^{(m)},\qquad
+ \epsilon_{si}^{(m)}\sim\mathcal N(0,1).
  \label{eq:noise}
 \end{equation}
-More specifically, the mean energy $\bar e_{st}=M^{-1}\sum_m e_{st}^{(m)}$
+More specifically, the mean energy $\bar e_{si}=M^{-1}\sum_m e_{si}^{(m)}$
 and progress $u$ enter a two-layer MLP.  Its output is added to a learned global
 log-scale, transformed by softplus, lower bounded for numerical stability, and
 clipped to a configured maximum.  Each head therefore receives its own
@@ -75,20 +92,20 @@ weights, then removes the perturbation before selection and test evaluation.
 The noise is a training configuration rather than a separate graph encoder.
 
 For each target, a softmax over incoming encoding edges gives
-$\alpha_{st}^{(m)}$.  The structural deviation is the projected multi-head sum
+$\alpha_{si}^{(m)}$.  The structural deviation is the projected multi-head sum
 \begin{equation}
- \mathbf o_t=\mathbf W_O\left\Vert_m
- \sum_{s:(s,t)\in E_{\mathrm{enc}}}\alpha_{st}^{(m)}\mathbf v_s^{(m)}
+ \mathbf o_i=\mathbf W_O\left\Vert_m
+ \sum_{s:(s,i)\in E_{\mathrm{enc}}}\alpha_{si}^{(m)}\mathbf v_s^{(m)}
  \right\Vert.
  \label{eq:deviation}
 \end{equation}
 Residual fusion then updates the point state:
 \begin{align}
- \mathbf r_t^{(\ell)}&=\mathbf h_t^{(\ell-1)}+
- \operatorname{Dropout}(\mathbf o_t^{(\ell)}),\\
- \widehat{\mathbf h}_t^{(\ell)}&=\operatorname{LN}(\mathbf r_t^{(\ell)}),\\
- \mathbf h_t^{(\ell)}&=\widehat{\mathbf h}_t^{(\ell)}+
- \operatorname{FFN}(\widehat{\mathbf h}_t^{(\ell)}).
+ \mathbf r_i^{(\ell)}&=\mathbf h_i^{(\ell-1)}+
+ \operatorname{Dropout}(\mathbf o_i^{(\ell)}),\\
+ \widehat{\mathbf h}_i^{(\ell)}&=\operatorname{LN}(\mathbf r_i^{(\ell)}),\\
+ \mathbf h_i^{(\ell)}&=\widehat{\mathbf h}_i^{(\ell)}+
+ \operatorname{FFN}(\widehat{\mathbf h}_i^{(\ell)}).
  \label{eq:fusion}
 \end{align}
 After $L$ layers, $\Hset_{\mathrm{dec}}=\mathbf H^{(L)}$ is used for recovery.
@@ -101,10 +118,12 @@ $\mathbf h^{(0)}_i\Vert\cdots\Vert\mathbf h^{(L)}_i$.
 \textbf{Output:} $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, and
 mean noise scale $\overline\sigma$.\\
 \textbf{1.} Set $\mathbf H^{(0)}\leftarrow\operatorname{Enc}_X(\mathbf X)$.\\
-\textbf{2.} For each layer, project points to queries, keys, and values; score
-every encoding edge with Eq.~\eqref{eq:energy}.\\
+\textbf{2.} For each layer, project points to queries, keys, and values. For
+each source--target edge $(s,i)$, compute $e_{si}$, normalize incoming scores,
+and sum $\alpha_{si}\mathbf v_s$ into $\mathbf o_i$.\\
 \textbf{3.} Perturb energies with Eq.~\eqref{eq:noise} during training; use
-clean energies otherwise. Normalize incoming scores and apply Eq.~\eqref{eq:fusion}.\\
+clean energies otherwise. Form $\mathbf r_i=\mathbf h_i^{(\ell-1)}+
+\mathbf o_i$ and apply the normalized feed-forward fusion in Eq.~\eqref{eq:fusion}.\\
 \textbf{4.} Return $\Hset_{\mathrm{dec}}\leftarrow\mathbf H^{(L)}$ and the
 configured final or jump-concatenated task state.
 \end{quote}
@@ -301,8 +320,10 @@ or continuous property.  Graph-level recovery losses are averaged over graphs in
 the batch, so a high graph score cannot silence the representation objective for
 individual graphs.
 
-For constrained autoregression, a set-expansion operator evolves the current
-state:
+For constrained autoregression, the reference construction first expands the
+point set from $\Hset_s=\{\mathbf h_1,\ldots,\mathbf h_n\}$ to
+$\Hset' =\{\mathbf h_1,\ldots,\mathbf h_n,\mathbf h_{n+1}\}$, then applies the
+same pair-attention relation decoder to recover the expanded graph.  Formally,
 \begin{equation}
  \Hset_{s+1}=\operatorname{StepSet}(\Hset_s,\boldsymbol\epsilon_s),
  \qquad E_{s+1}=\{(i,j):\sigma(D_A(\mathbf h_i,\mathbf h_j))\geq\tau\}.

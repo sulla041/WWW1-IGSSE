@@ -21,6 +21,9 @@ The Research Track requires `\documentclass[sigconf, anonymous, review]{acmart}`
 The official ACM `acmart` source distribution is retained under
 `vendor/acm-official/`; `vendor/acmart.cls` is generated from that source.
 
+`ALGORITHM_ALIGNMENT.md` maps the prose and pseudocode to the maintained Drawio
+algorithm reference in the parent writing directory.
+
 ## Evidence boundary
 
 The paper reports only numbers frozen in the approved prediction, generation,
