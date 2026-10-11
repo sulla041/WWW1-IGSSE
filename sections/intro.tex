@@ -26,9 +26,7 @@ point set $\Hset$.  A pair decoder reads relations from point pairs, and a
 content decoder reads non-label attributes from individual points.  These two
 paths form a recovery gate.  The prediction and generation modules operate on
 $\Hset$ rather than reopening the input graph as a task-specific computation
-graph.  Figure~\ref{fig:overview} summarizes the representation interface.
-
-\input{figures/overview}
+graph.  The method section specifies each transformation and its supervision.
 
 \paragraph{Web relevance.}
 This paper studies representation quality for attributed Web relation graphs and
@@ -49,13 +47,11 @@ Our contributions are:
   \item \textbf{Layered empirical evidence.} We report aligned prediction
   comparisons, component ablations, and constrained free growth.  \method{}
   exceeds every listed baseline in all ten aligned prediction rows, spanning Web
-  relation, program, circuit, timing, molecular, and social graphs
-  (Table~\ref{tab:prediction}); the growth evidence and component attribution
-  appear in Tables~\ref{tab:ar} and~\ref{tab:ablation}.
+  relation, program, circuit, timing, molecular, and social graphs; the growth
+  and component results use their stated protocols.
 \end{enumerate}
 
 The results support an interface claim, not a universal-pretraining or
 cross-domain-transfer claim.  In particular, we distinguish a table-wise best
 result from an unspecified field-wide ranking, and we separate validity in
-constrained growth from full distribution matching (Tables~\ref{tab:prediction}
-and~\ref{tab:ar}).
+constrained growth from full distribution matching.

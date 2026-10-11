@@ -17,32 +17,15 @@ $\mathbf C=\operatorname{sg}(\operatorname{Enc}_{X}(\mathbf X))$ and
 $\operatorname{sg}$ stops gradients.  A configuration may instead recover a
 standardized raw feature target.  In either case, labels are excluded.  The
 stopped encoded target prevents the feature decoder from reducing reconstruction
-to a shortcut through the target encoder.
-
-\begin{table}[t]
-\caption{State separation in \method{}.  The distinction prevents a task reader
-from silently changing the object audited by the recovery losses.}
-\label{tab:states}
-\centering
-\scriptsize
-\begin{tabular}{lll}
-\toprule
-Symbol & Role & Consumed by \\
-\midrule
-$\mathbf H^{(0)}$ & Edge-free attribute baseline & Encoder layers \\
-$\Hset_{\mathrm{dec}}$ & Final point set & Pair and content decoders \\
-$\Hset_{\mathrm{task}}$ & Final or jump-concatenated points & Node reader \\
-$\mathbf C$ & Stopped content target & $\mathcal L_{\mathrm{feat}}$ only \\
-$y$ & Task label & $\mathcal L_{\mathrm{pred}}$ on train mask \\
-$E_{\mathrm{enc}}$ & Encoder edges with self loops & Deviation computation \\
-\bottomrule
-\end{tabular}
-\end{table}
+to a shortcut through the target encoder.  We reserve $\Hset_{\mathrm{dec}}$
+for the final state audited by the two decoders, and reserve
+$\Hset_{\mathrm{task}}$ for a final-state or jump-concatenated reader input.
+This separation keeps a task reader from silently changing the object constrained
+by recovery.
 
 \subsection{Feature--structure deviation encoding}
 \label{sec:fsde}
-Figure~\ref{fig:fsde} expands the encoder.  First, a shared attribute map forms
-an edge-free baseline:
+First, a shared attribute map forms an edge-free baseline:
 \begin{equation}
   \mathbf h^{(0)}_i=\operatorname{Enc}_X(\mathbf x_i).
   \label{eq:baseline}
@@ -112,7 +95,19 @@ After $L$ layers, $\Hset_{\mathrm{dec}}=\mathbf H^{(L)}$ is used for recovery.
 Node tasks may use this final state or a jump-concatenated state
 $\mathbf h^{(0)}_i\Vert\cdots\Vert\mathbf h^{(L)}_i$.
 
-\input{figures/fsde}
+\paragraph{Pseudocode 1: FSDE encoding.}
+\begin{quote}\small
+\textbf{Input:} $\mathbf X$, $E_{\mathrm{enc}}$, and progress $u$.\\
+\textbf{Output:} $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, and
+mean noise scale $\overline\sigma$.\\
+\textbf{1.} Set $\mathbf H^{(0)}\leftarrow\operatorname{Enc}_X(\mathbf X)$.\\
+\textbf{2.} For each layer, project points to queries, keys, and values; score
+every encoding edge with Eq.~\eqref{eq:energy}.\\
+\textbf{3.} Perturb energies with Eq.~\eqref{eq:noise} during training; use
+clean energies otherwise. Normalize incoming scores and apply Eq.~\eqref{eq:fusion}.\\
+\textbf{4.} Return $\Hset_{\mathrm{dec}}\leftarrow\mathbf H^{(L)}$ and the
+configured final or jump-concatenated task state.
+\end{quote}
 
 \subsection{Two recovery paths}
 \label{sec:recovery}
@@ -218,52 +213,25 @@ For a node task, the normalized progress is
 The first 40\% of training therefore anneals Eq.~\eqref{eq:noise}; later
 updates and all selection passes use unperturbed relation energies.  Gradient
 clipping bounds the joint update, and the validation metric chooses a checkpoint.
-The test split is read once from the selected checkpoint.
+The test split is read once from the selected checkpoint.  The default node-task
+configuration uses dimension 64, three encoder layers, four heads, hidden width
+256, dropout 0.4, Adam at $10^{-3}$ with weight decay $5\times10^{-4}$, loss
+weights $(1.0,0.5,0.3,0.02)$, and up to 4096 positive and 4096 negative pairs.
 
-\begin{figure}[t]
-\small
-\centering
-\fbox{\begin{minipage}{0.92\linewidth}
-\textbf{One joint update.}
-\begin{enumerate}\itemsep1pt
-  \item Construct $\mathbf H^{(0)}=\operatorname{Enc}_X(\mathbf X)$ and
-  apply $L$ feature--structure deviation layers using the training edge view.
-  \item Decode clean content targets from $\Hset_{\mathrm{dec}}$ and sample
-  positive and negative relation pairs from the complete input edge set.
-  \item Compute $\mathcal L_{\mathrm{feat}}$, $\mathcal L_{\mathrm{link}}$,
-  $\mathcal L_{\mathrm{alive}}$, and the training-mask prediction loss.
-  \item Backpropagate their weighted sum, clip the gradient, and update all
-  encoder, decoder, and reader parameters together.
-  \item For validation or test, disable encoder noise, set $u=1$, and evaluate
-  the selected checkpoint without exposing test labels to the embedding path.
-\end{enumerate}
-\end{minipage}}
-\caption{Joint optimization protocol.  The recovery floor remains active during
-task learning; an embedding-only run sets $\lambda_{\mathrm{pred}}=0$.}
-\Description{Five optimization steps construct point states, decode content and
-sample relation pairs, compute four loss terms, update all modules jointly, and
-evaluate a deterministic selected checkpoint.}
-\label{fig:procedure}
-\end{figure}
-
-\begin{table}[t]
-\caption{Default node-task configuration.  Dataset-specific values and complete
-training commands are recorded in the reproducibility material.}
-\label{tab:defaults}
-\centering
-\scriptsize
-\begin{tabular}{lr@{\quad}lr}
-\toprule
-Point dimension & 64 & Encoder layers & 3 \\
-Attention heads & 4 & Hidden dimension & 256 \\
-Dropout & 0.4 & Optimizer & Adam \\
-Learning rate & $10^{-3}$ & Weight decay & $5\times10^{-4}$ \\
-$\lambda_{pred}$ & 1.0 & $\lambda_{link}$ & 0.5 \\
-$\lambda_{feat}$ & 0.3 & $\lambda_{alive}$ & 0.02 \\
-Positive/negative pairs & 4096/4096 & Gradient clip & 1.0 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\paragraph{Pseudocode 2: one joint update.}
+\begin{quote}\small
+\textbf{1.} Compute $u$, optionally perturb $\mathbf X$ and the encoder edge
+view, then run Pseudocode~1 with training noise enabled.\\
+\textbf{2.} Decode clean content targets from $\Hset_{\mathrm{dec}}$ and compute
+$\mathcal L_{\mathrm{feat}}$. Sample pairs from the complete input graph and
+compute $\mathcal L_{\mathrm{link}}$.\\
+\textbf{3.} Read $\Hset_{\mathrm{task}}$ with the configured node or graph head;
+compute $\mathcal L_{\mathrm{pred}}$ only on training labels.\\
+\textbf{4.} Add $\mathcal L_{\mathrm{alive}}$, backpropagate the weighted sum,
+clip gradients, and update encoder, decoders, and reader jointly.\\
+\textbf{5.} For selection and test, disable noise, set $u=1$, and evaluate the
+selected checkpoint.
+\end{quote}
 
 The reported embedding probe and direct recovery metrics have different roles.
 The probe asks whether a standardized structural feature can predict links from
@@ -282,25 +250,9 @@ sends gradients through the content decoder and final point set, but not through
 the stopped target encoder.  The survival term reaches the scale network and the
 attention-energy path.  Thus, the representation is not trained by a single
 ``reconstruction loss'': relation geometry, node content, task relevance, and
-the training perturbation receive separate signals.
-
-\begin{table}[t]
-\caption{Loss terms and their information boundary.  ``Train labels'' means the
-loss is evaluated only on the training mask.}
-\label{tab:losses}
-\centering
-\scriptsize
-\begin{tabular}{llll}
-\toprule
-Term & Input to loss & Direct modules & Label access \\
-\midrule
-$\mathcal L_{pred}$ & $\widehat y,y$ & reader, encoder & train labels only \\
-$\mathcal L_{link}$ & pair logits, $A_{ij}$ & pair decoder, encoder & none \\
-$\mathcal L_{feat}$ & $\widehat{\mathbf C},\mathbf C$ & content decoder, encoder & none \\
-$\mathcal L_{alive}$ & $\overline\sigma$ & $\psi$, energy path & none \\
-\bottomrule
-\end{tabular}
-\end{table}
+the training perturbation receive separate signals.  Only
+$\mathcal L_{\mathrm{pred}}$ reads $y$ on the training mask; the remaining
+three terms use no task label.
 
 For an embedding-only run, $\lambda_{pred}=0$ and the three representation terms
 train a point set without a task label.  A task run restores
@@ -391,6 +343,21 @@ At test time, $c_s$ is never used as a step-wise teacher.  It is evaluated only
 after the free-growth rollout to compute Valid.  This train--test separation is
 what makes Legal and Net results evidence about a learned growth process rather
 than a rule-filtered trajectory.
+
+\paragraph{Pseudocode 3: constrained free growth.}
+\begin{quote}\small
+\textbf{Input:} learned expansion operator, pair decoder, initial set
+$\Hset_0$, target size, gate type, and $\texttt{max\_live}$.\\
+\textbf{1.} Initialize the live state collection with $\Hset_0$.\\
+\textbf{2.} Until the target size, expand every live state with
+$\operatorname{StepSet}$ and decode candidate relation scores.\\
+\textbf{3.} During training, attach the graph-family legality signal to each
+candidate. During evaluation, do not query the legality teacher.\\
+\textbf{4.} Rank candidates by the declared Legal or Net gate, retain at most
+$\texttt{max\_live}$ states, and continue with their point sets.\\
+\textbf{5.} Decode terminal graphs and report Valid together with Emb F1 over
+the completed rollouts.
+\end{quote}
 
 \subsection{Symmetry and objective}
 \label{sec:objective}
