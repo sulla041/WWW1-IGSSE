@@ -83,13 +83,13 @@ uses
 \end{equation}
 More specifically, the mean energy $\bar e_{si}=M^{-1}\sum_m e_{si}^{(m)}$
 and progress $u$ enter a two-layer MLP:
-\begin{equation}
- \log\sigma_{si}=\operatorname{MLP}_{\psi}([\bar e_{si},u])+
- \log\sigma_0,\qquad
- \sigma_{si}^{(m)}=\min\{\operatorname{softplus}(
+\begin{align}
+ \log\sigma_{si}&=\operatorname{MLP}_{\psi}([\bar e_{si},u])+
+ \log\sigma_0,\\
+ \sigma_{si}^{(m)}&=\min\{\operatorname{softplus}(
  \log\sigma_{si}^{(m)})+10^{-4},1.5\}.
  \label{eq:scale}
-\end{equation}
+\end{align}
 Each head therefore receives its own edge-dependent perturbation scale.  The
 survival term in Eq.~\eqref{eq:objective} prevents this scale from trivially
 vanishing during the noise phase.

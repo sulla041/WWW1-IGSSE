@@ -1,6 +1,6 @@
 # Algorithm-to-Diagram Alignment
 
-Reference source: `../插图输出及相对应文档/算法核心.drawio`.
+Reference source: the maintained algorithm diagram accompanying this manuscript.
 
 The manuscript deliberately follows the diagram's computation order:
 

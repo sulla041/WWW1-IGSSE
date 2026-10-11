@@ -5,10 +5,12 @@
 We ask: (Q1) does the declared point set retain links and node content; (Q2) does
 it support Web relation tasks; (Q3) which encoder and readout components account
 for task utility; (Q4) can the set state free-grow beyond the training scale
-without a step-wise rule teacher; and (Q5) how do graph semantics and output
-level affect the result?  Each dataset trains its own encoder, decoders, and
-head.  Validation metrics select checkpoints and test splits report results.
-We do not interpret the independent task instances as a single zero-shot model.
+without a step-wise rule teacher; (Q5) how do graph semantics and output level
+affect the result; and (Q6) where does a learned point-set signature collide on
+non-isomorphic graphs stratified by 1/2/3-WL?  Each dataset trains its own
+encoder, decoders, and head.  Validation metrics select checkpoints and test
+splits report results.  We do not interpret the independent task instances as a
+single zero-shot model.
 
 The listed baselines are MLP, GCN, GraphSAGE, GAT, GIN, APPNP, SGFormer,
 Polynormer, Graph-Mamba, and PST.  Each row fixes its input convention, split,
@@ -26,12 +28,29 @@ graph-to-set route.  The comparison answers a row-level question: whether the
 declared \method{} configuration improves the task metric under that protocol.
 
 \subsection{Aligned prediction comparison}
-The full result workbook compares the strongest listed baseline and \method{}
+The frozen comparison record compares the strongest listed baseline and \method{}
 for each task.  \method{} exceeds the listed comparison set in all ten aligned
 rows.  The result spans co-purchase,
 collaboration, citation, program, circuit, timing, molecular, and social graph
-settings.  This statement is table-scoped: it applies to the frozen inputs,
+settings.  This statement is record-scoped: it applies to the frozen inputs,
 splits, schedules, and baseline set in the workbook.
+
+\subsection{Proposed WL-1/2/3 structural diagnostic}
+\label{sec:wl-diagnostic}
+The WL hierarchy supplies a controlled way to ask a question distinct from task
+accuracy: when two non-isomorphic graphs are respectively separated or merged by
+1-, 2-, and 3-WL, does the learned point-set signature separate them?
+\cite{morris2019wl}  We will enumerate small graph pairs, keep their initial
+attribute colors fixed, and assign each pair to exactly one of four strata:
+1-WL separable, 1-WL collision but 2-WL separable, 2-WL collision but 3-WL
+separable, or 3-WL collision.  An embedding-only PairAttn configuration will be
+trained without task labels; evaluation will use deterministic point sets and at
+least five consistent node permutations.  A collision requires both an
+invariant pooled signature within a declared tolerance and failure to separate
+the declared relation targets under PairAttn.  We will report collision rate,
+relation/content recovery, and permutation deviation by stratum.  This is a
+planned diagnostic, not a reported result or a claim that \method{} matches the
+power of any WL test.
 
 \paragraph{Web relation tasks.}
 Amazon Photo, Coauthor-CS, and Cora respectively represent product co-purchase,
@@ -39,7 +58,7 @@ academic collaboration, and citation relations \cite{shchur2018,sen2008,yang2016
 \method{} is best among the listed baselines in all four Web rows, including the
 Photo interact protocol.  The gains on Photo and Coauthor-CS are narrow, which
 is consistent with strong aligned baselines; the Cora row has a larger gap.
-We therefore use the table to support Web-task utility, not to infer an
+We therefore use the record to support Web-task utility, not to infer an
 unmeasured transfer property.
 
 \paragraph{Cross-semantic stress tests.}

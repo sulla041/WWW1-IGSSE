@@ -24,6 +24,9 @@ The official ACM `acmart` source distribution is retained under
 `ALGORITHM_ALIGNMENT.md` maps the prose and pseudocode to the maintained Drawio
 algorithm reference in the parent writing directory.
 
+`EXPERIMENT_PLAN_WL123.md` defines a proposed WL-1/2/3 diagnostic. It is not a
+reported result and must not be cited as evidence until it has been run.
+
 ## Evidence boundary
 
 The paper reports only numbers frozen in the approved prediction, generation,

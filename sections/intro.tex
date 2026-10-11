@@ -1,57 +1,99 @@
 \section{Introduction}
 \label{sec:intro}
 
-Web platforms, knowledge systems, and collaboration services organize entities,
-content, and interactions as attributed relation graphs.  Product co-purchases,
-co-authorships, and citations require a model to reason jointly about node
-content and graph structure.  The resulting decisions may concern an entity, a
-subgraph, or a changing relational state.  A useful representation must therefore
-support more than one output level while retaining an auditable connection to its
-input graph.
+Web systems reason over attributed relations rather than isolated records.
+Products connect through co-purchases, papers connect through citations, and
+researchers connect through collaboration.  Each relation graph carries two
+different kinds of input: content attached to individual entities and structure
+created by interactions.  The same graph may support an entity decision, a
+subgraph decision, a graph-level prediction, or an evolving relational state.
+These outputs require different readers, but they should not silently redefine
+which information the representation preserves.
 
-Message-passing neural networks encode a graph by repeatedly mixing neighbor
-states \cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.  This is an
-effective path to prediction, but a strong task score alone does not establish
-which relations or attributes survive in the final state.  Graph-to-set mappings
-and positional encoders show that graphs can expose reusable continuous objects
-\cite{wang2024graphpointset,chen2026gfse}.  Graph autoencoders, in turn, make
-structure recovery explicit \cite{kipf2016vgae,simonyan2018graphvae}.  These
-directions leave a practical gap: an attributed graph representation should make
-both content recovery and relation recovery testable, and should preserve a
-common interface for node, graph, and growth tasks.
+The difficulty is not merely to improve a task score.  A task-trained hidden
+state can be useful for one label while discarding content or relations that the
+label does not need.  Once this happens, a reader cannot tell whether a failure
+comes from its own decision rule or from an embedding that no longer contains the
+needed input.  This ambiguity is particularly costly for Web relation graphs:
+content and interaction jointly influence retrieval, recommendation, network
+analysis, and future relation formation.  A representation must therefore answer
+two questions before it supports downstream use: which declared entity content
+remains readable, and which declared relations remain readable.
 
-We call this target an \emph{auditable graph set representation}.  Given
-$G=(\mathbf A,\mathbf X)$ without task labels, \method{} learns a node-aligned
-point set $\Hset$.  A PairAttn decoder reads relations from point pairs, and a
-content decoder reads non-label attributes from individual points.  These two
-paths form a recovery gate.  The prediction and generation modules operate on
-$\Hset$ rather than reopening the input graph as a task-specific computation
-graph.  The method section specifies each transformation and its supervision.
+Standard graph encoders do not impose this requirement.  Neighborhood
+aggregation architectures construct node states along observed edges
+\cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.  Global
+encoders enlarge the interaction range through propagation, attention, or
+state-space updates \cite{gasteiger2019,wu2023sgformer,deng2024polynormer,wang2024graphmamba}.
+Both families can yield strong predictions, yet their task loss alone does not
+require an explicit decoder for both the relation target and the non-label
+content target.  Adding a decoder after a task encoder is also insufficient as a
+principle: unless its target, pair sampler, and gradient route are specified,
+``reconstruction'' does not say which part of the graph state it audits.
+
+We argue that the representation object itself must change.  Rather than treating
+the final hidden matrix as an unexamined by-product of task computation, we
+represent $G=(\mathbf A,\mathbf X)$ as a node-aligned set
+$\Hset=\{\mathbf h_i\}_{i=1}^n$ in a relation geometry.  The set preserves a
+row for every input node.  A pointwise decoder must recover declared content from
+$\mathbf h_i$; a PairAttn decoder must recover declared relations from
+$(\mathbf h_i,\mathbf h_j)$.  If both decoders have bounded error, then a shared
+point set cannot represent two graphs with arbitrarily different declared
+targets; Section~\ref{sec:objective} states the corresponding recovery bound.
+This does not make $\Hset$ an exact graph isomorphism invariant.  It makes the
+information claim in the paper measurable.
+
+\method{} realizes this object through \emph{feature--structure deviation
+encoding}.  An edge-free encoder first maps $\mathbf x_i$ to the original
+coordinate $\mathbf h_{o,i}$.  Relation-conditioned attention then writes a
+structural offset $\mathbf o_i$, and residual fusion produces $\mathbf h_i$.
+This decomposition is necessary for the audit: $\mathbf h_o$ names what the
+node carries before graph conditioning, while $\mathbf o$ names how the declared
+relations modify that content.  PairAttn and pointwise content decoding supervise
+the two reading paths.  Node heads and invariant set pooling then consume
+$\Hset$, not the raw graph, and set expansion evolves $\Hset$ before the same
+PairAttn operator reconstructs an expanded graph.
+
+\paragraph{Why generation belongs to the same representation.}
+Autoregressive graph models commonly construct node or adjacency decisions in a
+chosen order \cite{you2018,liao2019,dai2020,shi2020}; diffusion and score models
+instead refine a graph-valued state \cite{vignac2023,jo2022}.  These models
+address graph generation, but they do not by themselves establish that the
+continuous state used during growth preserves the declared relation geometry.  A
+recoverable point set supplies a testable intermediate state: expansion proposes
+$\Hset' = \{\mathbf h_1,\ldots,\mathbf h_n,\mathbf h_{n+1}\}$, PairAttn reads
+the expanded relations, and free-growth evaluation separates a learned transition
+from a step-wise rule teacher.  This connects prediction and constrained growth
+through one audited object rather than through a shared name alone.
 
 \paragraph{Web relevance.}
-This paper studies representation quality for attributed Web relation graphs and
-belongs to \emph{Graph Algorithms and Modeling for the Web}.  The primary Web
-evidence uses product co-purchase, academic collaboration, and citation graphs.
-Program, circuit, timing, molecular, and social graphs stress the representation
-under changed graph semantics; they do not establish cross-domain zero-shot
-transfer.
+This work studies representation quality for attributed Web relation graphs and
+belongs to \emph{Graph Algorithms and Modeling for the Web}.  Product
+co-purchase, academic collaboration, and citation tasks provide the primary Web
+evidence \cite{shchur2018,sen2008,yang2016}.  Program, circuit, timing,
+molecular, and social graphs vary the relation semantics and output level; they
+test whether the same representation construction remains usable, not whether a
+single checkpoint transfers without adaptation.
 
 Our contributions are:
 \begin{enumerate}
-  \item \textbf{Recoverable point-set embedding.} \method{} separates an
-  edge-free feature baseline from a relation-conditioned structural deviation,
-  and supervises the resulting point set with link and content recovery.
-  \item \textbf{One interface for point and set tasks.} Node heads, invariant
-  attention pooling, and set expansion consume the same node-aligned object,
-  making output-level changes explicit rather than redefining the representation.
-  \item \textbf{Layered empirical evidence.} We report aligned prediction
-  comparisons, component ablations, and constrained free growth.  \method{}
-  exceeds every listed baseline in all ten aligned prediction rows, spanning Web
-  relation, program, circuit, timing, molecular, and social graphs; the growth
-  and component results use their stated protocols.
+  \item \textbf{Recoverable graph set-space embedding.} We define a node-aligned
+  point set whose feature baseline, structural deviation, PairAttn reconstruction,
+  and pointwise content decoder make the declared $\mathbf A$ and $\mathbf X$
+  targets auditable.
+  \item \textbf{One object for point, set, and growth readers.} We define
+  task-specific point and invariant set readers on $\Hset$, then define set
+  expansion and PairAttn reconstruction on the same state for constrained
+  autoregression.
+  \item \textbf{Layered evidence rather than an aggregate ranking.} We compare
+  aligned prediction instances, analyze recovery losses and readers through
+  ablation, and evaluate constrained free growth with both validity and an
+  embedding probe.  Across ten aligned prediction comparisons, \method{} exceeds
+  every listed baseline; each result remains scoped to its split, input
+  convention, training schedule, and baseline set.
 \end{enumerate}
 
-The results support an interface claim, not a universal-pretraining or
-cross-domain-transfer claim.  In particular, we distinguish a table-wise best
-result from an unspecified field-wide ranking, and we separate validity in
-constrained growth from full distribution matching.
+The resulting claim is narrow but useful: \method{} provides an auditable
+representation interface for relation graphs.  It does not claim universal
+pretraining, zero-shot transfer, complete graph-distribution matching, or an
+unqualified field-wide ranking.
