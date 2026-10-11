@@ -1,47 +1,40 @@
 \section{Introduction}
 \label{sec:intro}
 
-Web systems reason over attributed relations rather than isolated records.
+Web systems reason over attributed relations among entities and content.
 Products connect through co-purchases, papers connect through citations, and
 researchers connect through collaboration.  Each relation graph carries two
 different kinds of input: content attached to individual entities and structure
 created by interactions.  The same graph may support an entity decision, a
 subgraph decision, a graph-level prediction, or an evolving relational state.
-These outputs require different readers, but they should not silently redefine
-which information the representation preserves.
+These outputs require readers that retain a common account of the information
+preserved by the representation.
 
-The difficulty is not merely to improve a task score.  A task-trained hidden
-state can be useful for one label while discarding content or relations that the
-label does not need.  Once this happens, a reader cannot tell whether a failure
-comes from its own decision rule or from an embedding that no longer contains the
-needed input.  This ambiguity is particularly costly for Web relation graphs:
-content and interaction jointly influence retrieval, recommendation, network
-analysis, and future relation formation.  A representation must therefore answer
-two questions before it supports downstream use: which declared entity content
-remains readable, and which declared relations remain readable.
+Task scores measure one downstream decision, whereas Web relation systems also
+need representations whose declared entity content and relations remain
+readable. Content and interaction jointly shape retrieval, recommendation,
+network analysis, and future relation formation. A useful representation thus
+exposes both the readable content of each entity and the readable relations
+between entities.
 
-Standard graph encoders do not impose this requirement.  Neighborhood
-aggregation architectures construct node states along observed edges
+Neighborhood aggregation architectures construct node states along observed edges
 \cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.  Global
 encoders enlarge the interaction range through propagation, attention, or
 state-space updates \cite{gasteiger2019,wu2023sgformer,deng2024polynormer,wang2024graphmamba}.
-Both families can yield strong predictions, yet their task loss alone does not
-require an explicit decoder for both the relation target and the non-label
-content target.  Adding a decoder after a task encoder is also insufficient as a
-principle: unless its target, pair sampler, and gradient route are specified,
-``reconstruction'' does not say which part of the graph state it audits.
+IGSSE combines global computation with adjacency-conditioned structural writing.
+Global Q/K/V attention forms source states available across the point set, and
+adjacency selects the states written into each target point. The recovery
+objective specifies the relation target, content target, pair sampler, and
+gradient route for this representation process.
 
-We argue that the representation object itself must change.  Rather than treating
-the final hidden matrix as an unexamined by-product of task computation, we
-represent $G=(\mathbf A,\mathbf X)$ as a node-aligned set
+We represent $G=(\mathbf A,\mathbf X)$ as a node-aligned set
 $\Hset=\{\mathbf h_i\}_{i=1}^n$ in a relation geometry.  The set preserves a
 row for every input node.  A pointwise decoder must recover declared content from
 $\mathbf h_i$; a PairAttn decoder must recover declared relations from
 $(\mathbf h_i,\mathbf h_j)$.  If both decoders have bounded error, then a shared
 point set cannot represent two graphs with arbitrarily different declared
 targets; Section~\ref{sec:objective} states the corresponding recovery bound.
-This does not make $\Hset$ an exact graph isomorphism invariant.  It makes the
-information claim in the paper measurable.
+The recovery bound makes this information claim measurable.
 
 \method{} realizes this object through \emph{feature--structure deviation
 encoding}.  An edge-free encoder first maps $\mathbf x_i$ to the original

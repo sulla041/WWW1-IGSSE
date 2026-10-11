@@ -24,21 +24,23 @@ This separation keeps a task reader from silently changing the object constraine
 by recovery.
 
 \paragraph{Core-path correspondence.}
-The core computation first forms original coordinates $\mathbf h_{o,i}$; source
-queries, target keys, and source values produce $e_{si}$ and $\alpha_{si}$;
-their weighted value sum forms the offset $\mathbf o_i$; and the offset is fused
+The core computation first forms original coordinates $\mathbf h_{o,i}$. Global
+Q/K/V attention evaluates an energy field over all source--target pairs and
+forms contextual source states. Incoming adjacency selects the source states
+written into target $i$; their weighted sum forms $\mathbf o_i$, which is fused
 with the original coordinate before the feed-forward map produces $\mathbf h_i$.
 The first-layer path is
-\begin{equation}
- \mathbf x_i\rightarrow\mathbf h_{o,i}\rightarrow
- (\mathbf q_s,\mathbf k_i,\mathbf v_s)\rightarrow e_{si}\rightarrow
- \alpha_{si}\rightarrow\mathbf o_i\rightarrow
+\begin{align}
+ \mathbf x_i&\rightarrow\mathbf h_{o,i}\rightarrow
+ (\mathbf Q,\mathbf K,\mathbf V)\rightarrow E^{\mathrm{global}}
+ \rightarrow\mathbf u_s,\nonumber\\
+ \mathbf u_s&\rightarrow\alpha_{si}\rightarrow\mathbf o_i\rightarrow
  \mathbf r_i=\mathbf h_{o,i}+\mathbf o_i\rightarrow\mathbf h_i.
  \label{eq:visual-core}
-\end{equation}
+\end{align}
 Later layers repeat this path with the preceding point state in place of
-$\mathbf h_o$.  Noise is a training configuration: it perturbs attention
-energies but does not alter this deterministic inference path.
+$\mathbf h_o$. The conditional noise filter regulates structural writing when
+global source states contract during aggregation.
 
 \subsection{Feature--structure deviation encoding}
 \label{sec:fsde}
@@ -59,17 +61,25 @@ map, and output normalization.  Formally,
 \end{align}
 This encoder has no access to $E$, so its output provides an explicit content
 reference for the subsequent structural correction and for the content target.
-The baseline gives a concrete location for node content before the graph changes
-it.  At layer $\ell$, the encoding edge set includes self loops,
-$E_{\mathrm{enc}}=E\cup\{(i,i):i\in V\}$.  Multi-head projections produce
-$\mathbf q_i$, $\mathbf k_i$, and $\mathbf v_i$.  For source $s$, target $i$,
-and head $m$, \method{} computes
+The baseline gives a concrete location for node content before graph
+conditioning. At layer $\ell$, multi-head projections produce $\mathbf q_i$,
+$\mathbf k_i$, and $\mathbf v_i$ for every node. For source $s$, target $i$,
+and head $m$, \method{} computes the global pair energy
 \begin{equation}
  e_{si}^{(m)}=\operatorname{LeakyReLU}\left(
  (\mathbf a_{\mathrm{src}}^{(m)})^\top\mathbf q_s^{(m)}+
  (\mathbf a_{\mathrm{dst}}^{(m)})^\top\mathbf k_i^{(m)}\right).
  \label{eq:energy}
 \end{equation}
+
+The global attention field then forms contextual source states
+\begin{equation}
+ \mathbf u_s^{(m)}=\sum_{j\in V}
+ \operatorname{softmax}_{j}(e_{sj}^{(m)})\mathbf v_j^{(m)}.
+ \label{eq:global-source}
+\end{equation}
+The adjacency defines the write set
+$N_A(i)=\{s:(s,i)\in E\}\cup\{i\}$ for each target $i$.
 
 \paragraph{Noise curriculum.}
 The noise network $\psi$ receives the mean head energy and a normalized training
@@ -95,13 +105,13 @@ survival term in Eq.~\eqref{eq:objective} prevents this scale from trivially
 vanishing during the noise phase.
 Evaluation sets $\widetilde e=e$.  The curriculum perturbs early relation
 weights, then removes the perturbation before selection and test evaluation.
-The noise is a training configuration rather than a separate graph encoder.
+The noise filter belongs to the structural-writing configuration.
 
-For each target, a softmax over incoming encoding edges gives
-$\alpha_{si}^{(m)}$.  The structural deviation is the projected multi-head sum
+For each target, a softmax over $N_A(i)$ gives $\alpha_{si}^{(m)}$. The
+structural deviation is the projected multi-head sum
 \begin{equation}
  \mathbf o_i=\mathbf W_O\left\Vert_m
- \sum_{s:(s,i)\in E_{\mathrm{enc}}}\alpha_{si}^{(m)}\mathbf v_s^{(m)}
+ \sum_{s\in N_A(i)}\alpha_{si}^{(m)}\mathbf u_s^{(m)}
  \right\Vert.
  \label{eq:deviation}
 \end{equation}
@@ -156,10 +166,9 @@ pair $(i,j)$,
  \end{aligned}
  \label{eq:pairattn}
 \end{equation}
-Here $\gamma$ and $\beta$ calibrate score scale and offset.  PairAttn reads only
-the final point set and is equivariant because point rows, queries, and keys
-permute together.  It does not reopen a fixed adjacency after
-$\Hset_{\mathrm{dec}}$ has been formed.
+Here $\gamma$ and $\beta$ calibrate score scale and offset. PairAttn reads the
+final point set and is equivariant because point rows, queries, and keys permute
+together.
 
 The accompanying pointwise content decoder is
 \begin{equation}
@@ -167,10 +176,9 @@ The accompanying pointwise content decoder is
  \mathcal L_{\mathrm{feat}}=\operatorname{MSE}(\widehat{\mathbf C},\mathbf C).
  \label{eq:feat}
 \end{equation}
-The two losses impose different requirements: PairAttn tests the relation
-geometry of point pairs, whereas $D_C$ tests information readable from one final
-point.  Their joint evaluation is the \emph{recovery gate}.  A task score cannot
-replace this gate because a head may exploit a small subset of a representation.
+The two losses measure complementary quantities: PairAttn evaluates relation
+geometry of point pairs, and $D_C$ evaluates content readable from one final
+point. Their joint evaluation forms the \emph{recovery gate}.
 
 \paragraph{Pair sampling and target hygiene.}
 Materializing every non-edge is unnecessary and can dominate the objective on a
@@ -195,15 +203,11 @@ $\mathcal L_{\mathrm{pred}}$ over the training mask.  This boundary prevents
 the recovery path from observing the target that a downstream task is meant to
 predict.
 
-The content decoder is a layer-normalized pointwise MLP.  It cannot aggregate
-neighbors after $\Hset_{\mathrm{dec}}$ has been formed.  Feature reconstruction
-therefore tests information readable from each final point, rather than a second
-message-passing computation over the graph.  Its default form is
-$D_C(\mathbf h)=\operatorname{Linear}(\operatorname{GELU}(
-\operatorname{Linear}(\operatorname{LN}(\mathbf h))))$, with output dimension
-equal to the target dimension.  When edge attributes are required, the interface
-extends with $D_E(\mathbf h_i,\mathbf h_j)$ and an explicit edge-attribute loss;
-no current result claims that unmodeled edge attributes are preserved.
+The content decoder is a layer-normalized pointwise MLP over
+$\Hset_{\mathrm{dec}}$. Feature reconstruction measures information readable
+from each final point. Its default form is a layer-normalized two-layer GELU MLP
+with output dimension equal to the target dimension. Edge attributes use the
+pair decoder $D_E(\mathbf h_i,\mathbf h_j)$ and an explicit edge-attribute loss.
 
 \subsection{Training schedule and evaluation protocol}
 \label{sec:training}
@@ -238,13 +242,10 @@ clip gradients, and update encoder, PairAttn, content decoder, and reader jointl
 selected checkpoint.
 \end{quote}
 
-The reported embedding probe and direct recovery metrics have different roles.
-The probe asks whether a standardized structural feature can predict links from
-the learned state.  The direct recovery gate instead evaluates $D_A$ and $D_C$.
-The paper reports them separately: a high probe score cannot certify feature
-recovery, and a high task score cannot certify either target.  This distinction
-also determines the experimental order: a data family first passes the recovery
-gate, then opens a point or set prediction comparison.
+The embedding probe measures whether a standardized structural feature predicts
+links from the learned state. The direct recovery gate evaluates $D_A$ and $D_C$.
+The paper reports these complementary metrics separately and applies the
+recovery gate before each point or set prediction comparison.
 
 \subsection{Loss attachment and gradient routes}
 \label{sec:losses}
@@ -253,11 +254,10 @@ points.  The prediction term supervises a task reader.  The link term sends
 gradients through PairAttn and the final point set.  The feature term
 sends gradients through the content decoder and final point set, but not through
 the stopped target encoder.  The survival term reaches the scale network and the
-attention-energy path.  Thus, the representation is not trained by a single
-``reconstruction loss'': relation geometry, node content, task relevance, and
-the training perturbation receive separate signals.  Only
-$\mathcal L_{\mathrm{pred}}$ reads $y$ on the training mask; the remaining
-three terms use no task label.
+attention-energy path. Relation geometry, node content, task relevance, and the
+training filter receive separate signals. $\mathcal L_{\mathrm{pred}}$ reads
+$y$ on the training mask; the remaining three terms use declared graph
+information.
 
 For an embedding-only run, $\lambda_{pred}=0$ and the three representation terms
 train a point set without a task label.  A task run restores
@@ -275,19 +275,18 @@ task uses invariant attention pooling,
  \widehat Y_G=R_{\mathrm{graph}}(\mathbf g),
  \label{eq:pool}
 \end{equation}
-where $\beta_i$ is normalized over the graph.  The readout receives points only;
-it does not reopen the original adjacency as a task message-passing graph.  The
-frozen-$\Hset$ and readout-replacement ablations isolate this interface choice.
+where $\beta_i$ is normalized over the graph. The readout consumes the learned
+point set. The frozen-$\Hset$ and readout-replacement ablations isolate this
+interface choice.
 
 \paragraph{Output-level choice.}
 For node classification and regression, the head is shared over point rows and
 preserves node alignment.  When a node needs task context, a set-attention block
 updates the entire point set before the shared head reads its row.  For graph
 classification and regression, attention pooling or PMA maps a variable-cardinality
-set to one invariant state.  Mean pooling is included only as an ablation because
-it removes learned selection among points.  These output choices do not alter the
-recovery target, so a change in task score can be attributed to the reader of
-$\Hset$ rather than a different embedding object.
+set to one invariant state. Mean pooling supplies an ablation reference for
+learned point selection. These output choices retain the same recovery target
+and attribute task-score changes to the reader of $\Hset$.
 
 \paragraph{Concrete readers.}
 For node classification, a shared MLP returns class logits
@@ -302,9 +301,8 @@ For graph tasks, a learned query or attention weight reads a set state.  A PMA
 configuration uses one or more seed queries; a simpler attention configuration
 uses $\beta_i\propto\exp(\mathbf w^\top\mathbf h_i)$.  Both preserve invariance
 to node ordering.  The graph head then maps $\mathbf g$ to a class distribution
-or continuous property.  Graph-level recovery losses are averaged over graphs in
-the batch, so a high graph score cannot silence the representation objective for
-individual graphs.
+or continuous property. Graph-level recovery losses are averaged over graphs in
+the batch, maintaining a representation objective for each graph.
 
 For constrained autoregression, the reference construction first expands the
 point set from $\Hset_s=\{\mathbf h_1,\ldots,\mathbf h_n\}$ to
@@ -315,10 +313,9 @@ same pair-attention relation decoder to recover the expanded graph.  Formally,
  \qquad E_{s+1}=\{(i,j):\sigma(D_A(\mathbf h_i,\mathbf h_j))\geq\tau\}.
  \label{eq:grow}
 \end{equation}
-Training may use a graph-family legality signal.  At evaluation, parameters are
-fixed and the model free-grows without a step-wise rule teacher.  We report
-terminal validity together with an embedding probe, because a legal output alone
-does not establish that the state remains relationally readable.
+Training uses a graph-family legality signal. At evaluation, fixed parameters
+produce free-growth rollouts. The report includes terminal validity together with
+an embedding probe for the resulting relational state.
 
 \paragraph{State expansion, candidates, and live states.}
 At a growth depth $s$, the expansion operator proposes one or more candidate

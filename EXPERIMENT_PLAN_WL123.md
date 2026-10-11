@@ -34,8 +34,9 @@ description. Store the refinement fingerprints and the stopping iteration.
 
 ## IGSSE Protocol
 
-1. Train PairAttn-based IGSSE without task labels on a training split of graph
-   families. Hold out graph isomorphism pairs for evaluation.
+1. Train PairAttn-based IGSSE without task labels on each declared graph-pair
+   recovery instance. This is a trained embedding protocol, not a zero-shot
+   graph mapping.
 2. For each graph, compute the deterministic decoder state `H_dec` with noise
    disabled. Compute an invariant graph signature from the configured attention
    pooling reader and retain the node-aligned point set.
@@ -63,7 +64,9 @@ description. Store the refinement fingerprints and the stopping iteration.
 
 ## Interpretation Boundary
 
-An empirical separation rate does not prove that IGSSE has a given WL power.
-The correct conclusion is limited to the tested graph family, attribute scheme,
-training procedure, and tolerance. A theoretical WL claim requires a separate
-proof of the encoder and decoder class.
+An empirical separation rate does not prove that IGSSE has a universal WL
+power.  The paper may state the scoped capability claim: “after unlabeled
+pairwise recovery training, IGSSE resolves the evaluated WL-collision pairs by
+reconstructing and separating the two graphs.” This remains limited to the
+tested graph family, attribute scheme, training procedure, and tolerance; it is
+not a theorem that IGSSE dominates a WL hierarchy.

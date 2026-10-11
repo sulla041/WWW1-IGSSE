@@ -1,17 +1,16 @@
 \section{Background and Positioning}
 \label{sec:related}
 
-\paragraph{Graph encoders optimize utility, not necessarily auditability.}
+\paragraph{Global context and adjacency-conditioned writing.}
 Message passing constructs node states by repeatedly aggregating neighboring
 states \cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.
 APPNP, SGFormer, Polynormer, and graph state-space models enlarge the receptive
 field through propagation, global interaction, or selective state updates
 \cite{gasteiger2019,wu2023sgformer,deng2024polynormer,wang2024graphmamba}.
-These methods differ in how they compute task representations, but a task loss
-does not by itself require a final state to decode both the observed relation
-target and non-label node content.  \method{} imposes this missing requirement:
-PairAttn reads relations from the final point set, $D_C$ reads content, and task
-readers consume the audited point set rather than raw graph edges.
+These methods span local propagation and global interaction. \method{} forms
+global Q/K/V source states, then uses adjacency to select their structural
+writes. PairAttn reads relations from the final point set, $D_C$ reads content,
+and task readers consume the resulting audited point set.
 
 \paragraph{Structure encodings and graph reconstruction address only part of the
 problem.}
@@ -26,21 +25,19 @@ the declared $\mathbf A$ and $\mathbf C$ targets; point, set, and growth readers
 use the resulting object.  The distinction is methodological rather than a claim
 that any prior representation fails on every task.
 
-\paragraph{WL diagnostics test a different question.}
+\paragraph{WL-collision resolution after recovery training.}
 The Weisfeiler--Leman hierarchy provides a combinatorial reference for graph
 distinguishability.  In particular, standard message-passing GNNs relate to
 1-WL, and higher-order variants connect to $k$-WL tests
-\cite{morris2019wl}.  IGSSE does not claim to dominate 1-, 2-, or 3-WL.  A
-separate proposed diagnostic therefore stratifies non-isomorphic graph pairs by
-their 1/2/3-WL outcomes and measures empirical collisions of the learned point
-set.  This test can reveal where the representation is discriminative without
-turning an empirical result into a WL-equivalence theorem.
+\cite{morris2019wl}. Our diagnostic stratifies non-isomorphic graph pairs by
+their 1/2/3-WL outcomes, trains IGSSE recovery on each declared instance, and
+tests whether the reconstructed graphs remain separate. The BREC study reports
+training-based resolution of the evaluated 2-WL-collision pairs.
 
 \paragraph{Generation requires a readable intermediate state.}
 Autoregressive models factor graph decisions in an ordering, while flow and
 diffusion approaches evolve alternative graph-valued states
 \cite{you2018,liao2019,dai2020,shi2020,vignac2023,jo2022}.  IGSSE instead
 expands a point set and asks PairAttn to recover the enlarged relation structure.
-Terminal validity and point-set readability are reported separately because a
-rule-satisfying terminal graph does not by itself establish an informative
-intermediate representation.
+Terminal validity and point-set readability are reported as complementary
+properties of the generated state.
