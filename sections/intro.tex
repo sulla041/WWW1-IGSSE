@@ -22,7 +22,7 @@ common interface for node, graph, and growth tasks.
 
 We call this target an \emph{auditable graph set representation}.  Given
 $G=(\mathbf A,\mathbf X)$ without task labels, \method{} learns a node-aligned
-point set $\Hset$.  A pair decoder reads relations from point pairs, and a
+point set $\Hset$.  A PairAttn decoder reads relations from point pairs, and a
 content decoder reads non-label attributes from individual points.  These two
 paths form a recovery gate.  The prediction and generation modules operate on
 $\Hset$ rather than reopening the input graph as a task-specific computation

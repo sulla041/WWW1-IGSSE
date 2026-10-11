@@ -82,11 +82,17 @@ uses
  \label{eq:noise}
 \end{equation}
 More specifically, the mean energy $\bar e_{si}=M^{-1}\sum_m e_{si}^{(m)}$
-and progress $u$ enter a two-layer MLP.  Its output is added to a learned global
-log-scale, transformed by softplus, lower bounded for numerical stability, and
-clipped to a configured maximum.  Each head therefore receives its own
-edge-dependent perturbation scale.  The survival term in Eq.~\eqref{eq:objective}
-prevents this scale from trivially vanishing during the noise phase.
+and progress $u$ enter a two-layer MLP:
+\begin{equation}
+ \log\sigma_{si}=\operatorname{MLP}_{\psi}([\bar e_{si},u])+
+ \log\sigma_0,\qquad
+ \sigma_{si}^{(m)}=\min\{\operatorname{softplus}(
+ \log\sigma_{si}^{(m)})+10^{-4},1.5\}.
+ \label{eq:scale}
+\end{equation}
+Each head therefore receives its own edge-dependent perturbation scale.  The
+survival term in Eq.~\eqref{eq:objective} prevents this scale from trivially
+vanishing during the noise phase.
 Evaluation sets $\widetilde e=e$.  The curriculum perturbs early relation
 weights, then removes the perturbation before selection and test evaluation.
 The noise is a training configuration rather than a separate graph encoder.
@@ -128,40 +134,57 @@ clean energies otherwise. Form $\mathbf r_i=\mathbf h_i^{(\ell-1)}+
 configured final or jump-concatenated task state.
 \end{quote}
 
-\subsection{Two recovery paths}
+\subsection{PairAttn reconstruction and content recovery}
 \label{sec:recovery}
-The pair decoder scores sampled positive and negative pairs:
+\textsc{PairAttn} is the mainline relation reconstruction operator.  It projects
+final point rows to head-specific queries and keys, scores their scaled inner
+product, symmetrizes the two directions for an undirected relation, and applies
+a learned scale and bias.  Its projections are independent of the encoder:
+$\overline{\mathbf q}_i^{(m)}=\mathbf h_i\mathbf U_Q^{(m)}$ and
+$\overline{\mathbf k}_i^{(m)}=\mathbf h_i\mathbf U_K^{(m)}$.  For a candidate
+pair $(i,j)$,
 \begin{equation}
  \begin{aligned}
- \widehat A_{ij}&=\sigma(D_A(\mathbf h_i,\mathbf h_j)),\\
+ s_{ij}&=\left(\operatorname{softplus}(\gamma)+0.5\right)
+ \frac{1}{2M}\sum_m\left[
+ \frac{(\overline{\mathbf q}_i^{(m)})^\top\overline{\mathbf k}_j^{(m)}}{\sqrt{d_h}}\right.\\
+ &\hspace{18mm}\left.+
+ \frac{(\overline{\mathbf q}_j^{(m)})^\top\overline{\mathbf k}_i^{(m)}}{\sqrt{d_h}}
+ \right]+\beta,\qquad \widehat A_{ij}=\sigma(s_{ij}),\\
  \mathcal L_{\mathrm{link}}&=
- \operatorname{BCEWithLogits}(D_A(\mathbf h_i,\mathbf h_j),A_{ij}).
+ \operatorname{BCEWithLogits}(s_{ij},A_{ij}).
  \end{aligned}
- \label{eq:link}
+ \label{eq:pairattn}
 \end{equation}
-The implementation offers an MLP score on concatenated point features,
-differences, and products, or an attention-based pair score.  Both use the same
-link supervision interface.  A separate content decoder gives
+Here $\gamma$ and $\beta$ calibrate score scale and offset.  PairAttn reads only
+the final point set and is equivariant because point rows, queries, and keys
+permute together.  It does not reopen a fixed adjacency after
+$\Hset_{\mathrm{dec}}$ has been formed.
+
+The accompanying pointwise content decoder is
 \begin{equation}
  \widehat{\mathbf C}=D_C(\Hset_{\mathrm{dec}}),\qquad
  \mathcal L_{\mathrm{feat}}=\operatorname{MSE}(\widehat{\mathbf C},\mathbf C).
  \label{eq:feat}
 \end{equation}
-The two losses impose different requirements: link recovery tests the relation
-geometry of point pairs, whereas feature recovery tests the information readable
-from an individual point.  We call their joint evaluation the \emph{recovery
-gate}.  A task score cannot replace this gate because a head may exploit a small
-subset of a representation.
+The two losses impose different requirements: PairAttn tests the relation
+geometry of point pairs, whereas $D_C$ tests information readable from one final
+point.  Their joint evaluation is the \emph{recovery gate}.  A task score cannot
+replace this gate because a head may exploit a small subset of a representation.
 
 \paragraph{Pair sampling and target hygiene.}
 Materializing every non-edge is unnecessary and can dominate the objective on a
-sparse graph.  At each update, we sample positive pairs from the complete input
-edge set and sample an equal-size set of non-edges, excluding self loops and
-known positives.  If edge dropout is active in the encoder, it affects only the
-computation graph $E_{\mathrm{enc}}$; link positives still come from the
-un-dropped input graph.  This distinguishes an input perturbation from a changed
-reconstruction target.  The decoder therefore learns whether a point set
-constructed under perturbation can still distinguish the declared relations.
+sparse graph.  At each update, we first canonicalize an undirected edge as
+$s<i$, remove self loops, and draw
+$n_+=\min(\texttt{num\_pos},\max(n,64),|E^+|)$ positive pairs from the complete
+input graph.  We then draw an equal-sized negative set by uniformly proposing
+$a\neq b$, canonicalizing $(a,b)$, and rejecting every pair in $E^+$.  The
+negative sampler stops after a fixed rejection budget, which makes the realized
+pair count explicit for dense graphs.  If edge dropout is active in the encoder,
+it affects only the computation graph $E_{\mathrm{enc}}$; link positives still
+come from the un-dropped input graph.  This distinguishes an input perturbation
+from a changed reconstruction target.  PairAttn therefore learns whether a point
+set constructed under perturbation can still distinguish the declared relations.
 
 The content target has the same hygiene requirement.  In the default
 configuration, $\mathbf C=\operatorname{sg}(\operatorname{Enc}_X(\mathbf X))$
@@ -172,52 +195,15 @@ $\mathcal L_{\mathrm{pred}}$ over the training mask.  This boundary prevents
 the recovery path from observing the target that a downstream task is meant to
 predict.
 
-\paragraph{Decoder parameterizations.}
-The default pair decoder is an MLP over complementary point-pair features,
-\begin{equation}
- s_{ij}=\operatorname{MLP}_{\mathrm{link}}
- \left([\mathbf h_i;\mathbf h_j;\mathbf h_i-\mathbf h_j;
- \mathbf h_i\odot\mathbf h_j]\right).
- \label{eq:pairmlp}
-\end{equation}
-Concatenation preserves endpoint-specific content, the difference exposes a
-directed displacement, and the product exposes coordinate agreement.  The MLP
-returns a logit, so the sampling distribution rather than a fixed threshold
-defines the training objective.  For undirected graphs, evaluation scores both
-orientations or uses the configured symmetrization rule.
-
-An attention-based decoder provides the alternate parameterization.  It projects
-each point into head-specific queries and keys, scores their scaled inner product,
-averages the two endpoint directions when the relation is undirected, and applies
-a learned scale and bias.  The choice changes the relation function but not the
-declared target, pair sampler, loss, or recovery metrics.  We therefore treat
-decoder choice as a relation-geometry ablation rather than as a different
-embedding problem.
-
-For completeness, the attention score for an undirected candidate can be written
-as
-\begin{equation}
- \begin{aligned}
- s_{ij}&=\left(\operatorname{softplus}(\gamma)+0.5\right)
- \frac{1}{2M}\sum_m\left[
- \frac{(\mathbf q_i^{(m)})^\top\mathbf k_j^{(m)}}{\sqrt{d_h}}\right.\\
- &\hspace{18mm}\left.+
- \frac{(\mathbf q_j^{(m)})^\top\mathbf k_i^{(m)}}{\sqrt{d_h}}
- \right]+\beta .
- \end{aligned}
- \label{eq:pairattn}
-\end{equation}
-Here $\gamma$ and $\beta$ calibrate score scale and offset.  This decoder is
-permutation equivariant because point rows, queries, and keys permute together.
-It does not use a fixed adjacency after $\Hset_{\mathrm{dec}}$ is constructed.
-
 The content decoder is a layer-normalized pointwise MLP.  It cannot aggregate
 neighbors after $\Hset_{\mathrm{dec}}$ has been formed.  Feature reconstruction
 therefore tests information readable from each final point, rather than a second
-message-passing computation over the graph.  When edge attributes are required,
-the interface extends with $D_E(\mathbf h_i,\mathbf h_j)$ and an explicit
-edge-attribute loss; no current result claims that unmodeled edge attributes are
-preserved.
+message-passing computation over the graph.  Its default form is
+$D_C(\mathbf h)=\operatorname{Linear}(\operatorname{GELU}(
+\operatorname{Linear}(\operatorname{LN}(\mathbf h))))$, with output dimension
+equal to the target dimension.  When edge attributes are required, the interface
+extends with $D_E(\mathbf h_i,\mathbf h_j)$ and an explicit edge-attribute loss;
+no current result claims that unmodeled edge attributes are preserved.
 
 \subsection{Training schedule and evaluation protocol}
 \label{sec:training}
@@ -247,7 +233,7 @@ compute $\mathcal L_{\mathrm{link}}$.\\
 \textbf{3.} Read $\Hset_{\mathrm{task}}$ with the configured node or graph head;
 compute $\mathcal L_{\mathrm{pred}}$ only on training labels.\\
 \textbf{4.} Add $\mathcal L_{\mathrm{alive}}$, backpropagate the weighted sum,
-clip gradients, and update encoder, decoders, and reader jointly.\\
+clip gradients, and update encoder, PairAttn, content decoder, and reader jointly.\\
 \textbf{5.} For selection and test, disable noise, set $u=1$, and evaluate the
 selected checkpoint.
 \end{quote}
@@ -264,7 +250,7 @@ gate, then opens a point or set prediction comparison.
 \label{sec:losses}
 The joint objective in Eq.~\eqref{eq:objective} has four distinct attachment
 points.  The prediction term supervises a task reader.  The link term sends
-gradients through the pair decoder and the final point set.  The feature term
+gradients through PairAttn and the final point set.  The feature term
 sends gradients through the content decoder and final point set, but not through
 the stopped target encoder.  The survival term reaches the scale network and the
 attention-energy path.  Thus, the representation is not trained by a single
@@ -367,7 +353,7 @@ than a rule-filtered trajectory.
 
 \paragraph{Pseudocode 3: constrained free growth.}
 \begin{quote}\small
-\textbf{Input:} learned expansion operator, pair decoder, initial set
+\textbf{Input:} learned expansion operator, PairAttn decoder, initial set
 $\Hset_0$, target size, gate type, and $\texttt{max\_live}$.\\
 \textbf{1.} Initialize the live state collection with $\Hset_0$.\\
 \textbf{2.} Until the target size, expand every live state with
@@ -398,7 +384,7 @@ The attribute map is shared across rows, so it commutes with a node permutation.
 For a fixed target, permuting the incoming edge order permutes the softmax
 arguments and values but preserves their weighted sum.  Residual maps, layer
 normalization, and pointwise feed-forward layers then preserve row alignment by
-induction over encoder layers.  The pair decoder receives both point rows and
+induction over encoder layers.  PairAttn receives both point rows and
 therefore transforms on both adjacency axes; attention pooling permutes weights
 and values together, leaving the sum unchanged.  The argument assumes that any
 edge dropout and noise sample are permuted consistently with the graph.
@@ -416,10 +402,6 @@ so the result follows from the triangle inequality.  The statement explains why
 direct recovery metrics matter: they bound how much declared input information a
 shared embedding can merge.  It does not claim exact inversion at finite error,
 reconstruction of unmodeled attributes, or a graph-isomorphism guarantee.
-If a fixed decoder reconstructs the declared target with error at most
-$\epsilon$, two graphs mapped to the same representation have target distance at
-most $2\epsilon$ by the triangle inequality.  This is a recovery statement, not
-a Weisfeiler--Lehman expressiveness claim.
 
 Each task instance jointly optimizes
 \begin{equation}
