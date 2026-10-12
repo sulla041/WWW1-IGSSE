@@ -12,10 +12,10 @@ preserved by the representation.
 
 Task scores measure one downstream decision, whereas Web relation systems also
 need representations whose declared entity content and relations remain
-readable. Content and interaction jointly shape retrieval, recommendation,
-network analysis, and future relation formation. A useful representation thus
-exposes both the readable content of each entity and the readable relations
-between entities.
+recoverable under explicit decoding objectives. Content and interaction jointly
+shape retrieval, recommendation, network analysis, and future relation
+formation. A useful representation thus supports both entity content recovery
+and relation reconstruction.
 
 Neighborhood aggregation architectures construct node states along observed edges
 \cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.  Global
@@ -34,8 +34,10 @@ row for every input node.  A content decoder at the point level must recover dec
 $\mathbf h_i$; a pair attention decoder must recover declared relations from
 $(\mathbf h_i,\mathbf h_j)$.  If both decoders have bounded error, then a shared
 point set cannot represent two graphs with arbitrarily different declared
-targets; Section~\ref{sec:objective} states the corresponding recovery bound.
-The recovery bound makes this information claim measurable.
+targets.  Under these declared recovery targets, the point set functions as an
+approximate equivalence class of the graph; Section~\ref{sec:objective} states
+the corresponding recovery bound. The recovery bound makes this information
+claim measurable.
 
 \method{} realizes this object through \emph{feature and structure deviation
 encoding}.  An encoder without edge input first maps $\mathbf x_i$ to the original

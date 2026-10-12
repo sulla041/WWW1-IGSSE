@@ -177,7 +177,7 @@ The accompanying content decoder at the point level is
  \label{eq:feat}
 \end{equation}
 The two losses measure complementary quantities: pair attention evaluates relation
-geometry of point pairs, and $D_C$ evaluates content readable from one final
+geometry of point pairs, and $D_C$ evaluates content decodable from one final
 point. Their joint evaluation forms the \emph{recovery gate}.
 
 \paragraph{Pair sampling and target hygiene.}
@@ -204,7 +204,7 @@ the recovery path from observing the target that a downstream task is meant to
 predict.
 
 The content decoder is a layer normalized MLP applied at the point level over
-$\Hset_{\mathrm{dec}}$. Feature reconstruction measures information readable
+$\Hset_{\mathrm{dec}}$. Feature reconstruction measures information decodable
 from each final point. Its default form is a layer normalized two layer GELU MLP
 with output dimension equal to the target dimension. Edge attributes use the
 pair decoder $D_E(\mathbf h_i,\mathbf h_j)$ and an explicit edge attribute loss.
