@@ -1,94 +1,120 @@
 \section{Introduction}
 \label{sec:intro}
 
-Web systems reason over attributed relations among entities and content.
-Products connect through purchase relations, papers connect through citations, and
-researchers connect through collaboration.  Each relation graph carries two
-different kinds of input: content attached to individual entities and structure
-created by interactions.  The same graph may support an entity decision, a
-subgraph decision, a graph level prediction, or an evolving relational state.
-These outputs require readers that retain a common account of the information
-preserved by the representation.
+Graphs are a central data model for the Web.  Products are linked by purchase
+relations, papers by citations, users by social interactions, repositories by
+program dependencies, circuits by signal paths, and molecules by chemical bonds.
+Across these settings, graph representation learning turns relational data into
+continuous objects that support recommendation, ranking, fraud detection,
+scientific search, program analysis, electronic design, and social network
+modeling.  Neural networks are especially effective when the input object can be
+expressed as vectors with a stable algebraic interface.  The difficulty of graph
+modeling is that a graph is both a set of attributed entities and a combinatorial
+structure over these entities.  The node attributes can be placed in a matrix,
+whereas the relational structure is permutation equivariant, sparse, and
+nonlocal.  A useful representation must therefore convert graph structure into a
+continuous form while preserving the information that makes the graph itself
+distinct.  This requirement is stronger than fitting a task label: Web graph
+systems need embeddings that support prediction and also maintain recoverable
+content and relation targets.
 
-Task scores measure one downstream decision, whereas Web relation systems also
-need representations whose declared entity content and relations remain
-recoverable under explicit decoding objectives. Content and interaction jointly
-shape retrieval, recommendation, network analysis, and future relation
-formation. A useful representation thus supports both entity content recovery
-and relation reconstruction.
+The dominant graph neural network paradigm builds node states by repeated
+message passing and neighborhood aggregation
+\cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.  This paradigm
+has powered many graph learning systems, yet its computation pattern introduces
+three structural bottlenecks.  First, oversmoothing drives node states toward a
+small set of similar vectors as depth increases, weakening the distinction
+between entities that need separate decisions.  Second, the Weisfeiler Leman
+hierarchy gives a precise expressivity ceiling: standard neighborhood
+aggregation follows the discrimination power of first order WL, while higher
+order variants require heavier state spaces and still inherit predefined
+combinatorial tests \cite{morris2019wl,li2018deeper}.  Third, structural compression occurs
+when local neighborhoods, long paths, and global motifs are repeatedly folded
+into a task hidden state.  The resulting vector can be predictive for a selected
+label while losing information needed to reconstruct the declared graph content
+and relations.  In this sense, the standard message passing pipeline acts as a
+lossy structural compressor: it updates node vectors through observed edges, but
+the final state is usually supervised by a task objective, with recovery
+evaluated only when an explicit reconstruction loss is added.
 
-Neighborhood aggregation architectures construct node states along observed edges
-\cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.  Global
-encoders enlarge the interaction range through propagation, attention, or
-state space updates \cite{gasteiger2019,wu2023sgformer,deng2024polynormer,wang2024graphmamba}.
-IGSSE combines global computation with structural writing conditioned on
-adjacency.
-Global Q/K/V attention forms source states available across the point set, and
-adjacency selects the states written into each target point. The recovery
-objective specifies the relation target, content target, pair sampler, and
-gradient route for this representation process.
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/igsse.drawio.pdf}
+  \caption{Message passing and \method{}. The upper part summarizes the
+  aggregation pipeline that compresses graph structure into hidden node states.
+  The lower part shows the \method{} workflow: attribute only content encoding,
+  feature and structure deviation encoding, pair attention relation recovery,
+  content recovery, task readout, and legality guided set expansion.}
+  \Description{A comparison between message passing and IGSSE. The first row
+  shows graph aggregation into hidden states. The second row shows content
+  encoding, structural deviation writing, relation and content recovery, task
+  readout, and autoregressive set expansion.}
+  \label{fig:mp-igsse}
+\end{figure*}
 
-We represent $G=(\mathbf A,\mathbf X)$ as a set aligned with nodes
-$\Hset=\{\mathbf h_i\}_{i=1}^n$ in a relation geometry.  The set preserves a
-row for every input node.  A content decoder at the point level must recover declared content from
-$\mathbf h_i$; a pair attention decoder must recover declared relations from
-$(\mathbf h_i,\mathbf h_j)$.  If both decoders have bounded error, then a shared
-point set forces graphs with the same representation to have nearby declared
-targets.  With respect to these declared recovery targets, the point set
-functions as an approximate equivalence class of the graph;
-Section~\ref{sec:objective} states the corresponding recovery bound. The recovery bound makes this information
-claim measurable.
+The core challenge is to define a graph representation whose vector form carries
+a recoverable relation geometry.  If an attributed graph can be mapped to a set
+of vectors that preserves the declared content and adjacency targets, then graph
+modeling can be reduced to set modeling with a mathematically stated recovery
+criterion \cite{zaheer2017,lee2019,wang2024graphpointset}.  This view changes
+the representation target.  The goal is no longer
+only to optimize a task hidden state; the goal is to construct a point set that
+serves as an approximate equivalence class of the graph with respect to declared
+recovery targets.  Two graphs mapped to the same point set must have nearby
+decoded targets, and the distance is controlled by the reconstruction error of
+the decoders.  This equivalence class view gives the model a concrete interface:
+points keep node alignment, point pairs carry relation scores, invariant set
+readouts support graph level prediction, and set expansion supports graph
+growth.  It also gives experiments a direct diagnostic: link recovery, content
+recovery, and WL collision separation evaluate the representation itself, while
+task metrics evaluate the reader built on top of it.
 
-\method{} realizes this object through \emph{feature and structure deviation
-encoding}.  An attribute only encoder first maps $\mathbf x_i$ to the original
-coordinate $\mathbf h_{o,i}$.  Attention conditioned on relations then writes a
-structural offset $\mathbf o_i$, and residual fusion produces $\mathbf h_i$.
-This decomposition is necessary for the audit: $\mathbf h_o$ names what the
-node carries before graph conditioning, while $\mathbf o$ names how the declared
-relations modify that content.  Pair attention and content decoding at the point
-level supervise the two reading paths.  Node heads and invariant set pooling then consume
-$\Hset$, not the raw graph, and set expansion evolves $\Hset$ before the same
-pair attention operator reconstructs an expanded graph.
+We propose \method{} (Invertible Graph Set Space Embedding), a recoverable graph
+set space embedding that implements this equivalence class view.  As illustrated
+in Figure~\ref{fig:mp-igsse}, \method{} first maps each node attribute vector to
+an attribute only content coordinate.  This coordinate identifies what the node
+contributes before relational writing.  A feature and structure deviation
+encoder then computes structural offsets by combining local neighborhoods,
+global attention states, and relation conditions.  The offset is written into the
+content coordinate through residual fusion, producing a point set aligned with
+the input nodes.  The recovery side uses two complementary decoders.  A content
+decoder at the point level recovers node content from each final point, while a
+pair attention relation decoder recovers links from point pairs.  These two
+decoders specify the declared graph targets and make the embedding auditable.
+The same point set is then consumed by task readers: node level heads read rows,
+edge level readers read point pairs, and graph level readers use invariant set
+pooling.  For generation, a set expansion module adds new points to the current
+set, and the same pair attention relation decoder recovers the expanded graph.
+The resulting interface connects graph prediction, graph recovery, and legality
+guided autoregressive growth through one representation object.
 
-\paragraph{Why generation belongs to the same representation.}
-Autoregressive graph models commonly construct node or adjacency decisions in a
-chosen order \cite{you2018,liao2019,dai2020,shi2020}; diffusion and score models
-instead refine a graph valued state \cite{vignac2023,jo2022}.  These models
-address graph generation, but they do not by themselves establish that the
-continuous state used during growth preserves the declared relation geometry.  A
-recoverable point set supplies a testable intermediate state: expansion proposes
-$\Hset' = \{\mathbf h_1,\ldots,\mathbf h_n,\mathbf h_{n+1}\}$, pair attention
-recovers the expanded relations, and free growth evaluation measures the learned
-transition after training with graph family supervision.  This connects
-prediction and legality guided growth through one audited object.
-
-\paragraph{Web relevance.}
-This work studies representation quality for attributed Web relation graphs and
-belongs to \emph{Graph Algorithms and Modeling for the Web}.  Product
-purchase relations, academic collaboration, and citation tasks provide the primary Web
-evidence \cite{shchur2018,sen2008,yang2016}.  Program, circuit, timing,
-molecular, and social graphs vary the relation semantics and output level; they
-measure how the same representation construction supports changed task
-interfaces and graph families.
+This design supplies both a modeling framework and an evaluation route.  On
+aligned prediction tasks, \method{} compares the learned point set and its
+readers against graph learning baselines using the same split, input convention,
+and metric.  On recovery diagnostics, the decoders measure whether the
+representation preserves declared links and content.  On WL collision graph
+pairs, recovery trained point sets are tested for separation on second order and
+third order WL collision cases.  On graph family growth, set expansion and pair
+attention recovery are evaluated by terminal validity and embedding recovery
+quality.  These evidence streams target different aspects of the same object:
+the point set as an approximate equivalence class of the graph.
 
 Our contributions are:
 \begin{enumerate}
-  \item \textbf{Recoverable graph set space embedding.} We define a point set
-  aligned with nodes whose feature baseline, structural deviation, pair attention
-  reconstruction, and content decoder at the point level make the declared $\mathbf A$ and $\mathbf X$
-  targets auditable.
-  \item \textbf{One object for point, set, and growth readers.} We define
-  task specific point and invariant set readers on $\Hset$, then define set
-  expansion and pair attention reconstruction on the same state for legality guided
-  autoregression.
-  \item \textbf{Layered evidence for prediction, recovery, and growth.} We compare
-  aligned prediction instances, analyze recovery losses and readers through
-  ablation, and evaluate legality guided free growth with both validity and an
-  embedding probe.  Across ten aligned prediction comparisons, \method{} exceeds
-  every listed baseline; each result remains scoped to its split, input
-  convention, training schedule, and baseline set.
+  \item \textbf{Recoverable graph set space embedding.} We formulate graph
+  embedding as a node aligned point set that functions as an approximate
+  equivalence class with respect to declared adjacency and content recovery
+  targets.
+  \item \textbf{Feature and structure deviation modeling.} We design an
+  attribute only content baseline, a feature and structure deviation encoder, a
+  pair attention relation decoder, and a content decoder at the point level to
+  realize recoverable graph to set modeling.
+  \item \textbf{WL collision diagnosis.} We evaluate recovery trained point sets
+  on second order and third order WL collision graph pairs and show separation
+  with the stated recovery criteria.
+  \item \textbf{Broad empirical validation.} We evaluate ten aligned prediction
+  comparisons over Web, circuit, timing, molecular, program, and social graphs,
+  together with legality guided growth on planar, chordal, and bipartite graph
+  families.  Across the aligned comparisons, \method{} exceeds every listed
+  baseline.
 \end{enumerate}
-
-The resulting claim is focused: \method{} provides an auditable representation
-interface for relation graphs, with evidence for graph prediction, direct
-recovery, and legality guided growth in the evaluated settings.
