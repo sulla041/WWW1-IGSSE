@@ -7,16 +7,17 @@ program dependencies, circuits by signal paths, and molecules by chemical bonds.
 Across these settings, graph representation learning turns relational data into
 continuous objects that support recommendation, ranking, fraud detection,
 scientific search, program analysis, electronic design, and social network
-modeling.  Neural networks are especially effective when the input object can be
-expressed as vectors with a stable algebraic interface.  The difficulty of graph
-modeling is that a graph is both a set of attributed entities and a combinatorial
-structure over these entities.  The node attributes can be placed in a matrix,
-whereas the relational structure is permutation equivariant, sparse, and
-nonlocal.  A useful representation must therefore convert graph structure into a
-continuous form while preserving the information that makes the graph itself
-distinct.  This requirement is stronger than fitting a task label: Web graph
-systems need embeddings that support prediction and also maintain recoverable
-content and relation targets.
+modeling \cite{hamilton2017,kipf2017,sen2008,yang2016,dong2023cktgnn,
+guo2022timing}.  Neural networks operate naturally on vector spaces with stable
+algebraic interfaces, whereas a graph combines attributed entities with a
+permutation equivariant and sparse relation system over these entities.  The node
+attributes can be placed in a matrix, while the relational structure also carries
+paths, neighborhoods, motifs, and global connectivity patterns.  A useful graph
+representation must therefore convert structure into a continuous object while
+preserving the information that makes the graph itself distinct.  This
+requirement is stronger than fitting a task label: Web graph systems need
+embeddings that support prediction and maintain recoverable content and relation
+targets.
 
 The dominant graph neural network paradigm builds node states by repeated
 message passing and neighborhood aggregation
@@ -24,18 +25,20 @@ message passing and neighborhood aggregation
 has powered many graph learning systems, yet its computation pattern introduces
 three structural bottlenecks.  First, oversmoothing drives node states toward a
 small set of similar vectors as depth increases, weakening the distinction
-between entities that need separate decisions.  Second, the Weisfeiler Leman
+between entities that need separate decisions \cite{li2018deeper,oono2020}.
+Second, the Weisfeiler Leman
 hierarchy gives a precise expressivity ceiling: standard neighborhood
 aggregation follows the discrimination power of first order WL, while higher
 order variants require heavier state spaces and still inherit predefined
-combinatorial tests \cite{morris2019wl,li2018deeper}.  Third, structural compression occurs
+combinatorial tests \cite{xu2019,morris2019wl}.  Third, structural compression occurs
 when local neighborhoods, long paths, and global motifs are repeatedly folded
 into a task hidden state.  The resulting vector can be predictive for a selected
-label while losing information needed to reconstruct the declared graph content
-and relations.  In this sense, the standard message passing pipeline acts as a
-lossy structural compressor: it updates node vectors through observed edges, but
-the final state is usually supervised by a task objective, with recovery
-evaluated only when an explicit reconstruction loss is added.
+label while losing information needed to reconstruct declared graph content and
+relations.  In this sense, the standard message passing pipeline acts as a lossy
+structural compressor: it updates node vectors through observed edges, then
+supervises the final state by the selected task objective; explicit graph
+reconstruction is usually introduced through a separate autoencoding objective
+\cite{kipf2016vgae,simonyan2018graphvae}.
 
 \begin{figure*}[t]
   \centering
@@ -53,36 +56,41 @@ evaluated only when an explicit reconstruction loss is added.
 \end{figure*}
 
 The core challenge is to define a graph representation whose vector form carries
-a recoverable relation geometry.  If an attributed graph can be mapped to a set
-of vectors that preserves the declared content and adjacency targets, then graph
-modeling can be reduced to set modeling with a mathematically stated recovery
-criterion \cite{zaheer2017,lee2019,wang2024graphpointset}.  This view changes
-the representation target.  The goal is no longer
-only to optimize a task hidden state; the goal is to construct a point set that
-serves as an approximate equivalence class of the graph with respect to declared
-recovery targets.  Two graphs mapped to the same point set must have nearby
-decoded targets, and the distance is controlled by the reconstruction error of
-the decoders.  This equivalence class view gives the model a concrete interface:
-points keep node alignment, point pairs carry relation scores, invariant set
-readouts support graph level prediction, and set expansion supports graph
-growth.  It also gives experiments a direct diagnostic: link recovery, content
-recovery, and WL collision separation evaluate the representation itself, while
-task metrics evaluate the reader built on top of it.
+a recoverable relation geometry.  If an attributed graph is mapped to a set of
+vectors that preserves the declared content and adjacency targets, graph modeling
+can be studied through set modeling with a mathematically stated recovery
+criterion \cite{zaheer2017,lee2019,wang2024graphpointset}.  The important step is
+to make the point set an approximate equivalence class of the graph.  Under this
+view, the point set is the canonical modeling object: graphs that share a point
+set also share decoded content and relation targets up to the reconstruction
+error of the declared decoders.  This turns embedding quality into an auditable
+property attached to declared recovery targets, with downstream accuracy
+evaluated through a separate task reader.  The
+equivalence class view also gives the model a concrete interface.  Points keep
+node alignment, point pairs carry relation scores, invariant set readouts support
+graph level prediction, and set expansion supports graph growth.  It further
+gives experiments a direct diagnostic: link recovery, content recovery, and WL
+collision separation evaluate the representation itself, while task metrics
+evaluate the reader built on top of it.
 
 We propose \method{} (Invertible Graph Set Space Embedding), a recoverable graph
-set space embedding that implements this equivalence class view.  As illustrated
-in Figure~\ref{fig:mp-igsse}, \method{} first maps each node attribute vector to
-an attribute only content coordinate.  This coordinate identifies what the node
-contributes before relational writing.  A feature and structure deviation
-encoder then computes structural offsets by combining local neighborhoods,
-global attention states, and relation conditions.  The offset is written into the
-content coordinate through residual fusion, producing a point set aligned with
-the input nodes.  The recovery side uses two complementary decoders.  A content
-decoder at the point level recovers node content from each final point, while a
-pair attention relation decoder recovers links from point pairs.  These two
-decoders specify the declared graph targets and make the embedding auditable.
-The same point set is then consumed by task readers: node level heads read rows,
-edge level readers read point pairs, and graph level readers use invariant set
+set space embedding that implements this approximate equivalence class view.  As
+illustrated in Figure~\ref{fig:mp-igsse}, \method{} first maps each node
+attribute vector to an attribute only content coordinate.  This coordinate
+identifies what the node contributes before relational writing.  A feature and
+structure deviation encoder then computes structural offsets by combining local
+neighborhoods, global attention states, and relation conditions.  The offset is
+written into the content coordinate through residual fusion, producing a point
+set aligned with the input nodes.  This point set is designed as the common
+object for every later operation: it stores content information in individual
+points, stores relation evidence in point pairs, and exposes a set interface for
+permutation invariant graph reasoning \cite{zaheer2017,lee2019}.  The recovery
+side uses two complementary decoders.  A content decoder at the point level
+recovers node content from each final point, while a pair attention relation
+decoder recovers links from point pairs.  These two decoders define the declared
+graph targets and make the approximate equivalence class measurable.  The same
+point set is then consumed by task readers: node level heads read rows, edge
+level readers read point pairs, and graph level readers use invariant set
 pooling.  For generation, a set expansion module adds new points to the current
 set, and the same pair attention relation decoder recovers the expanded graph.
 The resulting interface connects graph prediction, graph recovery, and legality
@@ -101,8 +109,8 @@ the point set as an approximate equivalence class of the graph.
 
 Our contributions are:
 \begin{enumerate}
-  \item \textbf{Recoverable graph set space embedding.} We formulate graph
-  embedding as a node aligned point set that functions as an approximate
+  \item \textbf{Approximate equivalence class representation.} We formulate
+  graph embedding as a node aligned point set that functions as an approximate
   equivalence class with respect to declared adjacency and content recovery
   targets.
   \item \textbf{Feature and structure deviation modeling.} We design an
