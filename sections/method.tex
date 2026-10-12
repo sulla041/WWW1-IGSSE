@@ -178,7 +178,7 @@ The accompanying content decoder at the point level is
 \end{equation}
 The two losses measure complementary quantities: pair attention evaluates relation
 geometry of point pairs, and $D_C$ evaluates content decodable from one final
-point. Their joint evaluation forms the \emph{recovery gate}.
+point. Their joint evaluation defines the direct reconstruction criteria.
 
 \paragraph{Pair sampling and target hygiene.}
 Materializing every nonedge is unnecessary and can dominate the objective on a
@@ -243,9 +243,9 @@ selected checkpoint.
 \end{quote}
 
 The embedding probe measures whether a standardized structural feature predicts
-links from the learned state. The direct recovery gate evaluates $D_A$ and $D_C$.
-The paper reports these complementary metrics separately and applies the
-recovery gate before each point or set prediction comparison.
+links from the learned state. Direct recovery metrics evaluate $D_A$ and $D_C$.
+The paper reports these complementary metrics separately before each point or set
+prediction comparison.
 
 \subsection{Loss attachment and gradient routes}
 \label{sec:losses}
@@ -262,9 +262,9 @@ information.
 For an embedding only run, $\lambda_{pred}=0$ and the three representation terms
 train a point set without a task label.  A task run restores
 $\mathcal L_{pred}$ but retains the other terms.  This schedule makes two
-experimental modes explicit: a recovery gate assesses the representation alone,
-and a joint task run assesses the representation and reader system while keeping the
-declared information constraints active.
+experimental modes explicit: representation training assesses the point set
+alone, and a joint task run assesses the representation and reader system while
+keeping the declared information constraints active.
 
 \subsection{Point, set, and growth interfaces}
 \label{sec:interfaces}
@@ -351,13 +351,13 @@ than a rule filtered trajectory.
 \paragraph{Pseudocode 3: constrained free growth.}
 \begin{quote}\small
 \textbf{Input:} learned expansion operator, pair attention decoder, initial set
-$\Hset_0$, target size, gate type, and $\texttt{max\_live}$.\\
+$\Hset_0$, target size, selection rule, and $\texttt{max\_live}$.\\
 \textbf{1.} Initialize the live state collection with $\Hset_0$.\\
 \textbf{2.} Until the target size, expand every live state with
 $\operatorname{StepSet}$ and decode candidate relation scores.\\
 \textbf{3.} During training, attach the graph family legality signal to each
 candidate. During evaluation, do not query the legality teacher.\\
-\textbf{4.} Rank candidates by the declared Legal or Net gate, retain at most
+\textbf{4.} Rank candidates by the declared Legal or Net selection rule, retain at most
 $\texttt{max\_live}$ states, and continue with their point sets.\\
 \textbf{5.} Decode terminal graphs and report Valid together with Emb F1 over
 the completed rollouts.

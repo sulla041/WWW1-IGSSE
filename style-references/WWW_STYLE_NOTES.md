@@ -28,5 +28,5 @@ Applied to IGSSE:
 - IGSSE is presented as a recoverable set space embedding with content computed
   without edges, structural deviations conditioned on relations, pair attention recovery, and
   set expansion.
-- The empirical close reports aligned prediction, WL collision diagnostics after
-  the recovery gate is reached, and constrained autoregressive growth.
+- The empirical close reports aligned prediction, WL collision diagnostics under
+  the stated recovery criteria, and constrained autoregressive growth.

@@ -15,7 +15,7 @@ to a content embedding computed without edges, then writes structural deviations
 through a feature and structure deviation encoder that combines local graph
 neighborhoods, global attention states, and relation conditions.  The resulting
 point set aligned with nodes serves as an approximate equivalence class of the
-graph under the declared recovery targets:
+graph with respect to the declared recovery targets:
 a content decoder at the point level recovers node content, a pair attention
 relation decoder decodes links, and node level, edge level, and graph level tasks
 are modeled through points and point pair relations.  A set expansion module
@@ -26,9 +26,9 @@ timing,
 molecular, and social graphs, and on constrained growth over planar, chordal,
 and bipartite graph families.  Across ten aligned prediction comparisons,
 \method{} exceeds every listed graph learning baseline.  A WL collision
-diagnostic shows that, after the declared recovery gate is reached, the learned
-point sets separate the evaluated second order and third order WL collision graph
-pairs, and constrained autoregressive generation shows the
+diagnostic shows that reconstruction trained point sets separate the evaluated
+second order and third order WL collision graph pairs with the stated recovery
+criteria, and constrained autoregressive generation shows the
 framework's ability to model latent graph family rules.  These results present
 \method{} as an effective unified representation framework for graph prediction,
 recovery, and growth.
