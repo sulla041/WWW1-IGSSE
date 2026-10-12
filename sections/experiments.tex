@@ -4,10 +4,11 @@
 \subsection{Questions and protocol}
 We ask: (Q1) does the declared point set retain links and node content; (Q2) does
 it support Web relation tasks; (Q3) which encoder and readout components account
-for task utility; (Q4) can the set state free-grow beyond the training scale
-without a step-wise rule teacher; (Q5) how do graph semantics and output level
-affect the result; and (Q6) where does a learned point-set signature collide on
-non-isomorphic graphs stratified by 1/2/3-WL?  Each dataset trains its own
+for task utility; (Q4) can the set state grow freely beyond the training scale
+without a step wise rule teacher; (Q5) how do graph semantics and output level
+affect the result; and (Q6) where does a learned point set signature collide on
+nonisomorphic graph pairs stratified by first order, second
+order, and third order WL tests?  Each dataset trains its own
 encoder, decoders, and head.  Validation metrics select checkpoints and test
 splits report results. Each task instance learns a dedicated representation and
 reader under its declared protocol.
@@ -15,7 +16,7 @@ reader under its declared protocol.
 The listed baselines are MLP, GCN, GraphSAGE, GAT, GIN, APPNP, SGFormer,
 Polynormer, Graph-Mamba, and PST.  Each row fixes its input convention, split,
 and primary metric. The \emph{Emb} column reports structural separability, while
-the pair decoder and content decoder report direct recovery. The camera-ready
+the pair decoder and content decoder report direct recovery. The camera ready
 recovery table reports link F1/AUC/AP and feature R$^2$/cosine
 for each primary graph family, together with optimization steps and wall time.
 
@@ -23,41 +24,41 @@ for each primary graph family, together with optimization steps and wall time.
 The prediction comparison uses the same split, input attributes, and task metric
 within a row.  MLP tests attributes without graph structure.  GCN, GraphSAGE,
 GAT, and GIN represent neighborhood aggregation; APPNP, SGFormer, Polynormer,
-and Graph-Mamba add different propagation or long-range mechanisms; PST tests a
-graph-to-set route.  The comparison answers a row-level question: whether the
+and Graph-Mamba add different propagation or long range mechanisms; PST tests a
+graph to set route.  The comparison answers a row level question: whether the
 declared \method{} configuration improves the task metric under that protocol.
 
 \subsection{Aligned prediction comparison}
 The frozen comparison record compares the strongest listed baseline and \method{}
 for each task.  \method{} exceeds the listed comparison set in all ten aligned
-rows.  The result spans co-purchase,
+rows.  The result spans purchase relations,
 collaboration, citation, program, circuit, timing, molecular, and social graph
-settings.  This statement is record-scoped: it applies to the frozen inputs,
+settings.  This statement is scoped to the record: it applies to the frozen inputs,
 splits, schedules, and baseline set in the workbook.
 
-\subsection{WL-collision resolution through recovery training}
+\subsection{WL collision resolution through recovery training}
 \label{sec:wl-diagnostic}
-The WL hierarchy supplies controlled graph-pair strata for trained recovery
+The WL hierarchy supplies controlled graph pair strata for trained recovery
 experiments \cite{morris2019wl}. BREC provides Basic, Regular, Extension, CFI,
-4-Vertex, and Distance-Regular pairs. For each declared pair, IGSSE receives
+Four Vertex, and Distance Regular pairs. For each declared pair, IGSSE receives
 unlabeled recovery training, passes a direct reconstruction gate, and decodes
 both embeddings under consistent node permutations. The experiment reports
-reconstruction F1/AUC/AP, reconstructed-graph separation, and permutation
-deviation by stratum. On the full Basic and Extension categories, trained IGSSE
-resolves 160 evaluated 2-WL-collision pairs through accurate reconstruction and
-stable separation.
+reconstruction F1/AUC/AP, reconstructed graph separation, and permutation
+deviation by stratum. After the declared recovery gate is reached, trained IGSSE
+separates the evaluated second order and third order WL collision graph pairs
+through accurate reconstruction and stable separation.
 
 \paragraph{Web relation tasks.}
-Amazon Photo, Coauthor-CS, and Cora respectively represent product co-purchase,
+Amazon Photo, Coauthor CS, and Cora respectively represent product purchase relations,
 academic collaboration, and citation relations \cite{shchur2018,sen2008,yang2016}.
 \method{} is best among the listed baselines in all four Web rows, including the
-Photo interact protocol.  The gains on Photo and Coauthor-CS are narrow, which
+Photo interact protocol.  The gains on Photo and Coauthor CS are narrow, which
 is consistent with strong aligned baselines; the Cora row has a larger gap.
-The record reports Web-task utility under its aligned training protocols.
+The record reports Web task utility under its aligned training protocols.
 
-\paragraph{Cross-semantic stress tests.}
+\paragraph{Cross semantic stress tests.}
 HiGraph, OCB, and TimingPredict change graph semantics and output granularity,
-while AIDS and IMDB add molecular and weak-feature social graph conditions
+while AIDS and IMDB add molecular and weak feature social graph conditions
 \cite{chen2025higraph,dong2023cktgnn,guo2022timing,morris2020,yang2015}.
 The point and set interfaces remain available in each setting, with parameters
 trained for the stated task. The tests measure architectural coverage under
@@ -65,19 +66,19 @@ changed semantics.
 
 \subsection{Constrained autoregressive growth}
 \label{sec:ar-results}
-The generation experiment trains set expansion with graph-family rule supervision,
-then freezes parameters and removes the step-wise rule teacher for free growth.
+The generation experiment trains set expansion with graph family rule supervision,
+then freezes parameters and removes the step wise rule teacher for free growth.
 The result workbook reports terminal validity and the Emb F1 probe at the target
-size.  Legal and Net use distinct live-state gates, so their validity values must
+size.  Legal and Net use distinct live state gates, so their validity values must
 be interpreted separately.
 
 \paragraph{Protocol boundary.}
-The training phase supplies a graph-family legality signal at the training
+The training phase supplies a graph family legality signal at the training
 scale.  The evaluation phase fixes the learned parameters, increases the target
 size, and does not query a rule teacher after each expansion.  A Legal gate keeps
 states satisfying the declared predicate, whereas a Net gate uses the learned
 network score to select live states.  The protocol records the target size,
-number of samples, maximum live-state capacity, gate type, and random seed.
+number of samples, maximum live state capacity, gate type, and random seed.
 These details matter because a high terminal validity can otherwise be caused by
 filtering, beam capacity, or a teacher that remains active at test time.
 
@@ -86,7 +87,7 @@ and bipartite rows test changed graph rules rather than a new Web application.
 The result supports constrained legal growth against the listed mechanism
 proxies.  It does not establish distributional fidelity: before making that
 claim, the appendix must add degree or clustering statistics, an appropriate
-MMD, uniqueness and novelty, and node-order sensitivity.
+MMD, uniqueness and novelty, and node order sensitivity.
 
 \subsection{Ablation and evidence boundaries}
 The ablation workbook separates recovery losses, noise, the frozen
@@ -97,21 +98,21 @@ changes identify which components the suite attributes to the observed utility.
 
 Removing a recovery term degrades either task utility, the structural probe, or
 both in the full suite.  Frozen-$\Hset$ creates the largest drop in the displayed
-Photo and Cora rows, while replacing set-aware readout also reduces the scores.
+Photo and Cora rows, while replacing set aware readout also reduces the scores.
 These ablations support component attribution within the stated suite; they do
 not replace the missing direct recovery table.
 
 \subsection{Reproducibility, cost, and limits}
-The released package provides pretrained checkpoints, an end-to-end toy test,
+The released package provides pretrained checkpoints, an end to end toy test,
 and checks for OCB, HiGraph, and planar metadata.  Link training samples point
 pairs rather than materializing a dense adjacency prediction.  This describes
 the implementation cost but is not an efficiency claim.  Before submission, we
 will report parameter count, effective optimization steps, wall time,
-per-step time, peak memory, and inference time for each primary graph family.
+time per update, peak memory, and inference time for each primary graph family.
 
 The present evidence has three boundaries.  First, all task instances are
 independently trained.  Second, the recovery target only covers declared links
 and node content; an application that requires edge attributes needs an explicit
-edge decoder and target.  Third, terminal validity depends on the graph-family
-predicate, live-state capacity, and gate.  The generation results should not be
+edge decoder and target.  Third, terminal validity depends on the graph family
+predicate, live state capacity, and gate.  The generation results should not be
 read as evidence for untested graph rules.

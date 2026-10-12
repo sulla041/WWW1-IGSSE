@@ -6,24 +6,26 @@ that combine node attributes with relational structure while keeping graph
 content and relations readable.  The prevailing graph neural network paradigm
 propagates messages along observed edges and stacks neighborhood aggregation
 layers to produce node or graph states.  However, oversmoothing,
-Weisfeiler--Leman expressivity limits, and structural compression can weaken the
+Weisfeiler Leman expressivity limits, and structural compression can weaken the
 recoverability of graph information in the learned hidden state.  We propose
-\method{} (Invertible Graph Set-Space Embedding), a recoverable set-space
+\method{} (Invertible Graph Set Space Embedding), a recoverable set space
 embedding for attributed graphs.  Specifically, \method{} maps node attributes
-to an edge-free content embedding, then writes relation-conditioned structural
-deviations with a feature--structure deviation encoder that combines local graph
-neighborhoods and global attention states.  The resulting node-aligned point set
-serves as a recoverable approximate graph state: a pointwise content decoder
-reads node content, a PairAttn relation decoder reads links, and node-, edge-,
-and graph-level tasks are modeled through points and point-pair relations.  A
-set-expansion module further supports constrained autoregressive growth on the
+to a content embedding computed without edges, then writes structural deviations
+through a feature and structure deviation encoder that combines local graph
+neighborhoods, global attention states, and relation conditions.  The resulting
+point set aligned with nodes serves as a recoverable approximate graph state:
+a content decoder at the point level reads node content, a pair attention
+relation decoder reads links, and node level, edge level, and graph level tasks
+are modeled through points and point pair relations.  A set expansion module
+further supports constrained autoregressive growth on the
 same representation interface.  We evaluate \method{} on aligned prediction
-tasks over co-purchase, collaboration, citation, program, circuit, timing,
+tasks over product purchase relations, collaboration, citation, program, circuit, timing,
 molecular, and social graphs, and on constrained growth over planar, chordal,
 and bipartite graph families.  Across ten aligned prediction comparisons,
-\method{} exceeds every listed graph learning baseline.  A WL-collision
-diagnostic shows that recovery-trained point sets separate the evaluated
-2-WL-collision graph pairs, and constrained autoregressive generation shows the
-framework's ability to model latent graph-family rules.  These results present
+\method{} exceeds every listed graph learning baseline.  A WL collision
+diagnostic shows that, after the declared recovery gate is reached, the learned
+point sets separate the evaluated second order and third order WL collision graph
+pairs, and constrained autoregressive generation shows the
+framework's ability to model latent graph family rules.  These results present
 \method{} as an effective unified representation framework for graph prediction,
 recovery, and growth.

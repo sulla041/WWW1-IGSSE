@@ -1,4 +1,4 @@
-# WWW Graph-Paper Style Notes
+# WWW Graph Paper Style Notes
 
 Reference PDFs in `style-references/www-papers/`:
 
@@ -11,8 +11,8 @@ Reference PDFs in `style-references/www-papers/`:
 
 Observed abstract pattern:
 
-1. Start from Web-scale graph relevance and concrete applications.
-2. Name the prevailing graph-learning paradigm and describe how it works.
+1. Start from Web scale graph relevance and concrete applications.
+2. Name the prevailing graph learning paradigm and describe how it works.
 3. State the limitation of prior methods directly, usually with "However".
 4. Introduce the method with "We propose" and then compress the mechanism with
    "Specifically".
@@ -25,8 +25,8 @@ Applied to IGSSE:
   neighborhood aggregation.
 - The gap is stated through oversmoothing, WL expressivity limits, and
   structural compression.
-- IGSSE is presented as a recoverable set-space embedding with edge-free
-  content, relation-conditioned structural deviations, PairAttn recovery, and
+- IGSSE is presented as a recoverable set space embedding with content computed
+  without edges, structural deviations conditioned on relations, pair attention recovery, and
   set expansion.
-- The empirical close reports aligned prediction, WL-collision diagnostics, and
-  constrained autoregressive growth.
+- The empirical close reports aligned prediction, WL collision diagnostics after
+  the recovery gate is reached, and constrained autoregressive growth.
