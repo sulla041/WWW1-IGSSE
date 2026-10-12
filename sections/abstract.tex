@@ -1,19 +1,29 @@
-Web relation graphs combine entity attributes with interactions, while graph
-learning tasks range from node decisions to graph-level prediction and structural
-growth.  Existing encoders often optimize a task-specific hidden state, which
-makes it difficult to determine whether the state still preserves the input
-content and relations.  We introduce \method{} (Invertible Graph Set-Space
-Embedding), a node-aligned point-set representation for attributed graphs.
-\method{} first maps each node attribute to an edge-free content baseline, then
-writes relation-conditioned deviations through a feature--structure deviation
-encoder.  Pairwise and pointwise decoders define a recovery gate for links and
-non-label attributes, while node and set readouts consume the learned point set.
-The same representation interface also supports constrained autoregressive
-growth: a set-expansion operator adds points and a pairwise decoder recovers the
-resulting graph.  We evaluate aligned node and graph tasks on co-purchase,
-collaboration, citation, program, circuit, timing, molecular, and social graphs,
-and evaluate free growth on planar, chordal, and bipartite graph families.
-Across ten aligned prediction comparisons, \method{} exceeds every listed
-baseline.  The generation study separates terminal validity from representation
-readability and reports both quantities. Each result is reported with its split,
-input convention, and baseline set.
+Graphs are a natural representation for complex relations and rich information
+on the Web, supporting recommendation, citation analysis, collaboration
+modeling, program reasoning, electronic design, molecular prediction, and social
+network analysis.  Effective graph modeling requires continuous representations
+that combine node attributes with relational structure while keeping graph
+content and relations readable.  The prevailing graph neural network paradigm
+propagates messages along observed edges and stacks neighborhood aggregation
+layers to produce node or graph states.  However, oversmoothing,
+Weisfeiler--Leman expressivity limits, and structural compression can weaken the
+recoverability of graph information in the learned hidden state.  We propose
+\method{} (Invertible Graph Set-Space Embedding), a recoverable set-space
+embedding for attributed graphs.  Specifically, \method{} maps node attributes
+to an edge-free content embedding, then writes relation-conditioned structural
+deviations with a feature--structure deviation encoder that combines local graph
+neighborhoods and global attention states.  The resulting node-aligned point set
+serves as a recoverable approximate graph state: a pointwise content decoder
+reads node content, a PairAttn relation decoder reads links, and node-, edge-,
+and graph-level tasks are modeled through points and point-pair relations.  A
+set-expansion module further supports constrained autoregressive growth on the
+same representation interface.  We evaluate \method{} on aligned prediction
+tasks over co-purchase, collaboration, citation, program, circuit, timing,
+molecular, and social graphs, and on constrained growth over planar, chordal,
+and bipartite graph families.  Across ten aligned prediction comparisons,
+\method{} exceeds every listed graph learning baseline.  A WL-collision
+diagnostic shows that recovery-trained point sets separate the evaluated
+2-WL-collision graph pairs, and constrained autoregressive generation shows the
+framework's ability to model latent graph-family rules.  These results present
+\method{} as an effective unified representation framework for graph prediction,
+recovery, and growth.
