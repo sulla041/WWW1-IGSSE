@@ -9,7 +9,7 @@ field through propagation, global interaction, or selective state updates
 \cite{gasteiger2019,wu2023sgformer,deng2024polynormer,wang2024graphmamba}.
 These methods span local propagation and global interaction. \method{} forms
 global Q/K/V source states, then uses adjacency to select their structural
-writes. Pair attention reads relations from the final point set, $D_C$ reads content,
+writes. Pair attention recovers relations from the final point set, $D_C$ recovers content,
 and task readers consume the resulting audited point set.
 
 \paragraph{Structure encodings and graph reconstruction address only part of the
@@ -19,12 +19,12 @@ Walk embeddings and positional encodings expose structural coordinates
 reconstruction explicit \cite{kipf2016vgae,simonyan2018graphvae}.  Graph as
 Point Set maps graphs to a point set representation that preserves information
 \cite{wang2024graphpointset}.  These directions establish useful ingredients,
-but IGSSE requires a more specific contract: a content baseline computed without
-edge input and a deviation conditioned on relations form each point; pair
+and IGSSE adds a more specific contract: an attribute only content baseline and
+a deviation conditioned on relations form each point; pair
 attention and $D_C$ then audit
 the declared $\mathbf A$ and $\mathbf C$ targets; point, set, and growth readers
-use the resulting object.  The distinction is methodological rather than a claim
-that any prior representation fails on every task.
+use the resulting object.  The distinction is methodological and defines the
+representation contract used throughout the paper.
 
 \paragraph{WL collision resolution after recovery training.}
 The Weisfeiler Leman hierarchy provides a combinatorial reference for graph

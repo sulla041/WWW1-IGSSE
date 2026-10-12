@@ -5,7 +5,7 @@
 \label{sec:setup}
 Let $G=(V,E,\mathbf X)$ be an attributed graph with adjacency $\mathbf A$ and
 $n$ nodes.  The task label $y$ is a node class, graph label, or continuous
-target, but never enters the embedding path.  \method{} produces
+target.  The embedding path uses graph attributes and relations, and \method{} produces
 $\Hset\in\mathbb R^{n\times d}$, where row $i$ remains associated with node
 $i$.  This row correspondence is essential: a content decoder must read a node
 target from one point, while a relation decoder must read a graph relation from a
@@ -20,8 +20,7 @@ stopped encoded target prevents the feature decoder from reducing reconstruction
 to a shortcut through the target encoder.  We reserve $\Hset_{\mathrm{dec}}$
 for the final state audited by the two decoders, and reserve
 $\Hset_{\mathrm{task}}$ for a final state or jump concatenated reader input.
-This separation keeps a task reader from silently changing the object constrained
-by recovery.
+This separation fixes the recovered representation object before task readout.
 
 \paragraph{Core path correspondence.}
 The core computation first forms original coordinates $\mathbf h_{o,i}$. Global
@@ -44,7 +43,7 @@ global source states contract during aggregation.
 
 \subsection{Feature and structure deviation encoding}
 \label{sec:fsde}
-First, a shared attribute map forms a baseline computed without edge input:
+First, a shared attribute map forms an attribute only baseline:
 \begin{equation}
   \mathbf h^{(0)}_i=\operatorname{Enc}_X(\mathbf x_i).
   \label{eq:baseline}
@@ -209,7 +208,7 @@ from each final point. Its default form is a layer normalized two layer GELU MLP
 with output dimension equal to the target dimension. Edge attributes use the
 pair decoder $D_E(\mathbf h_i,\mathbf h_j)$ and an explicit edge attribute loss.
 
-\subsection{Training schedule and evaluation protocol}
+\subsection{Training schedule and evaluation setup}
 \label{sec:training}
 The optimization schedule separates three quantities that otherwise become easy
 to conflate: a noisy encoder state during training, a clean deterministic state
@@ -252,19 +251,19 @@ prediction comparison.
 The joint objective in Eq.~\eqref{eq:objective} has four distinct attachment
 points.  The prediction term supervises a task reader.  The link term sends
 gradients through pair attention and the final point set.  The feature term
-sends gradients through the content decoder and final point set, but not through
-the stopped target encoder.  The survival term reaches the scale network and the
+sends gradients through the content decoder and final point set, with the target
+encoder stopped.  The survival term reaches the scale network and the
 attention energy path. Relation geometry, node content, task relevance, and the
 training filter receive separate signals. $\mathcal L_{\mathrm{pred}}$ reads
 $y$ on the training mask; the remaining three terms use declared graph
 information.
 
 For an embedding only run, $\lambda_{pred}=0$ and the three representation terms
-train a point set without a task label.  A task run restores
-$\mathcal L_{pred}$ but retains the other terms.  This schedule makes two
+train a point set using only declared graph recovery targets.  A task run restores
+$\mathcal L_{pred}$ and retains the other terms.  This schedule makes two
 experimental modes explicit: representation training assesses the point set
 alone, and a joint task run assesses the representation and reader system while
-keeping the declared information constraints active.
+keeping the declared information objectives active.
 
 \subsection{Point, set, and growth interfaces}
 \label{sec:interfaces}
@@ -304,7 +303,7 @@ to node ordering.  The graph head then maps $\mathbf g$ to a class distribution
 or continuous property. Graph level recovery losses are averaged over graphs in
 the batch, maintaining a representation objective for each graph.
 
-For constrained autoregression, the reference construction first expands the
+For legality guided autoregression, the reference construction first expands the
 point set from $\Hset_s=\{\mathbf h_1,\ldots,\mathbf h_n\}$ to
 $\Hset' =\{\mathbf h_1,\ldots,\mathbf h_n,\mathbf h_{n+1}\}$, then applies the
 same pair attention relation decoder to recover the expanded graph.  Formally,
@@ -323,18 +322,17 @@ states from each live $\Hset_s$.  The relation decoder maps every candidate to
 an edge score representation, and the graph family predicate labels it legal or
 illegal during training.  Candidate states can be ranked either by the declared
 legality route (Legal) or by a learned continuation score (Net).  A live state
-capacity prevents the candidate tree from growing without bound; the capacity is
-recorded as $\texttt{max\_live}$ in the generation protocol.
+capacity gives the candidate tree a fixed beam width; the capacity is
+recorded as $\texttt{max\_live}$ in the generation setting.
 
-The distinction between construction and evaluation is deliberate.  Training
+The construction and evaluation stages use separate signals.  Training
 uses legality supervision to make the set transition sensitive to the graph
 family.  Free growth evaluation fixes all learned parameters, disables a
 step wise rule teacher, and evaluates terminal graphs at a larger target size.
 Thus, the final legality predicate measures an output property while Emb F1
 measures whether the resulting point state retains a usable relation geometry.
-Neither quantity alone establishes the other.  The reported Legal and Net rows
-therefore use the same target size and decoder interface but make their live state
-selection rule explicit.
+The reported Legal and Net rows use the same target size and decoder interface
+and make their live state selection rule explicit.
 
 \paragraph{Growth objective.}
 For a candidate graph $G_s$ produced from $\Hset_s$, let
@@ -342,13 +340,13 @@ $c_s=\mathbb{I}[\operatorname{legal}(G_s)]$ be the family predicate.  A
 legality head can optimize a binary loss $\mathcal L_{\mathrm{legal}}$ during
 training, while the relation decoder continues to score the candidate graph.
 The full generator objective combines the set transition signal, pairwise
-recovery, and legality signal according to the active graph family protocol.
+recovery, and legality signal according to the active graph family setting.
 At test time, $c_s$ is never used as a step wise teacher.  It is evaluated only
 after the free growth rollout to compute Valid.  This train to test separation is
 what makes Legal and Net results evidence about a learned growth process rather
 than a rule filtered trajectory.
 
-\paragraph{Pseudocode 3: constrained free growth.}
+\paragraph{Pseudocode 3: legality guided free growth.}
 \begin{quote}\small
 \textbf{Input:} learned expansion operator, pair attention decoder, initial set
 $\Hset_0$, target size, selection rule, and $\texttt{max\_live}$.\\
@@ -356,7 +354,7 @@ $\Hset_0$, target size, selection rule, and $\texttt{max\_live}$.\\
 \textbf{2.} Until the target size, expand every live state with
 $\operatorname{StepSet}$ and decode candidate relation scores.\\
 \textbf{3.} During training, attach the graph family legality signal to each
-candidate. During evaluation, do not query the legality teacher.\\
+candidate. During evaluation, use the learned transition and selection rule.\\
 \textbf{4.} Rank candidates by the declared Legal or Net selection rule, retain at most
 $\texttt{max\_live}$ states, and continue with their point sets.\\
 \textbf{5.} Decode terminal graphs and report Valid together with Emb F1 over
@@ -379,7 +377,7 @@ structure.  For a consistent node permutation $\mathbf P$,
 \paragraph{Why the symmetry holds.}
 The attribute map is shared across rows, so it commutes with a node permutation.
 For a fixed target, permuting the incoming edge order permutes the softmax
-arguments and values but preserves their weighted sum.  Residual maps, layer
+arguments and values while preserving their weighted sum.  Residual maps, layer
 normalization, and feedforward layers applied at the point level then preserve row alignment by
 induction over encoder layers.  Pair attention receives both point rows and
 therefore transforms on both adjacency axes; attention pooling permutes weights
@@ -394,11 +392,11 @@ domain, then two graphs $G_1,G_2$ with the same representation satisfy
  d_T(T(G_1),T(G_2))\leq 2\epsilon.
  \label{eq:recoverability}
 \end{equation}
-Indeed, both targets lie within $\epsilon$ of the same decoded representation,
-so the result follows from the triangle inequality.  The statement explains why
-direct recovery metrics matter: they bound how much declared input information a
-shared embedding can merge.  It does not claim exact inversion at finite error,
-reconstruction of unmodeled attributes, or a graph isomorphism guarantee.
+Both targets lie within $\epsilon$ of the same decoded representation, so the
+result follows from the triangle inequality.  The statement explains why direct
+recovery metrics matter: they bound how much declared input information a shared
+embedding can merge.  Exact inversion, additional edge attributes, and graph
+isomorphism each require their own declared target and evaluation metric.
 
 Each task instance jointly optimizes
 \begin{equation}
@@ -419,7 +417,7 @@ in the number of encoded edges up to the head and hidden dimensions.  Relation
 training uses sampled pairs, whereas a complete recovery evaluation may score a
 larger specified pair set.  Set attention and unrestricted pair decoding can
 become quadratic in the number of live points.  We therefore treat sampled pair
-training, chunked decoding, and live state capacity as explicit protocol choices
-rather than claiming graph scale efficiency from small graph results.  The
+training, chunked decoding, and live state capacity as explicit evaluation
+settings for the reported graph sizes.  The
 experiments report task accuracy and validity; measured time and memory remain a
 separate evidence requirement.

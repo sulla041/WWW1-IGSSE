@@ -25,8 +25,8 @@ Applied to IGSSE:
   neighborhood aggregation.
 - The gap is stated through oversmoothing, WL expressivity limits, and
   structural compression.
-- IGSSE is presented as a recoverable set space embedding with content computed
-  without edges, structural deviations conditioned on relations, pair attention recovery, and
+- IGSSE is presented as a recoverable set space embedding with attribute only
+  content, structural deviations conditioned on relations, pair attention recovery, and
   set expansion.
-- The empirical close reports aligned prediction, WL collision diagnostics under
-  the stated recovery criteria, and constrained autoregressive growth.
+- The empirical close reports aligned prediction, WL collision diagnostics with
+  the stated recovery criteria, and legality guided autoregressive growth.

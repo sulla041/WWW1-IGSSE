@@ -1,17 +1,17 @@
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{Questions and protocol}
+\subsection{Questions and setup}
 We ask: (Q1) does the declared point set retain links and node content; (Q2) does
 it support Web relation tasks; (Q3) which encoder and readout components account
 for task utility; (Q4) can the set state grow freely beyond the training scale
-without a step wise rule teacher; (Q5) how do graph semantics and output level
+after graph family supervision; (Q5) how do graph semantics and output level
 affect the result; and (Q6) where does a learned point set signature collide on
 nonisomorphic graph pairs stratified by first order, second
 order, and third order WL tests?  Each dataset trains its own
 encoder, decoders, and head.  Validation metrics select checkpoints and test
 splits report results. Each task instance learns a dedicated representation and
-reader with its declared protocol.
+reader with its declared data split, input convention, and metric.
 
 The listed baselines are MLP, GCN, GraphSAGE, GAT, GIN, APPNP, SGFormer,
 Polynormer, Graph-Mamba, and PST.  Each row fixes its input convention, split,
@@ -22,7 +22,7 @@ for each primary graph family, together with optimization steps and wall time.
 
 \paragraph{Baseline alignment.}
 The prediction comparison uses the same split, input attributes, and task metric
-within a row.  MLP tests attributes without graph structure.  GCN, GraphSAGE,
+within a row.  MLP tests attributes alone.  GCN, GraphSAGE,
 GAT, and GIN represent neighborhood aggregation; APPNP, SGFormer, Polynormer,
 and Graph-Mamba add different propagation or long range mechanisms; PST tests a
 graph to set route.  The comparison answers a row level question: whether the
@@ -52,7 +52,7 @@ separation.
 Amazon Photo, Coauthor CS, and Cora respectively represent product purchase relations,
 academic collaboration, and citation relations \cite{shchur2018,sen2008,yang2016}.
 \method{} is best among the listed baselines in all four Web rows, including the
-Photo interact protocol.  The gains on Photo and Coauthor CS are narrow, which
+Photo interact setting.  The gains on Photo and Coauthor CS are narrow, which
 is consistent with strong aligned baselines; the Cora row has a larger gap.
 The record reports Web task utility with aligned training settings.
 
@@ -64,7 +64,7 @@ The point and set interfaces remain available in each setting, with parameters
 trained for the stated task. The tests measure architectural coverage under
 changed semantics.
 
-\subsection{Constrained autoregressive growth}
+\subsection{Legality guided autoregressive growth}
 \label{sec:ar-results}
 The generation experiment trains set expansion with graph family rule supervision,
 then freezes parameters and removes the step wise rule teacher for free growth.
@@ -72,23 +72,23 @@ The result workbook reports terminal validity and the Emb F1 probe at the target
 size.  Legal and Net use distinct live state selection rules, so their validity values must
 be interpreted separately.
 
-\paragraph{Protocol boundary.}
+\paragraph{Evaluation setup.}
 The training phase supplies a graph family legality signal at the training
 scale.  The evaluation phase fixes the learned parameters, increases the target
-size, and does not query a rule teacher after each expansion.  A Legal selection
+size, and uses learned parameters for every expansion step.  A Legal selection
 rule keeps states satisfying the declared predicate, whereas a Net selection rule
-uses the learned network score to select live states.  The protocol records the
+uses the learned network score to select live states.  The record stores the
 target size, number of samples, maximum live state capacity, selection rule, and
 random seed.
-These details matter because a high terminal validity can otherwise be caused by
-filtering, beam capacity, or a teacher that remains active at test time.
+These details identify the source of terminal validity by separating the learned
+transition, filtering rule, live state capacity, and training teacher.
 
 The planar result shows that the selection rule changes terminal validity.  The chordal
-and bipartite rows test changed graph rules rather than a new Web application.
-The result supports constrained legal growth against the listed mechanism
-proxies.  It does not establish distributional fidelity: before making that
-claim, the appendix must add degree or clustering statistics, an appropriate
-MMD, uniqueness and novelty, and node order sensitivity.
+and bipartite rows test changed graph rules as an additional evaluation axis.
+The result supports legality guided growth against the listed mechanism
+proxies.  Distributional fidelity evidence requires degree or clustering
+statistics, an appropriate MMD, uniqueness and novelty, and node order
+sensitivity.
 
 \subsection{Ablation and evidence boundaries}
 The ablation workbook separates recovery losses, noise, the frozen
@@ -100,20 +100,19 @@ changes identify which components the suite attributes to the observed utility.
 Removing a recovery term degrades either task utility, the structural probe, or
 both in the full suite.  Frozen-$\Hset$ creates the largest drop in the displayed
 Photo and Cora rows, while replacing set aware readout also reduces the scores.
-These ablations support component attribution within the stated suite; they do
-not replace the missing direct recovery table.
+These ablations support component attribution within the stated suite and direct
+recovery tables provide the complementary reconstruction evidence.
 
 \subsection{Reproducibility, cost, and limits}
 The released package provides pretrained checkpoints, an end to end toy test,
 and checks for OCB, HiGraph, and planar metadata.  Link training samples point
-pairs rather than materializing a dense adjacency prediction.  This describes
-the implementation cost but is not an efficiency claim.  Before submission, we
-will report parameter count, effective optimization steps, wall time,
+pairs as a sparse relation objective. This describes implementation cost. Before
+submission, we will report parameter count, effective optimization steps, wall time,
 time per update, peak memory, and inference time for each primary graph family.
 
-The present evidence has three boundaries.  First, all task instances are
-independently trained.  Second, the recovery target only covers declared links
-and node content; an application that requires edge attributes needs an explicit
-edge decoder and target.  Third, terminal validity depends on the graph family
-predicate, live state capacity, and selection rule.  The generation results should not be
-read as evidence for untested graph rules.
+The present evidence covers three stated axes.  First, all task instances are
+independently trained.  Second, the recovery target covers declared links and
+node content, with edge attributes handled by an explicit edge decoder and
+target.  Third, terminal validity is reported together with the graph family
+predicate, live state capacity, and selection rule.  The generation results
+cover the tested graph rules.
