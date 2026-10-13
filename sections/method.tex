@@ -201,24 +201,19 @@ After $L$ layers, $\Hset_{\mathrm{dec}}=\mathbf H^{(L)}$ is used for recovery.
 Node tasks may use this final state or a jump concatenated state
 $\mathbf h_{o,i}^{(0)}\Vert\mathbf h_i^{(1)}\Vert\cdots\Vert\mathbf h_i^{(L)}$.
 
-\paragraph{Pseudocode 1: embedding by content coordinate and structural deviation.}
+\paragraph{Algorithm 1: point set embedding.}
 \begin{quote}\small
-\textbf{Input:} $\mathbf X$, $E_{\mathrm{enc}}$, and progress $u$.\\
-\textbf{Output:} $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, and
-mean noise scale $\overline\sigma$.\\
-\textbf{1.} Initialize $\mathbf h_{o,i}^{(0)}\leftarrow
-\operatorname{Enc}_X(\mathbf x_i)$ for every node.\\
-\textbf{2.} At layer $\ell$, set $\mathbf h_{o,i}^{(\ell)}$ to the current
-content coordinate, then project it to queries, keys, and values.\\
-\textbf{3.} Compute global pair energies $e_{si}$ and contextual source states
-$\mathbf u_s$. Use $N_A(i)$ to normalize incoming scores and form the structural
-deviation $\mathbf o_i^{(\ell)}$ by Eq.~\eqref{eq:deviation}.\\
-\textbf{4.} Perturb energies with Eq.~\eqref{eq:noise} during training; use
-clean energies otherwise. Form $\mathbf r_i^{(\ell)}=\mathbf h_{o,i}^{(\ell)}
-+\mathbf o_i^{(\ell)}$ and apply Eq.~\eqref{eq:fusion} to obtain
+\textbf{Input:} $\mathbf X$, $E_{\mathrm{enc}}$, progress $u$.\\
+\textbf{Output:} $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$,
+$\overline\sigma$.\\
+\textbf{Initialize:} $\mathbf h_{o,i}^{(0)}\leftarrow
+\operatorname{Enc}_X(\mathbf x_i)$ for each node.\\
+\textbf{For each layer:} project $\mathbf h_{o,i}^{(\ell)}$ to queries, keys,
+and values; compute $e_{si}$ and $\mathbf u_s$; normalize over $N_A(i)$ to form
+$\mathbf o_i^{(\ell)}$; apply training noise when enabled; set
+$\mathbf r_i^{(\ell)}=\mathbf h_{o,i}^{(\ell)}+\mathbf o_i^{(\ell)}$ and update
 $\mathbf h_i^{(\ell)}$.\\
-\textbf{5.} Return the final point set $\Hset_{\mathrm{dec}}$ and the configured
-task state.
+\textbf{Return:} final recovery set and configured task set.
 \end{quote}
 
 \subsection{Graph recovery from the point set}
@@ -313,21 +308,6 @@ encoder depth, head count, hidden width, dropout, optimizer settings, loss
 weights, and pair budgets are treated as experimental configuration and reported
 with the corresponding experiments.
 
-\paragraph{Pseudocode 2: one joint update.}
-\begin{quote}\small
-\textbf{1.} Compute $u$, optionally perturb $\mathbf X$ and the encoder edge
-view, then run Pseudocode~1 with training noise enabled.\\
-\textbf{2.} Decode clean content targets from $\Hset_{\mathrm{dec}}$ and compute
-$\mathcal L_{\mathrm{feat}}$. Sample pairs from the complete input graph and
-compute $\mathcal L_{\mathrm{link}}$.\\
-\textbf{3.} Read $\Hset_{\mathrm{task}}$ with the configured node or graph head;
-compute $\mathcal L_{\mathrm{pred}}$ only on training labels.\\
-\textbf{4.} Add $\mathcal L_{\mathrm{alive}}$, backpropagate the weighted sum,
-clip gradients, and update encoder, pair attention, content decoder, and reader jointly.\\
-\textbf{5.} For selection and test, disable noise, set $u$ to its terminal
-progress value, and evaluate the selected checkpoint.
-\end{quote}
-
 The embedding probe measures whether a standardized structural feature predicts
 links from the learned state. Direct recovery metrics evaluate $D_A$ and $D_C$.
 The paper reports these complementary metrics separately before each point or set
@@ -354,104 +334,53 @@ keeping the information objectives active.
 
 \subsection{Downstream modeling over the point set}
 \label{sec:interfaces}
-All downstream tasks use $\Hset$ as the modeling target.  Node prediction reads
-one point, graph prediction pools the whole set, and autoregressive graph
-modeling expands the set before relation decoding.  This keeps the task
-interface consistent with graph recovery: recovery and prediction both operate
-on the same learned point set.
-
-A shared point head maps each $\mathbf h_i$ to a node label or value.  A graph
-task uses invariant attention pooling,
+All downstream tasks use $\Hset$ as the modeling object.  Node prediction applies
+a shared reader to point rows, graph prediction pools the set into an invariant
+state, and autoregressive graph modeling expands the set before relation
+decoding.  The same point set therefore supports prediction, recovery, and
+growth under a unified representation interface.  For graph tasks we use
+attention pooling,
 \begin{equation}
  \mathbf g=\sum_i\beta_i\mathbf U_V\mathbf h_i,\qquad
  \widehat Y_G=R_{\mathrm{graph}}(\mathbf g),
  \label{eq:pool}
 \end{equation}
-where $\beta_i$ is normalized over the graph. The readout consumes the learned
-point set. The frozen $\Hset$ and readout replacement ablations isolate this
-interface choice.
+where $\beta_i$ is normalized over the graph.  Classification and regression
+choose the corresponding prediction loss on the training labels, while recovery
+losses remain attached to $\Hset$.
 
-\paragraph{Output level choice.}
-For node classification and regression, the head is shared over point rows and
-preserves correspondence to nodes.  When a node needs task context, a set attention block
-updates the entire point set before the shared head reads its row.  For graph
-classification and regression, attention pooling or PMA maps a variable cardinality
-set to one invariant state. Mean pooling supplies an ablation reference for
-learned point selection. These output choices retain the same recovery target
-and attribute task score changes to the reader of $\Hset$.
+\paragraph{Algorithm 2: downstream prediction over $\Hset$.}
+\begin{quote}\small
+\textbf{Input:} $\Hset_{\mathrm{task}}$, task type, reader $R$, training labels.\\
+\textbf{Node task:} compute
+$\widehat{\mathbf y}_i\leftarrow R_{\mathrm{node}}(\mathbf h_i)$.\\
+\textbf{Graph task:} compute
+$\mathbf g\leftarrow\operatorname{Pool}(\Hset_{\mathrm{task}})$ and
+$\widehat{\mathbf y}_G\leftarrow R_{\mathrm{graph}}(\mathbf g)$.\\
+\textbf{Optimize:} compute $\mathcal L_{\mathrm{pred}}$ on the training labels.\\
+\textbf{Return:} prediction scores and selected task loss.
+\end{quote}
 
-\paragraph{Concrete readers.}
-For node classification, a shared MLP returns class logits
-$\widehat{\mathbf z}_i=R_{\mathrm{node}}(\mathbf h_i)$ and optimizes masked
-cross entropy.  Class weights and label smoothing, when configured, apply only
-to training nodes.  For node regression, the same row wise reader returns a
-scalar or vector and uses Huber or squared error; validation selects the target
-regression metric.  These readers retain row correspondence, so an input permutation
-permutes their outputs in the same way.
-
-For graph tasks, a learned query or attention weight reads a set state.  A PMA
-configuration uses one or more seed queries; a simpler attention configuration
-uses $\beta_i\propto\exp(\mathbf w^\top\mathbf h_i)$.  Both preserve invariance
-to node ordering.  The graph head then maps $\mathbf g$ to a class distribution
-or continuous property. Graph level recovery losses are averaged over graphs in
-the batch, maintaining a representation objective for each graph.
-
-For legality guided autoregression, the reference construction first expands the
-point set from $\Hset_s=\{\mathbf h_1,\ldots,\mathbf h_n\}$ to
-$\Hset' =\{\mathbf h_1,\ldots,\mathbf h_n,\mathbf h_{n+1}\}$, then applies the
-same pair attention relation decoder to recover the expanded graph.  Formally,
+For autoregressive graph modeling, the expansion operator maps the current set to
+a larger set, and the same relation decoder recovers the expanded graph:
 \begin{equation}
  \Hset_{s+1}=\operatorname{StepSet}(\Hset_s,\boldsymbol\epsilon_s),
  \qquad E_{s+1}=\{(i,j):\sigma(D_A(\mathbf h_i,\mathbf h_j))\geq\tau\}.
  \label{eq:grow}
 \end{equation}
-Training uses a graph rule legality signal. At evaluation, fixed parameters
-produce free growth rollouts. The report includes terminal validity together with
-an embedding probe for the resulting relational state.
+Training uses graph rule legality signals for candidate transitions; evaluation
+uses fixed parameters to produce free growth rollouts and then reports terminal
+validity and relational embedding probes.
 
-\paragraph{State expansion, candidates, and live states.}
-At a growth depth $s$, the expansion operator proposes one or more candidate
-states from each live $\Hset_s$.  The relation decoder maps every candidate to
-an edge score representation, and the graph rule predicate labels it legal or
-illegal during training.  Candidate states can be ranked either by the
-legality route (Legal) or by a learned continuation score (Net).  A live state
-capacity gives the candidate tree a fixed beam width; the capacity is
-recorded as $\texttt{max\_live}$ in the generation setting.
-
-The construction and evaluation stages use separate signals.  Training
-uses legality supervision to make the set transition sensitive to the graph
-rules.  Free growth evaluation fixes all learned parameters, disables a
-step wise rule teacher, and evaluates terminal graphs at a larger target size.
-Thus, the final legality predicate measures an output property while Emb F1
-measures whether the resulting point state retains a usable relation geometry.
-The reported Legal and Net rows use the same target size and decoder interface
-and make their live state selection rule explicit.
-
-\paragraph{Growth objective.}
-For a candidate graph $G_s$ produced from $\Hset_s$, let
-$c_s=\mathbb{I}[\operatorname{legal}(G_s)]$ be the graph rule predicate.  A
-legality head can optimize a binary loss $\mathcal L_{\mathrm{legal}}$ during
-training, while the relation decoder continues to score the candidate graph.
-The full generator objective combines the set transition signal, pairwise
-recovery, and legality signal according to the active graph rule setting.
-At test time, $c_s$ is never used as a step wise teacher.  It is evaluated only
-after the free growth rollout to compute Valid.  This train to test separation is
-what makes Legal and Net results evidence about a learned growth process rather
-than a rule filtered trajectory.
-
-\paragraph{Pseudocode 3: legality guided free growth.}
+\paragraph{Algorithm 3: autoregressive graph modeling.}
 \begin{quote}\small
-\textbf{Input:} learned expansion operator, pair attention decoder, initial set
-$\Hset_0$, target size, selection rule, and $\texttt{max\_live}$.\\
-\textbf{1.} Initialize the live state collection with $\Hset_0$.\\
-\textbf{2.} Until the target size, expand every live state with
-$\operatorname{StepSet}$ and decode candidate relation scores.\\
-\textbf{3.} During training, attach the graph rule legality signal to each
-candidate. During evaluation, use the learned transition and selection rule.\\
-\textbf{4.} Rank candidates by the configured Legal or Net selection rule, retain at most
-$\texttt{max\_live}$ states, and continue with their point sets.\\
-\textbf{5.} Decode terminal graphs and report Valid together with Emb F1 over
-the completed rollouts.
+\textbf{Input:} initial set $\Hset_0$, expansion operator, $D_A$, target size,
+selector.\\
+\textbf{Initialize:} live states $\leftarrow\{\Hset_0\}$.\\
+\textbf{While active:} expand each live state with $\operatorname{StepSet}$;
+decode candidate relations with $D_A$; score candidates by legality or learned
+continuation; retain configured live states.\\
+\textbf{Return:} terminal graphs, validity, and relation probe metrics.
 \end{quote}
 
 \subsection{Symmetry and objective}
