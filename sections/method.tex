@@ -203,17 +203,23 @@ $\mathbf h_{o,i}^{(0)}\Vert\mathbf h_i^{(1)}\Vert\cdots\Vert\mathbf h_i^{(L)}$.
 
 \paragraph{Algorithm 1: point set embedding.}
 \begin{quote}\small
-\textbf{Input:} $\mathbf X$, $E_{\mathrm{enc}}$, progress $u$.\\
-\textbf{Output:} $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$,
-$\overline\sigma$.\\
-\textbf{Initialize:} $\mathbf h_{o,i}^{(0)}\leftarrow
-\operatorname{Enc}_X(\mathbf x_i)$ for each node.\\
-\textbf{For each layer:} project $\mathbf h_{o,i}^{(\ell)}$ to queries, keys,
-and values; compute $e_{si}$ and $\mathbf u_s$; normalize over $N_A(i)$ to form
-$\mathbf o_i^{(\ell)}$; apply training noise when enabled; set
-$\mathbf r_i^{(\ell)}=\mathbf h_{o,i}^{(\ell)}+\mathbf o_i^{(\ell)}$ and update
-$\mathbf h_i^{(\ell)}$.\\
-\textbf{Return:} final recovery set and configured task set.
+\begin{tabular}{@{}p{0.19\linewidth}@{\hspace{0.5em}}p{0.72\linewidth}@{}}
+\textbf{Input} & $\mathbf X$, $E_{\mathrm{enc}}$, $u$ \\
+\textbf{Output} & $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, $\overline\sigma$ \\
+\textbf{Init} & $\mathbf h_{o,i}^{(0)} \leftarrow \operatorname{Enc}_X(\mathbf x_i)$ \\
+\textbf{for $\ell$} & $(\mathbf q_i,\mathbf k_i,\mathbf v_i)\leftarrow
+\operatorname{Proj}(\mathbf h_{o,i}^{(\ell)})$ \\
+& $e_{si}\leftarrow \operatorname{Energy}(\mathbf q_s,\mathbf k_i)$ \\
+& $\mathbf u_s\leftarrow \operatorname{GlobalAttn}(e_{s:},\mathbf v)$ \\
+& $\alpha_{si}\leftarrow \operatorname{Softmax}_{s\in N_A(i)}(e_{si})$ \\
+& $\mathbf o_i^{(\ell)}\leftarrow
+\operatorname{Write}(\alpha_{:i},\mathbf u)$ \\
+& \textbf{if train:} $e_{si}\leftarrow e_{si}+\sigma_{si}g(u)\epsilon_{si}$ \\
+& $\mathbf r_i^{(\ell)}\leftarrow \mathbf h_{o,i}^{(\ell)}+\mathbf o_i^{(\ell)}$ \\
+& $\mathbf h_i^{(\ell)}\leftarrow
+\operatorname{FFN}(\operatorname{LN}(\mathbf r_i^{(\ell)}))$ \\
+\textbf{return} & $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, $\overline\sigma$ \\
+\end{tabular}
 \end{quote}
 
 \subsection{Graph recovery from the point set}
@@ -351,14 +357,16 @@ losses remain attached to $\Hset$.
 
 \paragraph{Algorithm 2: downstream prediction over $\Hset$.}
 \begin{quote}\small
-\textbf{Input:} $\Hset_{\mathrm{task}}$, task type, reader $R$, training labels.\\
-\textbf{Node task:} compute
-$\widehat{\mathbf y}_i\leftarrow R_{\mathrm{node}}(\mathbf h_i)$.\\
-\textbf{Graph task:} compute
-$\mathbf g\leftarrow\operatorname{Pool}(\Hset_{\mathrm{task}})$ and
-$\widehat{\mathbf y}_G\leftarrow R_{\mathrm{graph}}(\mathbf g)$.\\
-\textbf{Optimize:} compute $\mathcal L_{\mathrm{pred}}$ on the training labels.\\
-\textbf{Return:} prediction scores and selected task loss.
+\begin{tabular}{@{}p{0.19\linewidth}@{\hspace{0.5em}}p{0.72\linewidth}@{}}
+\textbf{Input} & $\Hset_{\mathrm{task}}$, task type, reader $R$, labels \\
+\textbf{if node} & $\widehat{\mathbf y}_i\leftarrow
+R_{\mathrm{node}}(\mathbf h_i)$ \\
+\textbf{if graph} & $\mathbf g\leftarrow \operatorname{Pool}(\Hset_{\mathrm{task}})$ \\
+& $\widehat{\mathbf y}_G\leftarrow R_{\mathrm{graph}}(\mathbf g)$ \\
+\textbf{loss} & $\mathcal L_{\mathrm{pred}}\leftarrow
+\operatorname{TaskLoss}(\widehat{\mathbf y},y)$ on training labels \\
+\textbf{return} & prediction scores, $\mathcal L_{\mathrm{pred}}$ \\
+\end{tabular}
 \end{quote}
 
 For autoregressive graph modeling, the expansion operator maps the current set to
@@ -374,13 +382,18 @@ validity and relational embedding probes.
 
 \paragraph{Algorithm 3: autoregressive graph modeling.}
 \begin{quote}\small
-\textbf{Input:} initial set $\Hset_0$, expansion operator, $D_A$, target size,
-selector.\\
-\textbf{Initialize:} live states $\leftarrow\{\Hset_0\}$.\\
-\textbf{While active:} expand each live state with $\operatorname{StepSet}$;
-decode candidate relations with $D_A$; score candidates by legality or learned
-continuation; retain configured live states.\\
-\textbf{Return:} terminal graphs, validity, and relation probe metrics.
+\begin{tabular}{@{}p{0.19\linewidth}@{\hspace{0.5em}}p{0.72\linewidth}@{}}
+\textbf{Input} & $\Hset_0$, $\operatorname{StepSet}$, $D_A$, target size, selector \\
+\textbf{Init} & $\mathcal B\leftarrow\{\Hset_0\}$ \\
+\textbf{while active} & $\mathcal C\leftarrow\emptyset$ \\
+\textbf{for $\Hset_s\in\mathcal B$} & $\Hset_{s+1}\leftarrow
+\operatorname{StepSet}(\Hset_s,\boldsymbol\epsilon_s)$ \\
+& $\widehat E_{s+1}\leftarrow D_A(\Hset_{s+1})$ \\
+& $\operatorname{score}\leftarrow \operatorname{SelectScore}(\widehat E_{s+1})$ \\
+& $\mathcal C\leftarrow\mathcal C\cup\{(\Hset_{s+1},\operatorname{score})\}$ \\
+\textbf{update} & $\mathcal B\leftarrow\operatorname{Select}(\mathcal C)$ \\
+\textbf{return} & terminal graphs, validity, relation probe metrics \\
+\end{tabular}
 \end{quote}
 
 \subsection{Symmetry and objective}
