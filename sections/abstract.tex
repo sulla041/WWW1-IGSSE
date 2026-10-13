@@ -1,34 +1,31 @@
 Graphs are a natural representation for complex relations and rich information
 on the Web, supporting recommendation, citation analysis, collaboration
 modeling, program reasoning, electronic design, molecular prediction, and social
-network analysis.  Effective graph modeling requires continuous representations
-that combine node attributes with relational structure while preserving the
-recoverability of graph content and relations.  The prevailing graph neural
-network paradigm
-propagates messages along observed edges and stacks neighborhood aggregation
-layers to produce node or graph states.  However, oversmoothing,
-Weisfeiler Leman expressivity limits, and structural compression can weaken the
-recoverability of graph information in the learned hidden state.  We propose
-\method{} (Invertible Graph Set Space Embedding), a recoverable set space
-embedding for attributed graphs.  Specifically, \method{} maps node attributes
-to an attribute only content embedding, then writes structural deviations
-through a feature and structure deviation encoder that combines local graph
-neighborhoods, global attention states, and relation conditions.  The resulting
-point set aligned with nodes serves as an approximate equivalence class of the
-graph with respect to the declared recovery targets:
-a content decoder at the point level recovers node content, a pair attention
-relation decoder decodes links, and node level, edge level, and graph level tasks
-are modeled through points and point pair relations.  A set expansion module
-further supports legality guided autoregressive growth on the
-same representation interface.  We evaluate \method{} on aligned prediction
-tasks over product purchase relations, collaboration, citation, program, circuit,
-timing,
-molecular, and social graphs, and on legality guided growth over planar, chordal,
-and bipartite graph families.  Across ten aligned prediction comparisons,
-\method{} exceeds every listed graph learning baseline.  A WL collision
-diagnostic shows that reconstruction trained point sets separate the evaluated
-second order and third order WL collision graph pairs with the stated recovery
-criteria, and legality guided autoregressive generation shows the
-framework's ability to model latent graph family rules.  These results present
-\method{} as an effective unified representation framework for graph prediction,
-recovery, and growth.
+network analysis.  Web graphs combine heterogeneous node content with sparse,
+nonlocal, and evolving relations, so effective graph modeling requires
+continuous representations that support prediction while preserving recoverable
+content and topology.  The prevailing graph neural network paradigm propagates
+messages along observed edges and stacks neighborhood aggregation layers to
+produce node or graph states.  However, oversmoothing, Weisfeiler Leman
+expressivity limits, and structural compression can weaken the recoverability of
+graph information in the learned hidden state.  We propose \method{}
+(Invertible Graph Set Space Embedding), a recoverable set space embedding for
+attributed graphs.  \method{} maps node attributes to an attribute only content
+embedding, then writes structural deviations through a feature and structure
+deviation encoder that combines local graph neighborhoods, global attention
+states, and relation conditions.  The resulting point set aligned with nodes
+serves as an approximate equivalence class of the graph with respect to declared
+recovery targets: a content decoder at the point level recovers node content, a
+pair attention relation decoder decodes links, and downstream readers operate on
+points and point pair relations.  A set expansion module further supports
+legality guided autoregressive growth on the same representation interface.  We
+evaluate \method{} on aligned prediction tasks over product purchase relations,
+collaboration, citation, program, circuit, timing, molecular, and social graphs,
+and on legality guided growth over planar, chordal, and bipartite graph families.
+Across ten aligned prediction comparisons, \method{} exceeds every listed graph
+learning baseline.  A WL collision diagnostic shows that reconstruction trained
+point sets separate the evaluated second order and third order WL collision
+graph pairs with the stated recovery criteria, and legality guided
+autoregressive generation shows the framework's ability to model latent graph
+family rules.  These results present \method{} as a unified representation
+framework for graph prediction, recovery, and growth.

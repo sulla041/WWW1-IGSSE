@@ -1,30 +1,31 @@
 \section{Background and Positioning}
 \label{sec:related}
 
-\paragraph{Global context and writing conditioned on adjacency.}
+\paragraph{From local message passing to relational writing.}
 Message passing constructs node states by repeatedly aggregating neighboring
 states \cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.
 APPNP, SGFormer, Polynormer, and graph state space models enlarge the receptive
 field through propagation, global interaction, or selective state updates
 \cite{gasteiger2019,wu2023sgformer,deng2024polynormer,wang2024graphmamba}.
-These methods span local propagation and global interaction. \method{} forms
-global Q/K/V source states, then uses adjacency to select their structural
-writes. Pair attention recovers relations from the final point set, $D_C$ recovers content,
-and task readers consume the resulting audited point set.
+These methods broaden the interaction range while keeping feature aggregation
+closely tied to structural propagation.  \method{} separates the two roles: it
+forms global source states, then uses adjacency as a selective condition for
+structural writing.  The pair attention relation decoder recovers relations from
+the final point set, the content decoder recovers node content, and task readers
+consume the audited point set.
 
-\paragraph{Structure encodings and graph reconstruction address only part of the
-problem.}
+\paragraph{Structural encodings and representation audit.}
 Walk embeddings and positional encodings expose structural coordinates
 \cite{perozzi2014,grover2016,chen2026gfse}.  Graph autoencoders make adjacency
 reconstruction explicit \cite{kipf2016vgae,simonyan2018graphvae}.  Graph as
 Point Set maps graphs to a point set representation that preserves information
 \cite{wang2024graphpointset}.  These directions establish useful ingredients,
-and IGSSE adds a more specific contract: an attribute only content baseline and
-a deviation conditioned on relations form each point; pair
-attention and $D_C$ then audit
-the declared $\mathbf A$ and $\mathbf C$ targets; point, set, and growth readers
-use the resulting object.  The distinction is methodological and defines the
-representation contract used throughout the paper.
+and \method{} adds a more specific contract: an attribute only content baseline
+and a relation conditioned deviation form each point; the pair attention relation
+decoder and the content decoder audit the declared $\mathbf A$ and $\mathbf C$
+targets; point, set, and growth readers use the resulting object.  The
+distinction is methodological and defines the representation contract used
+throughout the paper.
 
 \paragraph{WL collision resolution after recovery training.}
 The Weisfeiler Leman hierarchy provides a combinatorial reference for graph

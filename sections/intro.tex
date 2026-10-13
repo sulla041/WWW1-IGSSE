@@ -12,12 +12,14 @@ guo2022timing}.  Neural networks operate naturally on vector spaces with stable
 algebraic interfaces, whereas a graph combines attributed entities with a
 permutation equivariant and sparse relation system over these entities.  The node
 attributes can be placed in a matrix, while the relational structure also carries
-paths, neighborhoods, motifs, and global connectivity patterns.  A useful graph
-representation must therefore convert structure into a continuous object while
-preserving the information that makes the graph itself distinct.  This
-requirement is stronger than fitting a task label: Web graph systems need
-embeddings that support prediction and maintain recoverable content and relation
-targets.
+paths, neighborhoods, motifs, and global connectivity patterns.  Web graphs add
+another layer of difficulty: their content is heterogeneous, their relations are
+large scale and sparse, and their downstream tasks may change as the graph
+evolves \cite{sen2008,yang2016,shchur2018}.  A useful graph representation must
+therefore convert structure into a continuous object while preserving the
+information that makes the graph itself distinct.  This requirement is stronger
+than fitting a task label: Web graph systems need embeddings that support
+prediction and maintain recoverable content and relation targets.
 
 The dominant graph neural network paradigm builds node states by repeated
 message passing and neighborhood aggregation
@@ -65,15 +67,17 @@ reconstruction is usually introduced through a separate autoencoding objective
 
 The core challenge is to define a graph representation whose vector form carries
 a recoverable relation geometry.  If an attributed graph is mapped to a set of
-vectors that preserves the declared content and adjacency targets, graph modeling
-can be studied through set modeling with a mathematically stated recovery
-criterion \cite{zaheer2017,lee2019,wang2024graphpointset}.  The important step is
-to make the point set an approximate equivalence class of the graph.  Under this
-view, the point set is the canonical modeling object: graphs that share a point
-set also share decoded content and relation targets up to the reconstruction
-error of the declared decoders.  This turns embedding quality into an auditable
-property attached to declared recovery targets, with downstream accuracy
-evaluated through a separate task reader.  The
+vectors that preserves declared content and adjacency targets, graph modeling can
+be studied through set modeling with explicit recovery criteria
+\cite{zaheer2017,lee2019,wang2024graphpointset}.  The important step is to make
+the point set an approximate equivalence class of the graph.  Intuitively, the
+single point decoder recovers node content and the pair decoder recovers
+relations; when both decoded targets stay within the declared recovery error,
+the point set represents the original graph up to that approximation.  Under
+this view, graphs mapped to the same point set also share decoded content and
+relation targets up to the reconstruction error of the decoders.  This turns
+embedding quality into an auditable property attached to declared recovery
+targets, with downstream accuracy evaluated through a separate task reader.  The
 equivalence class view also gives the model a concrete interface.  Points keep
 node alignment, point pairs carry relation scores, invariant set readouts support
 graph level prediction, and set expansion supports graph growth.  It further
@@ -91,16 +95,17 @@ This row visualizes the main bottleneck described above: irreversible
 aggregation can discard structural information and amplify over smoothing as
 depth increases \cite{li2018deeper,oono2020}.  The lower pipeline represents the
 \method{} mechanism.  The input graph is first mapped by node feature encoding
-into a node embedding, the feature and structure deviation encoder writes
+into a content baseline, the feature and structure deviation encoder writes
 relational deviation into the node set, and the pair attention relation decoder
-performs graph recovery from point pairs.  The check mark in the graph recovery
-stage and the reversible embedding block indicate the intended modeling contract:
-after the graph is embedded as a set, the node set remains recoverable with
-respect to declared content and relation targets.  Consequently, the embedded
-node set becomes an approximate equivalence class of the original graph.  The
-resulting embedding matrix is consumed by downstream readers, while the same
-recoverable set object can also support generation through set expansion and
-pair attention recovery.
+performs graph recovery from point pairs.  A content decoder at the point level
+audits feature preservation, while the relation decoder audits link recovery.
+The check mark in the graph recovery stage and the reversible embedding block
+indicate the intended modeling contract: after the graph is embedded as a set,
+the node set remains recoverable with respect to declared content and relation
+targets.  Consequently, the embedded node set becomes an approximate equivalence
+class of the original graph.  The resulting embedding matrix is consumed by
+downstream readers, while the same recoverable set object can also support
+generation through set expansion and pair attention recovery.
 
 This design supplies both a modeling framework and an evaluation route.  On
 aligned prediction tasks, \method{} compares the learned point set and its
@@ -119,10 +124,10 @@ Our contributions are:
   graph embedding as a node aligned point set that functions as an approximate
   equivalence class with respect to declared adjacency and content recovery
   targets.
-  \item \textbf{Feature and structure deviation modeling.} We design an
-  attribute only content baseline, a feature and structure deviation encoder, a
-  pair attention relation decoder, and a content decoder at the point level to
-  realize recoverable graph to set modeling.
+  \item \textbf{Recoverable deviation architecture.} We design an attribute only
+  content baseline, a feature and structure deviation encoder, a pair attention
+  relation decoder, and a content decoder at the point level to realize
+  recoverable graph to set modeling.
   \item \textbf{WL collision diagnosis.} We evaluate recovery trained point sets
   on second order and third order WL collision graph pairs and show separation
   with the stated recovery criteria.
