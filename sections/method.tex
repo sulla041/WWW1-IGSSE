@@ -149,17 +149,17 @@ progress $u$.  It predicts a nonnegative scale $\sigma_{si}^{(m)}$, and training
 uses
 \begin{equation}
  \widetilde e_{si}^{(m)}=e_{si}^{(m)}+
- \sigma_{si}^{(m)}\max(0,1-u)\epsilon_{si}^{(m)},\qquad
- \epsilon_{si}^{(m)}\sim\mathcal N(0,1).
+ \sigma_{si}^{(m)}g(u)\epsilon_{si}^{(m)},\qquad
+ \epsilon_{si}^{(m)}\sim\mathcal P_{\epsilon}.
  \label{eq:noise}
 \end{equation}
 More specifically, the mean energy $\bar e_{si}=M^{-1}\sum_m e_{si}^{(m)}$
-and progress $u$ enter a two layer MLP:
+and progress $u$ enter a small MLP:
 \begin{align}
  \log\sigma_{si}&=\operatorname{MLP}_{\psi}([\bar e_{si},u])+
  \log\sigma_0,\\
  \sigma_{si}^{(m)}&=\min\{\operatorname{softplus}(
- \log\sigma_{si}^{(m)})+10^{-4},1.5\}.
+ \log\sigma_{si}^{(m)})+\epsilon_{\sigma},\sigma_{\max}\}.
  \label{eq:scale}
 \end{align}
 Each head therefore receives its own edge dependent perturbation scale.  The
@@ -238,18 +238,20 @@ $\overline{\mathbf k}_i^{(m)}=\mathbf h_i\mathbf U_K^{(m)}$.  For a candidate
 pair $(i,j)$,
 \begin{equation}
  \begin{aligned}
- s_{ij}&=\left(\operatorname{softplus}(\gamma)+0.5\right)
- \frac{1}{2M}\sum_m\left[
- \frac{(\overline{\mathbf q}_i^{(m)})^\top\overline{\mathbf k}_j^{(m)}}{\sqrt{d_h}}\right.\\
- &\hspace{18mm}\left.+
- \frac{(\overline{\mathbf q}_j^{(m)})^\top\overline{\mathbf k}_i^{(m)}}{\sqrt{d_h}}
- \right]+\beta,\qquad \widehat A_{ij}=\sigma(s_{ij}),\\
+ \eta_{ij}^{(m,\rightarrow)}&=
+ \frac{(\overline{\mathbf q}_i^{(m)})^\top\overline{\mathbf k}_j^{(m)}}{\sqrt{d_h}},
+ \qquad
+ \eta_{ij}^{(m,\leftarrow)}=
+ \frac{(\overline{\mathbf q}_j^{(m)})^\top\overline{\mathbf k}_i^{(m)}}{\sqrt{d_h}},\\
+ s_{ij}&=\left(\operatorname{softplus}(\gamma)+\gamma_0\right)
+ \operatorname{Mean}_{m,\leftrightarrow}(\eta_{ij}^{(m,\leftrightarrow)})
+ +\beta,\qquad \widehat A_{ij}=\sigma(s_{ij}),\\
  \mathcal L_{\mathrm{link}}&=
  \operatorname{BCEWithLogits}(s_{ij},A_{ij}).
  \end{aligned}
  \label{eq:pairattn}
 \end{equation}
-Here $\gamma$ and $\beta$ calibrate score scale and offset. Pair attention reads the
+Here $\gamma_0$, $\gamma$, and $\beta$ calibrate score scale and offset. Pair attention reads the
 final point set and is equivariant because point rows, queries, and keys permute
 together.
 
@@ -267,8 +269,9 @@ point. Their joint evaluation defines the direct reconstruction criteria.
 Materializing every nonedge is unnecessary and can dominate the objective on a
 sparse graph.  At each update, we first canonicalize an undirected edge as
 $s<i$, remove self loops, and draw
-$n_+=\min(\texttt{num\_pos},\max(n,64),|E^+|)$ positive pairs from the complete
-input graph.  We then draw an equal size negative set by uniformly proposing
+$n_+=\min(\texttt{num\_pos},b(n),|E^+|)$ positive pairs from the complete
+input graph, where $b(n)$ is a configurable graph size dependent lower budget.
+We then draw an equal size negative set by uniformly proposing
 $a\neq b$, canonicalizing $(a,b)$, and rejecting every pair in $E^+$.  The
 negative sampler stops after a fixed rejection budget, which makes the realized
 pair count explicit for dense graphs.  If edge dropout is active in the encoder,
@@ -288,8 +291,8 @@ predict.
 
 The content decoder is a layer normalized MLP applied at the point level over
 $\Hset_{\mathrm{dec}}$. Feature reconstruction measures information decodable
-from each final point. Its default form is a layer normalized two layer GELU MLP
-with output dimension equal to the target dimension. Edge attributes use the
+from each final point. Its configured form uses layer normalization and nonlinear
+hidden transformations, with output dimension equal to the target dimension. Edge attributes use the
 pair decoder $D_E(\mathbf h_i,\mathbf h_j)$ and an explicit edge attribute loss.
 
 \subsection{Training schedule and evaluation setup}
@@ -299,16 +302,16 @@ to conflate: a noisy encoder state during training, a clean deterministic state
 for validation and test, and a task label visible only on training examples.
 For a node task, the normalized progress is
 \begin{equation}
- u=\min\left(1,\frac{\mathrm{epoch}}{0.4\,\mathrm{epochs}}\right).
+ u=\min\left(u_{\max},\frac{\mathrm{epoch}}{\rho\,\mathrm{epochs}}\right).
  \label{eq:curriculum}
 \end{equation}
-The first 40\% of training therefore anneals Eq.~\eqref{eq:noise}; later
+The initial curriculum phase therefore anneals Eq.~\eqref{eq:noise}; later
 updates and all selection passes use unperturbed relation energies.  Gradient
 clipping bounds the joint update, and the validation metric chooses a checkpoint.
-The test split is read once from the selected checkpoint.  The default node task
-configuration uses dimension 64, three encoder layers, four heads, hidden width
-256, dropout 0.4, Adam at $10^{-3}$ with weight decay $5\times10^{-4}$, loss
-weights $(1.0,0.5,0.3,0.02)$, and up to 4096 positive and 4096 negative pairs.
+The test split is read once from the selected checkpoint.  Embedding dimension,
+encoder depth, head count, hidden width, dropout, optimizer settings, loss
+weights, and pair budgets are treated as experimental configuration and reported
+with the corresponding experiments.
 
 \paragraph{Pseudocode 2: one joint update.}
 \begin{quote}\small
@@ -321,8 +324,8 @@ compute $\mathcal L_{\mathrm{link}}$.\\
 compute $\mathcal L_{\mathrm{pred}}$ only on training labels.\\
 \textbf{4.} Add $\mathcal L_{\mathrm{alive}}$, backpropagate the weighted sum,
 clip gradients, and update encoder, pair attention, content decoder, and reader jointly.\\
-\textbf{5.} For selection and test, disable noise, set $u=1$, and evaluate the
-selected checkpoint.
+\textbf{5.} For selection and test, disable noise, set $u$ to its terminal
+progress value, and evaluate the selected checkpoint.
 \end{quote}
 
 The embedding probe measures whether a standardized structural feature predicts
@@ -342,8 +345,8 @@ training filter receive separate signals. $\mathcal L_{\mathrm{pred}}$ reads
 $y$ on the training mask; the remaining three terms use graph
 information.
 
-For an embedding only run, $\lambda_{pred}=0$ and the three representation terms
-train a point set using only graph recovery targets.  A task run restores
+For an embedding only run, the prediction term is disabled and the representation
+terms train a point set using only graph recovery targets.  A task run restores
 $\mathcal L_{pred}$ and retains the other terms.  This schedule makes two
 experimental modes explicit: representation training assesses the point set
 alone, and a joint task run assesses the representation and reader system while
@@ -479,11 +482,11 @@ Let $D$ be a deterministic decoder and let $d_T$ be a distance on the target
 space.  If $d_T(D(\operatorname{Enc}(G)),T(G))\leq\epsilon$ on the evaluation
 domain, then two graphs $G_1,G_2$ with the same representation satisfy
 \begin{equation}
- d_T(T(G_1),T(G_2))\leq 2\epsilon.
+ d_T(T(G_1),T(G_2))\leq \epsilon_{\triangle}.
  \label{eq:recoverability}
 \end{equation}
-Both targets lie within $\epsilon$ of the same decoded representation, so the
-result follows from the triangle inequality.  The statement explains why direct
+Both targets lie within the recovery tolerance of the same decoded
+representation, so the result follows from the triangle inequality.  The statement explains why direct
 recovery metrics matter: they bound how much input information a shared
 embedding can merge.  Exact inversion, additional edge attributes, and graph
 isomorphism each require their own target and evaluation metric.
@@ -496,7 +499,7 @@ Each task instance jointly optimizes
  \lambda_{\mathrm{alive}}\mathcal L_{\mathrm{alive}},
  \label{eq:objective}
 \end{equation}
-where $\mathcal L_{\mathrm{alive}}=-\log(\max(\overline\sigma,10^{-4}))$
+where $\mathcal L_{\mathrm{alive}}=-\log(\max(\overline\sigma,\epsilon_{\mathrm{alive}}))$
 keeps the learned training noise scale active.  The prediction loss only accesses
 training labels.  The recovery terms remain active in task mode, preserving an
 embedding floor while the readout learns the task.
