@@ -49,10 +49,11 @@ reconstruction is usually introduced through a separate autoencoding objective
   \includegraphics[width=\textwidth]{figures/igsse.drawio.pdf}
   \caption{Traditional message passing and \method{}. Top: message passing
   aggregates graph signals into an irreversible feature state, which can lose
-  global structure and amplify over smoothing \cite{li2018deeper,oono2020}.
-  Bottom: \method{} encodes node content, writes structural deviations, and uses
-  recovery decoders to make the embedded node set an approximate equivalence
-  class of the graph. Downstream tasks then operate on the recovered point set.}
+  global structure and limit downstream task performance
+  \cite{li2018deeper,oono2020}. Bottom: \method{} encodes node content, writes
+  structural deviations, and uses recovery decoders to make the embedded node
+  set an approximate equivalence class of the graph. Downstream tasks then model
+  the recovered point set efficiently.}
   \Description{A two-row conceptual comparison. The upper row is traditional
   message passing: input graph, message passing, feature aggregation, feature
   matrix, irreversible embedding, downstream tasks, and results. The lower row
@@ -78,7 +79,7 @@ difficult to expose directly as vectors, into a point set that neural
 architectures can process through point and set operations.  Link recovery,
 content recovery, and WL collision separation verify whether graph information
 has entered the point set; task metrics evaluate how well downstream readers use
-that point set.  Points keep node alignment, point pairs carry relation scores,
+that point set.  Points keep correspondence to nodes, point pairs carry relation scores,
 invariant set readouts support graph level prediction, and set expansion
 supports graph growth.
 
@@ -102,12 +103,12 @@ modeling then operates on the point set for element prediction, graph
 prediction, and autoregressive growth.
 
 This design supplies both a modeling framework and an evaluation route.  On
-aligned prediction tasks, \method{} compares the learned point set and its
+matched prediction tasks, \method{} compares the learned point set and its
 readers against graph learning baselines using the same split, input convention,
 and metric.  On recovery diagnostics, the decoders measure whether the
 representation preserves target links and content.  On WL collision graph
 pairs, recovery trained point sets are tested for separation on second order and
-third order WL collision cases.  On graph family growth, set expansion and pair
+third order WL collision cases.  On graph rule growth, set expansion and pair
 attention recovery are evaluated by terminal validity and embedding recovery
 quality.  These evidence streams target different aspects of the same object:
 the point set as an approximate equivalence class of the graph.
@@ -115,7 +116,8 @@ the point set as an approximate equivalence class of the graph.
 Our contributions are:
 \begin{enumerate}
   \item \textbf{Approximate equivalence class embedding.} We construct a graph
-  embedding route that maps an attributed graph to a node aligned point set,
+  embedding route that maps an attributed graph to a point set whose rows
+  correspond to graph nodes,
   using feature and link recoverability to guarantee its approximate equivalence
   to the graph.
   \item \textbf{Downstream task interfaces.} On top of the recovered point set,

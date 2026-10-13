@@ -280,7 +280,7 @@ interface choice.
 
 \paragraph{Output level choice.}
 For node classification and regression, the head is shared over point rows and
-preserves node alignment.  When a node needs task context, a set attention block
+preserves correspondence to nodes.  When a node needs task context, a set attention block
 updates the entire point set before the shared head reads its row.  For graph
 classification and regression, attention pooling or PMA maps a variable cardinality
 set to one invariant state. Mean pooling supplies an ablation reference for
@@ -293,7 +293,7 @@ $\widehat{\mathbf z}_i=R_{\mathrm{node}}(\mathbf h_i)$ and optimizes masked
 cross entropy.  Class weights and label smoothing, when configured, apply only
 to training nodes.  For node regression, the same row wise reader returns a
 scalar or vector and uses Huber or squared error; validation selects the target
-regression metric.  These readers retain row alignment, so an input permutation
+regression metric.  These readers retain row correspondence, so an input permutation
 permutes their outputs in the same way.
 
 For graph tasks, a learned query or attention weight reads a set state.  A PMA
@@ -312,14 +312,14 @@ same pair attention relation decoder to recover the expanded graph.  Formally,
  \qquad E_{s+1}=\{(i,j):\sigma(D_A(\mathbf h_i,\mathbf h_j))\geq\tau\}.
  \label{eq:grow}
 \end{equation}
-Training uses a graph family legality signal. At evaluation, fixed parameters
+Training uses a graph rule legality signal. At evaluation, fixed parameters
 produce free growth rollouts. The report includes terminal validity together with
 an embedding probe for the resulting relational state.
 
 \paragraph{State expansion, candidates, and live states.}
 At a growth depth $s$, the expansion operator proposes one or more candidate
 states from each live $\Hset_s$.  The relation decoder maps every candidate to
-an edge score representation, and the graph family predicate labels it legal or
+an edge score representation, and the graph rule predicate labels it legal or
 illegal during training.  Candidate states can be ranked either by the
 legality route (Legal) or by a learned continuation score (Net).  A live state
 capacity gives the candidate tree a fixed beam width; the capacity is
@@ -327,7 +327,7 @@ recorded as $\texttt{max\_live}$ in the generation setting.
 
 The construction and evaluation stages use separate signals.  Training
 uses legality supervision to make the set transition sensitive to the graph
-family.  Free growth evaluation fixes all learned parameters, disables a
+rules.  Free growth evaluation fixes all learned parameters, disables a
 step wise rule teacher, and evaluates terminal graphs at a larger target size.
 Thus, the final legality predicate measures an output property while Emb F1
 measures whether the resulting point state retains a usable relation geometry.
@@ -340,7 +340,7 @@ $c_s=\mathbb{I}[\operatorname{legal}(G_s)]$ be the family predicate.  A
 legality head can optimize a binary loss $\mathcal L_{\mathrm{legal}}$ during
 training, while the relation decoder continues to score the candidate graph.
 The full generator objective combines the set transition signal, pairwise
-recovery, and legality signal according to the active graph family setting.
+recovery, and legality signal according to the active graph rule setting.
 At test time, $c_s$ is never used as a step wise teacher.  It is evaluated only
 after the free growth rollout to compute Valid.  This train to test separation is
 what makes Legal and Net results evidence about a learned growth process rather
@@ -353,7 +353,7 @@ $\Hset_0$, target size, selection rule, and $\texttt{max\_live}$.\\
 \textbf{1.} Initialize the live state collection with $\Hset_0$.\\
 \textbf{2.} Until the target size, expand every live state with
 $\operatorname{StepSet}$ and decode candidate relation scores.\\
-\textbf{3.} During training, attach the graph family legality signal to each
+\textbf{3.} During training, attach the graph rule legality signal to each
 candidate. During evaluation, use the learned transition and selection rule.\\
 \textbf{4.} Rank candidates by the configured Legal or Net selection rule, retain at most
 $\texttt{max\_live}$ states, and continue with their point sets.\\
@@ -378,7 +378,7 @@ structure.  For a consistent node permutation $\mathbf P$,
 The attribute map is shared across rows, so it commutes with a node permutation.
 For a fixed target, permuting the incoming edge order permutes the softmax
 arguments and values while preserving their weighted sum.  Residual maps, layer
-normalization, and feedforward layers applied at the point level then preserve row alignment by
+normalization, and feedforward layers applied at the point level then preserve row correspondence by
 induction over encoder layers.  Pair attention receives both point rows and
 therefore transforms on both adjacency axes; attention pooling permutes weights
 and values together, leaving the sum unchanged.  The argument assumes that any
