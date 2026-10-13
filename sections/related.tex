@@ -12,7 +12,9 @@ closely tied to structural propagation.  \method{} separates the two roles: it
 forms global source states, then uses adjacency as a selective condition for
 structural writing.  The pair attention relation decoder recovers relations from
 the final point set, the content decoder recovers node content, and task readers
-consume the audited point set.
+consume the audited point set.  This design makes the hidden object compatible
+with neural set modeling while keeping a direct test of how much declared graph
+information it preserves.
 
 \paragraph{Structural encodings and representation audit.}
 Walk embeddings and positional encodings expose structural coordinates
@@ -23,8 +25,9 @@ Point Set maps graphs to a point set representation that preserves information
 and \method{} adds a more specific contract: an attribute only content baseline
 and a relation conditioned deviation form each point; the pair attention relation
 decoder and the content decoder audit the declared $\mathbf A$ and $\mathbf C$
-targets; point, set, and growth readers use the resulting object.  The
-distinction is methodological and defines the representation contract used
+targets; point, set, and growth readers use the resulting object.  The resulting
+point set is therefore treated as the modelable surrogate of the input graph,
+with recovery metrics testing the approximate equivalence relation used
 throughout the paper.
 
 \paragraph{WL collision resolution after recovery training.}
