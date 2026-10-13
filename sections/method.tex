@@ -22,8 +22,25 @@ for the final state verified by the two decoders, and reserve
 $\Hset_{\mathrm{task}}$ for a final state or jump concatenated reader input.
 This separation fixes the recovered representation object before task readout.
 
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/algorithm_core.drawio.pdf}
+  \caption{Core architecture of \method{}. The input graph is mapped to an
+  attribute baseline, structural deviations are written into the point set by
+  combining global attention states with adjacency guided writes, and recovery
+  decoders reconstruct node content and relations between points. The recovered
+  point set provides the approximate equivalence class used by feature
+  prediction, graph prediction, and autoregressive graph modeling.}
+  \Description{A system diagram of IGSSE. The graph input is encoded into point
+  states, structural information is written into the set representation, relation
+  and content decoders recover graph targets, and downstream heads use the
+  recovered set for prediction and graph growth.}
+  \label{fig:algorithm-core}
+\end{figure*}
+
 \paragraph{Core path correspondence.}
-The core computation first forms original coordinates $\mathbf h_{o,i}$. Global
+Figure~\ref{fig:algorithm-core} summarizes the computation graph used in this
+section. The core computation first forms original coordinates $\mathbf h_{o,i}$. Global
 Q/K/V attention evaluates an energy field over all source to target pairs and
 forms contextual source states. Incoming adjacency selects the source states
 written into target $i$; their weighted sum forms $\mathbf o_i$, which is fused
