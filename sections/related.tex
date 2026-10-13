@@ -1,50 +1,83 @@
 \section{Background and Positioning}
 \label{sec:related}
 
-\paragraph{From local message passing to relational writing.}
-Message passing constructs node states by repeatedly aggregating neighboring
-states \cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.
-APPNP, SGFormer, Polynormer, and graph state space models enlarge the receptive
-field through propagation, global interaction, or selective state updates
-\cite{gasteiger2019,wu2023sgformer,deng2024polynormer,wang2024graphmamba}.
-These methods broaden the interaction range while keeping feature aggregation
-closely tied to structural propagation.  \method{} separates the two roles: it
-forms global source states, then uses adjacency as a selective condition for
-structural writing.  The pair attention relation decoder recovers relations from
-the final point set, the content decoder recovers node content, and task readers
-consume the recovered point set.  This design makes the hidden object compatible
-with neural set modeling while keeping a direct test of how much graph
-information it preserves.
+\paragraph{Graph algorithms for representation learning.}
+Graph representation learning has developed from random walk embeddings and
+neighborhood aggregation to attention, propagation, and set based modeling.
+DeepWalk and node2vec learn proximity preserving node vectors from sampled graph
+walks \cite{perozzi2014,grover2016}.  Message passing neural networks then made
+local aggregation the dominant neural graph algorithm: graph convolution,
+inductive neighborhood sampling, graph attention, and expressive aggregation
+functions instantiate this template across semi supervised node prediction,
+inductive learning, and graph prediction tasks
+\cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.  APPNP separates
+prediction and propagation through personalized PageRank
+\cite{gasteiger2019}.  Graph Transformers introduce global attention with
+structural encodings, while GraphGPS combines local message passing with global
+attention in a scalable recipe \cite{ying2021graphormer,rampasek2022graphgps}.
+These algorithms define the current graph learning toolkit used by Web
+recommendation, citation analysis, program reasoning, electronic design, and
+scientific graph prediction.
 
-\paragraph{Structural encodings and representation guarantee.}
-Walk embeddings and positional encodings expose structural coordinates
-\cite{perozzi2014,grover2016,chen2026gfse}.  Graph autoencoders make adjacency
-reconstruction explicit \cite{kipf2016vgae,simonyan2018graphvae}.  Graph as
-Point Set maps graphs to a point set representation that preserves information
-\cite{wang2024graphpointset}.  These directions establish useful ingredients,
-and \method{} adds a more specific contract: an attribute only content baseline
-and a relation conditioned deviation form each point; the pair attention relation
-decoder and the content decoder recover the target $\mathbf A$ and $\mathbf C$
-targets; point, set, and growth readers use the resulting object.  The resulting
-point set is therefore treated as the modelable surrogate of the input graph,
-with recovery metrics testing the approximate equivalence relation used
-throughout the paper.
+\paragraph{Known limitations of graph algorithms.}
+The same algorithms face structural limits that are well documented.  Repeated
+neighborhood averaging can make node states increasingly similar, producing
+oversmoothing in deep graph neural networks \cite{li2018deeper,oono2020}.  The
+message passing template also has expressivity bounded by the first order
+Weisfeiler Leman test, while higher order variants increase the state dimension
+and computational cost \cite{xu2019,morris2019wl}.  Long range dependence
+creates a second bottleneck: information from many distant nodes must be
+compressed into fixed width states along narrow graph cuts, a phenomenon studied
+as oversquashing and linked to graph curvature and bottlenecks
+\cite{alon2021bottleneck,topping2022oversquashing}.  Graph Transformers reduce
+locality through global attention, yet standard attention has quadratic cost, and
+its structural knowledge often depends on positional or structural encodings
+\cite{ying2021graphormer,rampasek2022graphgps,shirzad2023exphormer}.  These
+limitations motivate representations that preserve graph content and relations
+before task readout and make the retained information directly recoverable.
 
-\paragraph{WL collision resolution after recovery training.}
-The Weisfeiler Leman hierarchy provides a combinatorial reference for graph
-distinguishability.  In particular, standard message passing GNNs relate to
-first order WL, and higher order variants connect to higher order WL tests
-\cite{morris2019wl}. Our diagnostic stratifies nonisomorphic graph pairs by
-their first order, second order, and third order WL outcomes,
-trains IGSSE recovery on each evaluated instance, and
-tests whether the reconstructed graphs remain separate under the same separation
-criteria. The BREC study reports recovery trained separation of
-the evaluated second order and third order WL collision pairs.
+\paragraph{Recent attempts to address these limits.}
+Recent work has explored several routes.  Sparse and hybrid Graph Transformers
+such as Exphormer and GraphGPS reduce the cost of global interactions by using
+expander based sparse attention, virtual global nodes, or a local and global
+layer composition \cite{rampasek2022graphgps,shirzad2023exphormer}.  Rewiring
+methods alter graph connectivity to improve information flow; locality aware
+rewiring explicitly balances reducing oversquashing, respecting graph locality,
+and preserving sparsity \cite{barbero2024locality}.  State space models for
+graphs, including Graph Mamba, use selective sequence modeling to capture long
+range dependencies on graph derived token orders \cite{wang2024graphmamba}.
+NeuralWalker combines random walk sequences with local message passing so that
+sequence models can carry long range graph information \cite{chen2025neuralwalker}.
+These advances improve interaction range and efficiency, and they still leave a
+central representation question: whether the learned state retains enough graph
+information to reconstruct the content and relations needed by downstream tasks.
+\method{} addresses this question by making recoverability the guarantee that
+the learned point set is an approximate equivalence class of the input graph.
 
-\paragraph{Generation requires a recoverable intermediate state.}
-Autoregressive models factor graph decisions in an ordering, while flow and
-diffusion approaches evolve alternative graph valued states
-\cite{you2018,liao2019,dai2020,shi2020,vignac2023,jo2022}.  IGSSE instead
-expands a point set and asks pair attention to recover the enlarged relation structure.
-Terminal validity and point set reconstruction quality are reported as complementary
-properties of the generated state.
+\paragraph{Equivalence classes and graph representation.}
+Equivalence classes provide a mathematical language for replacing an object by a
+representative that preserves the quantities of interest.  In graph learning,
+isomorphism partitions graphs into classes that share the same labeled structure,
+and graph canonization chooses a representative for such a class.  Recent work
+revisits canonization for graph representation learning and studies the
+expressivity and stability tradeoff induced by canonical representatives
+\cite{dong2024canonization}.  Graph as Point Set further shows that a graph can
+be transformed into a set of independent points in a way that preserves graph
+information for set encoders \cite{wang2024graphpointset}.  \method{} follows
+the same mathematical spirit while defining an approximate equivalence relation
+through recoverability: if the content and relation decoders recover the target
+$T(G)=(\mathbf A,\mathbf C)$ within the evaluation tolerance, the point set
+serves as the graph representative for downstream modeling.
+
+\paragraph{Algorithms for set modeling.}
+Set modeling supplies the neural interface used after this transformation.  Deep
+Sets characterizes permutation invariant set functions through a shared element
+map followed by invariant aggregation \cite{zaheer2017}.  Set Transformer
+extends this interface with attention over set elements and inducing point
+attention to reduce self attention cost \cite{lee2019}.  Graph as Point Set uses
+this foundation to process converted graph objects with set encoders
+\cite{wang2024graphpointset}.  \method{} builds on the same permutation
+principles while retaining row correspondence to graph nodes, decoding relations
+from point pairs, and using feature and link recoverability to guarantee the
+approximate equivalence that downstream prediction and autoregressive graph
+modeling consume.
