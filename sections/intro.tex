@@ -49,15 +49,17 @@ reconstruction is usually introduced through a separate autoencoding objective
   irreversible embedding before downstream tasks, a process associated with
   information loss and over smoothing bottlenecks
   \cite{li2018deeper,oono2020}. Bottom: the \method{} pipeline maps the graph
-  through node feature encoding, node embedding via FSDE, graph recovery via
-  PAIR ATTN, and reversible embedding, transforming the embedded node set into an
+  through node feature encoding, node embedding with a feature and structure
+  deviation encoder, relation recovery with a pair attention relation decoder,
+  and reversible embedding, transforming the embedded node set into an
   approximate equivalence class of the original graph for downstream tasks.}
   \Description{A two-row conceptual comparison. The upper row is traditional
   message passing: input graph, message passing, feature aggregation, feature
   matrix, irreversible embedding, downstream tasks, and results. The lower row
-  is IGSSE: input graph, node feature encode, node embedding through FSDE, graph
-  recover through PAIR ATTN, reversible embedding, embedding matrix, downstream
-  tasks, and results.}
+  is IGSSE: input graph, node feature encoding, node embedding with a feature
+  and structure deviation encoder, graph recovery with a pair attention relation
+  decoder, reversible embedding, embedding matrix, downstream tasks, and
+  results.}
   \label{fig:mp-igsse}
 \end{figure*}
 
