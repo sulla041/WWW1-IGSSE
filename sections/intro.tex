@@ -43,18 +43,21 @@ reconstruction is usually introduced through a separate autoencoding objective
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/igsse.drawio.pdf}
-  \caption{Message passing and \method{}. The upper pipeline maps an input graph
-  through message passing, feature aggregation, a feature matrix, an
-  irreversible embedding, downstream tasks, and final results.  The lower
-  pipeline maps the input graph through node feature encoding, node embedding,
-  graph recovery, a reversible embedding, an embedding matrix, downstream tasks,
-  and results.  In \method{}, the embedded node set becomes an approximate
-  equivalence class of the graph.}
-  \Description{A two-row comparison. The upper row is message passing: input
-  graph, message passing, feature aggregation, feature matrix, irreversible
-  embedding, downstream tasks, and results. The lower row is IGSSE: input graph,
-  node feature encode, node embedding, graph recover, reversible embedding,
-  embedding matrix, downstream tasks, and results.}
+  \caption{Conceptual comparison between traditional message passing and
+  \method{}. Top: the conventional message passing pipeline maps an input graph
+  through message passing, feature aggregation, a feature matrix, and an
+  irreversible embedding before downstream tasks, a process associated with
+  information loss and over smoothing bottlenecks
+  \cite{li2018deeper,oono2020}. Bottom: the \method{} pipeline maps the graph
+  through node feature encoding, node embedding via FSDE, graph recovery via
+  PAIR ATTN, and reversible embedding, transforming the embedded node set into an
+  approximate equivalence class of the original graph for downstream tasks.}
+  \Description{A two-row conceptual comparison. The upper row is traditional
+  message passing: input graph, message passing, feature aggregation, feature
+  matrix, irreversible embedding, downstream tasks, and results. The lower row
+  is IGSSE: input graph, node feature encode, node embedding through FSDE, graph
+  recover through PAIR ATTN, reversible embedding, embedding matrix, downstream
+  tasks, and results.}
   \label{fig:mp-igsse}
 \end{figure*}
 
@@ -78,26 +81,24 @@ evaluate the reader built on top of it.
 
 We propose \method{} (Invertible Graph Set Space Embedding), a recoverable graph
 set space embedding that implements this approximate equivalence class view.
-Figure~\ref{fig:mp-igsse} contrasts two representation pipelines.  The message
-passing row starts from an input graph, passes through message passing and
-feature aggregation, forms a feature matrix, and then uses an irreversible
-embedding for downstream tasks.  The \method{} row starts from the same graph
-object and maps it through node feature encoding into a node embedding.  A
-feature and structure deviation encoder then writes structural offsets into this
-node embedding, and a pair attention relation decoder performs graph recovery
-from point pairs.  The recovered graph targets define the reversible embedding
-shown in the figure: the embedding matrix is meaningful because the node set can
-be decoded back to declared content and relation targets.  This point set is
-therefore designed as the common object for every later operation.  It stores
-content information in individual points, stores relation evidence in point
-pairs, and exposes a set interface for permutation invariant graph reasoning
-\cite{zaheer2017,lee2019}.  The same point set is consumed by task readers: node
-level heads read rows, edge level readers read point pairs, and graph level
-readers use invariant set pooling.  For generation, a set expansion module adds
-new points to the current set, and the same pair attention relation decoder
-recovers the expanded graph.  The resulting interface connects graph prediction,
-graph recovery, and legality guided autoregressive growth through one
-representation object.
+Figure~\ref{fig:mp-igsse} organizes the comparison as two pipelines.  The upper
+pipeline represents the conventional message passing paradigm: an input graph is
+processed by message passing, feature aggregation, and a feature matrix, then the
+representation enters an irreversible embedding stage before downstream tasks.
+This row visualizes the main bottleneck described above: irreversible
+aggregation can discard structural information and amplify over smoothing as
+depth increases \cite{li2018deeper,oono2020}.  The lower pipeline represents the
+\method{} mechanism.  The input graph is first mapped by node feature encoding
+into a node embedding, the feature and structure deviation encoder writes
+relational deviation into the node set, and the pair attention relation decoder
+performs graph recovery from point pairs.  The check mark in the graph recovery
+stage and the reversible embedding block indicate the intended modeling contract:
+after the graph is embedded as a set, the node set remains recoverable with
+respect to declared content and relation targets.  Consequently, the embedded
+node set becomes an approximate equivalence class of the original graph.  The
+resulting embedding matrix is consumed by downstream readers, while the same
+recoverable set object can also support generation through set expansion and
+pair attention recovery.
 
 This design supplies both a modeling framework and an evaluation route.  On
 aligned prediction tasks, \method{} compares the learned point set and its
