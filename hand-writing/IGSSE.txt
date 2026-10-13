@@ -22,7 +22,7 @@ IGSSE 的算法主线由三部分组成。第一，嵌入阶段把属性图映�
 
 结构偏差 $\mathbf o_i$。该偏差是写入原始坐标的关系修正。对每个目标，在 $N_A(i)$ 上的 softmax 给出 $\alpha_{si}^{(m)}$，投影后的多头和定义 $\mathbf o_i^{(\ell)}$。该公式是嵌入部分第二条关键公式，表示邻接选择的全局源状态如何被写入点集。
 
-融合为 $\mathbf h_i$。点状态由原始坐标和结构偏差相加得到，随后经过归一化和前馈映射产生 $\mathbf h_i^{(\ell)}$。该融合公式是嵌入部分第三条关键公式。经过 $L$ 层后，$\Hset_{\mathrm{dec}}=\{\mathbf h_i^{(L)}\}_{i=1}^{n}$ 用于恢复；节点任务可以使用该最终状态，也可以使用跳连拼接状态。
+融合为 $\mathbf h_i$。点状态由原始坐标和结构偏差相加得到，随后经过归一化和前馈映射产生 $\mathbf h_i^{(\ell)}$。正文只保留这个融合核心公式。经过 $L$ 层后，$\Hset_{\mathrm{dec}}=\{\mathbf h_i^{(L)}\}_{i=1}^{n}$ 用于恢复；节点任务可以使用该最终状态，也可以使用各层状态的跳连拼接。
 
 算法 1：点集嵌入。表格形式如下：Input 为 $\mathbf X,E_{\mathrm{enc}},u$；Output 为 $\Hset_{\mathrm{dec}},\Hset_{\mathrm{task}},\overline\sigma$；Init 执行 $\mathbf h_{o,i}^{(0)}\leftarrow\operatorname{Enc}_X(\mathbf x_i)$；for $\ell$ 执行 $(\mathbf q_i,\mathbf k_i,\mathbf v_i)\leftarrow\operatorname{Proj}(\mathbf h_{o,i}^{(\ell)})$、$e_{si}\leftarrow\operatorname{Energy}(\mathbf q_s,\mathbf k_i)$、$\mathbf u_s\leftarrow\operatorname{GlobalAttn}(e_{s:},\mathbf v)$、$\alpha_{si}\leftarrow\operatorname{Softmax}_{s\in N_A(i)}(e_{si})$、$\mathbf o_i^{(\ell)}\leftarrow\operatorname{Write}(\alpha_{:i},\mathbf u)$；if train 执行 $e_{si}\leftarrow e_{si}+\sigma_{si}g(u)\epsilon_{si}$；随后执行 $\mathbf r_i^{(\ell)}\leftarrow\mathbf h_{o,i}^{(\ell)}+\mathbf o_i^{(\ell)}$ 和 $\mathbf h_i^{(\ell)}\leftarrow\operatorname{FFN}(\operatorname{LN}(\mathbf r_i^{(\ell)}))$；return $\Hset_{\mathrm{dec}},\Hset_{\mathrm{task}},\overline\sigma$。
 
@@ -30,9 +30,9 @@ IGSSE 的算法主线由三部分组成。第一，嵌入阶段把属性图映�
 
 图恢复以 $\Hset$ 为建模对象。关系解码器从 $\Hset$ 中读取两个点，恢复二者之间是否存在图关系；内容解码器从 $\Hset$ 中读取一个点，恢复对应内容目标。二者共同使学习到的点集在所选恢复目标下成为图的近似等价类。
 
-成对注意力关系解码器把最终点行投影为每个头对应的 query 和 key，对缩放内积打分，对无向关系的两个方向做对称化，并应用可学习尺度和偏置。对候选点对 $(i,j)$，一个关键公式同时给出得分、预测邻接和链接损失。成对注意力读取最终点集；由于点行、query 和 key 会一起置换，所以该算子保持等变性。
+成对注意力关系解码器把最终点行投影为每个头对应的 query 和 key，对缩放内积打分，对无向关系的两个方向做对称化，并应用可学习尺度和偏置。对候选点对 $(i,j)$，正文只保留得分和邻接预测的核心公式；链接损失用文字说明。成对注意力读取最终点集；由于点行、query 和 key 会一起置换，所以该算子保持等变性。
 
-伴随的点级内容解码器给出内容恢复公式。两个损失测量互补量：成对注意力评估点对的关系几何，$D_C$ 评估可从单个最终点解码的内容。二者的联合评估定义直接重构标准。
+伴随的点级内容解码器只保留内容预测公式，内容损失用文字说明。两个损失测量互补量：成对注意力评估点对的关系几何，$D_C$ 评估可从单个最终点解码的内容。二者的联合评估定义直接重构标准。
 
 成对采样与目标卫生。物化每个非边没有必要，并且会在稀疏图上支配目标函数。每次更新时，首先将无向边规范为 $s<i$，移除自环，并从完整输入图中抽取正样本。随后通过均匀提出 $a\neq b$、规范化 $(a,b)$ 并拒绝 $E^+$ 中的点对来抽取等量负样本。负采样器在固定拒绝预算后停止，使稠密图的实际点对数量保持显式。如果编码器中启用边 dropout，它只影响计算图 $E_{\mathrm{enc}}$；链接正样本仍来自未 dropout 的输入图。这一区分把输入扰动和重构目标变化分开。成对注意力因此学习在扰动下构造的点集是否仍能区分目标关系。
 

@@ -128,9 +128,7 @@ The structural deviation is the relation dependent correction written to the
 original coordinate.  For each target, a softmax over $N_A(i)$ gives
 $\alpha_{si}^{(m)}$.  The projected multihead sum defines
 \begin{equation}
- \mathbf o_i^{(\ell)}=\mathbf W_O\left\Vert_m
- \sum_{s\in N_A(i)}\alpha_{si}^{(m)}\mathbf u_s^{(m)}
- \right\Vert.
+ \mathbf o_i^{(\ell)}=\mathbf W_O\Vert_m\sum_{s\in N_A(i)}\alpha_{si}^{(m)}\mathbf u_s^{(m)}.
  \label{eq:deviation}
 \end{equation}
 In the embedding path, this term summarizes relation selected global source
@@ -139,18 +137,13 @@ coordinate and the graph conditioned point.
 
 \paragraph{Fusion into $\mathbf h_i$.}
 The point state is produced by adding the original coordinate and the structural
-deviation, then applying normalization and a feedforward map:
-\begin{align}
- \mathbf r_i^{(\ell)}&=\mathbf h_{o,i}^{(\ell)}+
- \operatorname{Dropout}(\mathbf o_i^{(\ell)}),\\
- \widehat{\mathbf h}_i^{(\ell)}&=\operatorname{LN}(\mathbf r_i^{(\ell)}),\\
- \mathbf h_i^{(\ell)}&=\widehat{\mathbf h}_i^{(\ell)}+
- \operatorname{FFN}(\widehat{\mathbf h}_i^{(\ell)}).
+deviation, then applying a normalized feedforward update $\Phi$:
+\begin{equation}
+ \mathbf h_i^{(\ell)}=\Phi\!\left(\mathbf h_{o,i}^{(\ell)}+\operatorname{Dropout}(\mathbf o_i^{(\ell)})\right).
  \label{eq:fusion}
-\end{align}
+\end{equation}
 After $L$ layers, $\Hset_{\mathrm{dec}}=\mathbf H^{(L)}$ is used for recovery.
-Node tasks may use this final state or a jump concatenated state
-$\mathbf h_{o,i}^{(0)}\Vert\mathbf h_i^{(1)}\Vert\cdots\Vert\mathbf h_i^{(L)}$.
+Node tasks may use this final state or a jump concatenation of layer states.
 
 \paragraph{Algorithm 1: point set embedding.}
 \begin{quote}\small
@@ -191,33 +184,23 @@ directions for an undirected relation, and applies a learned scale and bias.  It
 projections are independent of the encoder:
 $\overline{\mathbf q}_i^{(m)}=\mathbf h_i\mathbf U_Q^{(m)}$ and
 $\overline{\mathbf k}_i^{(m)}=\mathbf h_i\mathbf U_K^{(m)}$.  For a candidate
-pair $(i,j)$,
+pair $(i,j)$, the core prediction is
 \begin{equation}
- \begin{aligned}
- \eta_{ij}^{(m,\rightarrow)}&=
- \frac{(\overline{\mathbf q}_i^{(m)})^\top\overline{\mathbf k}_j^{(m)}}{\sqrt{d_h}},
- \qquad
- \eta_{ij}^{(m,\leftarrow)}=
- \frac{(\overline{\mathbf q}_j^{(m)})^\top\overline{\mathbf k}_i^{(m)}}{\sqrt{d_h}},\\
- s_{ij}&=\left(\operatorname{softplus}(\gamma)+\gamma_0\right)
- \operatorname{Mean}_{m,\leftrightarrow}(\eta_{ij}^{(m,\leftrightarrow)})
- +\beta,\qquad \widehat A_{ij}=\sigma(s_{ij}),\\
- \mathcal L_{\mathrm{link}}&=
- \operatorname{BCEWithLogits}(s_{ij},A_{ij}).
- \end{aligned}
+ s_{ij}=\rho\,\operatorname{Mean}_{m,\leftrightarrow}\!\left(\frac{(\overline{\mathbf q}_i^{(m)})^\top\overline{\mathbf k}_j^{(m)}}{\sqrt{d_h}}\right)+\beta,\quad \widehat A_{ij}=\sigma(s_{ij}).
  \label{eq:pairattn}
 \end{equation}
-Here $\gamma_0$, $\gamma$, and $\beta$ calibrate score scale and offset. Pair attention reads the
-final point set and is equivariant because point rows, queries, and keys permute
-together.
+Here $\rho$ and $\beta$ calibrate score scale and offset, the bidirectional mean
+symmetrizes undirected relations, and the link loss applies binary cross entropy
+to $s_{ij}$ and $A_{ij}$. Pair attention reads the final point set and is
+equivariant because point rows, queries, and keys permute together.
 
 The accompanying content decoder at the point level is
 \begin{equation}
- \widehat{\mathbf C}=D_C(\Hset_{\mathrm{dec}}),\qquad
- \mathcal L_{\mathrm{feat}}=\operatorname{MSE}(\widehat{\mathbf C},\mathbf C).
+ \widehat{\mathbf C}=D_C(\Hset_{\mathrm{dec}}).
  \label{eq:feat}
 \end{equation}
-The two losses measure complementary quantities: pair attention evaluates relation
+The content loss uses mean squared error between $\widehat{\mathbf C}$ and
+$\mathbf C$. The two losses measure complementary quantities: pair attention evaluates relation
 geometry of point pairs, and $D_C$ evaluates content decodable from one final
 point. Their joint evaluation defines the direct reconstruction criteria.
 
@@ -284,10 +267,7 @@ information.
 
 Each task instance jointly optimizes
 \begin{equation}
- \mathcal L=\lambda_{\mathrm{pred}}\mathcal L_{\mathrm{pred}}+
- \lambda_{\mathrm{link}}\mathcal L_{\mathrm{link}}+
- \lambda_{\mathrm{feat}}\mathcal L_{\mathrm{feat}}+
- \lambda_{\mathrm{alive}}\mathcal L_{\mathrm{alive}},
+ \mathcal L=\sum_{t\in\{\mathrm{pred},\mathrm{link},\mathrm{feat},\mathrm{alive}\}}\lambda_t\mathcal L_t,
  \label{eq:objective}
 \end{equation}
 where $\mathcal L_{\mathrm{alive}}=-\log(\max(\overline\sigma,\epsilon_{\mathrm{alive}}))$
@@ -373,14 +353,12 @@ validity and relational embedding probes.
 Shared point maps and relation scoring preserve the intended permutation
 structure.  For a consistent node permutation $\mathbf P$,
 \begin{equation}
- \begin{aligned}
- \operatorname{Enc}(\mathbf P\mathbf A\mathbf P^\top,\mathbf P\mathbf X)
- &=\mathbf P\operatorname{Enc}(\mathbf A,\mathbf X),\\
- D_A(\mathbf P\Hset)&=\mathbf P D_A(\Hset)\mathbf P^\top,\\
- \operatorname{Pool}(\mathbf P\Hset)&=\operatorname{Pool}(\Hset).
- \end{aligned}
+ F(\mathbf P G)=\mathbf P F(G),\qquad R(\mathbf P\Hset)=R(\Hset).
  \label{eq:symmetry}
 \end{equation}
+\noindent Here $F$ denotes point-set embedding and $R$ denotes a permutation
+invariant graph reader; the relation decoder follows the same simultaneous row
+and column permutation on adjacency scores.
 \paragraph{Why the symmetry holds.}
 The attribute map is shared across rows, so it commutes with a node permutation.
 For a fixed target, permuting the incoming edge order permutes the softmax
