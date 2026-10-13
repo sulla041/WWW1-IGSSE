@@ -1,12 +1,13 @@
 Graphs are a natural representation for complex relations and rich information
 on the Web, supporting recommendation, citation analysis, collaboration
 modeling, program reasoning, electronic design, molecular prediction, and social
-network analysis.  Web graphs combine heterogeneous node content with sparse,
-nonlocal, and evolving relations, so effective graph modeling requires
-continuous representations that support prediction while preserving recoverable
-content and topology.  The prevailing graph neural network paradigm propagates
-messages along observed edges and stacks neighborhood aggregation layers to
-produce node or graph states.  However, oversmoothing, Weisfeiler Leman
+network analysis.  Web graphs combine heterogeneous node content with global
+structural regularities that must be captured across relations, so effective
+graph modeling requires continuous representations that support prediction while
+preserving recoverable content and topology.  The prevailing graph neural
+network paradigm propagates messages along observed edges and stacks
+neighborhood aggregation layers to produce node or graph states.  However,
+oversmoothing, Weisfeiler Leman
 expressivity limits, and structural compression can weaken the recoverability of
 graph information in the learned hidden state.  We propose \method{}
 (Invertible Graph Set Space Embedding), a recoverable set space embedding for
@@ -26,6 +27,6 @@ Across ten aligned prediction comparisons, \method{} exceeds every listed graph
 learning baseline.  A WL collision diagnostic shows that reconstruction trained
 point sets separate the evaluated second order and third order WL collision
 graph pairs with the stated recovery criteria, and legality guided
-autoregressive generation shows the framework's ability to model latent graph
+autoregressive generation shows the framework's ability to follow explicit graph
 family rules.  These results present \method{} as a unified representation
 framework for graph prediction, recovery, and growth.
