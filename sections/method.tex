@@ -154,6 +154,9 @@ $\mathbf h_{o,i}^{(0)}\Vert\mathbf h_i^{(1)}\Vert\cdots\Vert\mathbf h_i^{(L)}$.
 
 \paragraph{Algorithm 1: point set embedding.}
 \begin{quote}\small
+\setlength{\fboxsep}{5pt}%
+\noindent\fbox{%
+\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
 \begin{tabular}{@{}p{0.19\linewidth}@{\hspace{0.5em}}p{0.72\linewidth}@{}}
 \textbf{Input} & $\mathbf X$, $E_{\mathrm{enc}}$, $u$ \\
 \textbf{Output} & $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, $\overline\sigma$ \\
@@ -171,6 +174,7 @@ $\mathbf h_{o,i}^{(0)}\Vert\mathbf h_i^{(1)}\Vert\cdots\Vert\mathbf h_i^{(L)}$.
 \operatorname{FFN}(\operatorname{LN}(\mathbf r_i^{(\ell)}))$ \\
 \textbf{return} & $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, $\overline\sigma$ \\
 \end{tabular}
+\end{minipage}}
 \end{quote}
 
 \subsection{Graph recovery from the point set}
@@ -317,6 +321,9 @@ losses remain attached to $\Hset$.
 
 \paragraph{Algorithm 2: downstream prediction over $\Hset$.}
 \begin{quote}\small
+\setlength{\fboxsep}{5pt}%
+\noindent\fbox{%
+\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
 \begin{tabular}{@{}p{0.19\linewidth}@{\hspace{0.5em}}p{0.72\linewidth}@{}}
 \textbf{Input} & $\Hset_{\mathrm{task}}$, task type, reader $R$, labels \\
 \textbf{if node} & $\widehat{\mathbf y}_i\leftarrow
@@ -327,6 +334,7 @@ R_{\mathrm{node}}(\mathbf h_i)$ \\
 \operatorname{TaskLoss}(\widehat{\mathbf y},y)$ on training labels \\
 \textbf{return} & prediction scores, $\mathcal L_{\mathrm{pred}}$ \\
 \end{tabular}
+\end{minipage}}
 \end{quote}
 
 For autoregressive graph modeling, the expansion operator maps the current set to
@@ -342,6 +350,9 @@ validity and relational embedding probes.
 
 \paragraph{Algorithm 3: autoregressive graph modeling.}
 \begin{quote}\small
+\setlength{\fboxsep}{5pt}%
+\noindent\fbox{%
+\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
 \begin{tabular}{@{}p{0.19\linewidth}@{\hspace{0.5em}}p{0.72\linewidth}@{}}
 \textbf{Input} & $\Hset_0$, $\operatorname{StepSet}$, $D_A$, target size, selector \\
 \textbf{Init} & $\mathcal B\leftarrow\{\Hset_0\}$ \\
@@ -354,6 +365,7 @@ validity and relational embedding probes.
 \textbf{update} & $\mathcal B\leftarrow\operatorname{Select}(\mathcal C)$ \\
 \textbf{return} & terminal graphs, validity, relation probe metrics \\
 \end{tabular}
+\end{minipage}}
 \end{quote}
 
 \subsection{Symmetry and objective}
