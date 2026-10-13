@@ -17,13 +17,10 @@ another layer of difficulty: their content is heterogeneous, their relations are
 organized by global structural regularities that must be captured across
 relations, and their downstream tasks may change as the graph evolves
 \cite{sen2008,yang2016,shchur2018}.  A useful graph representation must
-therefore convert structure into a continuous object while preserving the
-information that makes the graph itself distinct.  This requirement is stronger
-than fitting a task label: Web graph systems need embeddings that support
-prediction, fit the hidden spaces used by neural networks, and maintain
-recoverable content and relation targets.  In this sense, recoverability is the
-mechanism that turns a graph embedding from a task state into an information
-preserving surrogate for the original graph.
+therefore embed as much graph information as possible into neural hidden spaces.
+Recoverability supplies the technical audit for this requirement: if the
+embedded object can reconstruct the graph targets needed by the task, it can act
+as an approximate equivalence class of the original graph.
 
 The dominant graph neural network paradigm builds node states by repeated
 message passing and neighborhood aggregation
@@ -32,17 +29,15 @@ has powered many graph learning systems, yet its computation pattern introduces
 three structural bottlenecks.  First, oversmoothing drives node states toward a
 small set of similar vectors as depth increases, weakening the distinction
 between entities that need separate decisions \cite{li2018deeper,oono2020}.
-Second, the Weisfeiler Leman
-hierarchy gives a precise expressivity ceiling: standard neighborhood
-aggregation follows the discrimination power of first order WL, while higher
-order variants require heavier state spaces and still inherit predefined
-combinatorial tests \cite{xu2019,morris2019wl}.  Third, structural compression
-occurs because the embedding process usually does not make invertibility a
-first class objective: local neighborhoods, long paths, and global motifs are
-repeatedly folded into a task hidden state.  Capturing such global patterns
-often requires multiple message passing layers, which further amplifies
-oversmoothing.  The resulting vector can be predictive for a selected label
-while losing information needed to reconstruct declared graph content and
+Second, the Weisfeiler Leman hierarchy gives a precise expressivity ceiling:
+standard neighborhood aggregation follows the discrimination power of first
+order WL, while higher order variants require heavier state spaces and remain
+tied to fixed combinatorial tests \cite{xu2019,morris2019wl}.  Third, local
+information has a natural priority in message passing: local neighborhoods, long
+paths, and global motifs are folded into the same task state, while global
+patterns usually require more layers and thereby intensify oversmoothing
+\cite{li2018deeper,oono2020}.  The resulting vector can be predictive for a
+selected label while losing information needed to reconstruct graph content and
 relations.  In this sense, the standard message passing pipeline acts as a lossy
 structural compressor: it updates node vectors through observed edges, then
 supervises the final state by the selected task objective; explicit graph
@@ -52,18 +47,12 @@ reconstruction is usually introduced through a separate autoencoding objective
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/igsse.drawio.pdf}
-  \caption{Conceptual comparison between traditional message passing and
-  \method{}. Top: the conventional message passing pipeline maps an input graph
-  through message passing, feature aggregation, a feature matrix, and an
-  irreversible embedding before downstream tasks, a process associated with
-  global structural information loss and over smoothing bottlenecks
-  \cite{li2018deeper,oono2020}. Bottom: the \method{} pipeline maps the graph
-  through node feature encoding, node embedding with a feature and structure
-  deviation encoder, relation recovery with a pair attention relation decoder,
-  and reversible embedding, transforming the embedded node set into an
-  approximate equivalence class of the original graph.  This conversion turns
-  graph modeling into set modeling for downstream tasks while preserving a
-  direct recovery audit.}
+  \caption{Traditional message passing and \method{}. Top: message passing
+  aggregates graph signals into an irreversible feature state, which can lose
+  global structure and amplify over smoothing \cite{li2018deeper,oono2020}.
+  Bottom: \method{} encodes node content, writes structural deviations, and uses
+  recovery decoders to make the embedded node set an approximate equivalence
+  class of the graph. Downstream tasks then operate on the recovered point set.}
   \Description{A two-row conceptual comparison. The upper row is traditional
   message passing: input graph, message passing, feature aggregation, feature
   matrix, irreversible embedding, downstream tasks, and results. The lower row
@@ -75,24 +64,23 @@ reconstruction is usually introduced through a separate autoencoding objective
 \end{figure*}
 
 The core challenge is to define a graph representation that is convenient for
-neural modeling and still carries enough graph information for recovery.  If an
-attributed graph is mapped to a set of vectors that preserves declared content
-and adjacency targets, graph modeling can be studied through set modeling with
-explicit recovery criteria \cite{zaheer2017,lee2019,wang2024graphpointset}.  The
+neural modeling and still carries enough graph information for downstream tasks.
+If an attributed graph is mapped to a set of vectors that preserves content and
+adjacency targets, graph modeling can be studied through set modeling with
+explicit recovery audits \cite{zaheer2017,lee2019,wang2024graphpointset}.  The
 important step is to make the point set an approximate equivalence class of the
-graph.  Intuitively, attention based decoders give this equivalence class an
-operational meaning: a single point decoder recovers node content, and a pair
-decoder recovers relations.  When both decoded targets satisfy the declared
-recovery criteria, the point set represents the original graph up to that
-approximation.  This transformation converts a graph, whose relational structure
-is difficult to expose directly as vectors, into a point set that neural
-architectures can process through point and set operations.  At the same time,
-embedding quality becomes auditable: link recovery, content recovery, and WL
-collision separation test whether graph information has actually entered the
-point set, while task metrics evaluate the reader built on top of it.  The
-equivalence class view also gives the model a concrete interface.  Points keep
-node alignment, point pairs carry relation scores, invariant set readouts support
-graph level prediction, and set expansion supports graph growth.
+graph.  Attention based decoders give this equivalence class an operational
+meaning: a single point decoder recovers node content, and a pair decoder
+recovers relations.  Once these decoders verify the content and relation
+targets, the point set can stand in for the original graph in downstream
+modeling.  This transformation converts a graph, whose relational structure is
+difficult to expose directly as vectors, into a point set that neural
+architectures can process through point and set operations.  Link recovery,
+content recovery, and WL collision separation audit whether graph information
+has entered the point set; task metrics evaluate how well downstream readers use
+that point set.  Points keep node alignment, point pairs carry relation scores,
+invariant set readouts support graph level prediction, and set expansion
+supports graph growth.
 
 We propose \method{} (Invertible Graph Set Space Embedding), a recoverable graph
 set space embedding that implements this approximate equivalence class view.
@@ -104,25 +92,20 @@ This row visualizes the main bottleneck described above: irreversible
 aggregation can discard global structural information and amplify over smoothing
 as depth increases \cite{li2018deeper,oono2020}.  The lower pipeline represents
 the \method{} mechanism.  The input graph is first mapped by node feature
-encoding into a content baseline.  The feature and structure deviation encoder
-then writes relation dependent corrections into the node set by combining local
-neighborhoods, global attention states, and adjacency based writing.  On the
-recovery side, a content decoder audits feature preservation from individual
-points, and a pair attention relation decoder audits link recovery from point
-pairs.  The check mark in the graph recovery stage and the reversible embedding
-block indicate the intended modeling contract: after the graph is embedded as a
-set, the node set remains recoverable with respect to declared content and
-relation targets.  Consequently, the embedded node set becomes an approximate
-equivalence class of the original graph.  The resulting embedding matrix is
-consumed by downstream readers for element prediction and graph prediction, while
-the same recoverable set object also supports autoregressive growth through set
-expansion and pair attention recovery.
+encoding into an original point set without structural deviation.  The feature
+and structure deviation encoder then combines local neighborhoods, global
+attention states, and adjacency based writing to produce a point set carrying
+global structural deviations.  Content and relation decoders audit whether this
+point set preserves node features and links; after this audit, the point set is
+used as an approximate equivalence class of the original graph.  Downstream
+modeling then operates on the point set for element prediction, graph
+prediction, and autoregressive growth.
 
 This design supplies both a modeling framework and an evaluation route.  On
 aligned prediction tasks, \method{} compares the learned point set and its
 readers against graph learning baselines using the same split, input convention,
 and metric.  On recovery diagnostics, the decoders measure whether the
-representation preserves declared links and content.  On WL collision graph
+representation preserves target links and content.  On WL collision graph
 pairs, recovery trained point sets are tested for separation on second order and
 third order WL collision cases.  On graph family growth, set expansion and pair
 attention recovery are evaluated by terminal validity and embedding recovery
@@ -133,15 +116,15 @@ Our contributions are:
 \begin{enumerate}
   \item \textbf{Approximate equivalence class embedding.} We construct a graph
   embedding route that maps an attributed graph to a node aligned point set,
-  making the embedded object an approximate equivalence class with respect to
-  declared adjacency and content recovery targets.
-  \item \textbf{Attention based task interfaces.} On top of the recovered point
-  set, we design attention based readers for element feature prediction, graph
-  property prediction, and autoregressive graph growth through a shared set
+  making the embedded object an approximate equivalence class through feature
+  and link recovery audits.
+  \item \textbf{Downstream task interfaces.} On top of the recovered point set,
+  we design task readers for element feature prediction, graph property
+  prediction, and autoregressive graph growth through a shared set
   representation interface.
-  \item \textbf{Empirical recovery and modeling evidence.} We compare \method{}
-  with competitive graph modeling baselines under matched splits and metrics,
-  evaluate recovery trained separation on second order and third order WL
-  collision graph pairs, and test rule guided graph growth with terminal
-  validity and embedding recovery quality.
+  \item \textbf{Empirical modeling evidence.} We compare \method{} with
+  competitive graph modeling baselines under matched splits and metrics, show
+  that recovery trained embeddings separate second order and third order WL
+  collision graph pairs, and compare rule guided graph growth with competitive
+  generation baselines.
 \end{enumerate}

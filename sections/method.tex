@@ -191,7 +191,7 @@ pair count explicit for dense graphs.  If edge dropout is active in the encoder,
 it affects only the computation graph $E_{\mathrm{enc}}$; link positives still
 come from the undropped input graph.  This distinguishes an input perturbation
 from a changed reconstruction target.  Pair attention therefore learns whether a point
-set constructed under perturbation can still distinguish the declared relations.
+set constructed under perturbation can still distinguish the target relations.
 
 The content target has the same hygiene requirement.  In the default
 configuration, $\mathbf C=\operatorname{sg}(\operatorname{Enc}_X(\mathbf X))$
@@ -255,15 +255,15 @@ sends gradients through the content decoder and final point set, with the target
 encoder stopped.  The survival term reaches the scale network and the
 attention energy path. Relation geometry, node content, task relevance, and the
 training filter receive separate signals. $\mathcal L_{\mathrm{pred}}$ reads
-$y$ on the training mask; the remaining three terms use declared graph
+$y$ on the training mask; the remaining three terms use graph
 information.
 
 For an embedding only run, $\lambda_{pred}=0$ and the three representation terms
-train a point set using only declared graph recovery targets.  A task run restores
+train a point set using only graph recovery targets.  A task run restores
 $\mathcal L_{pred}$ and retains the other terms.  This schedule makes two
 experimental modes explicit: representation training assesses the point set
 alone, and a joint task run assesses the representation and reader system while
-keeping the declared information objectives active.
+keeping the information objectives active.
 
 \subsection{Point, set, and growth interfaces}
 \label{sec:interfaces}
@@ -292,7 +292,7 @@ For node classification, a shared MLP returns class logits
 $\widehat{\mathbf z}_i=R_{\mathrm{node}}(\mathbf h_i)$ and optimizes masked
 cross entropy.  Class weights and label smoothing, when configured, apply only
 to training nodes.  For node regression, the same row wise reader returns a
-scalar or vector and uses Huber or squared error; validation selects the stated
+scalar or vector and uses Huber or squared error; validation selects the target
 regression metric.  These readers retain row alignment, so an input permutation
 permutes their outputs in the same way.
 
@@ -320,7 +320,7 @@ an embedding probe for the resulting relational state.
 At a growth depth $s$, the expansion operator proposes one or more candidate
 states from each live $\Hset_s$.  The relation decoder maps every candidate to
 an edge score representation, and the graph family predicate labels it legal or
-illegal during training.  Candidate states can be ranked either by the declared
+illegal during training.  Candidate states can be ranked either by the
 legality route (Legal) or by a learned continuation score (Net).  A live state
 capacity gives the candidate tree a fixed beam width; the capacity is
 recorded as $\texttt{max\_live}$ in the generation setting.
@@ -355,7 +355,7 @@ $\Hset_0$, target size, selection rule, and $\texttt{max\_live}$.\\
 $\operatorname{StepSet}$ and decode candidate relation scores.\\
 \textbf{3.} During training, attach the graph family legality signal to each
 candidate. During evaluation, use the learned transition and selection rule.\\
-\textbf{4.} Rank candidates by the declared Legal or Net selection rule, retain at most
+\textbf{4.} Rank candidates by the configured Legal or Net selection rule, retain at most
 $\texttt{max\_live}$ states, and continue with their point sets.\\
 \textbf{5.} Decode terminal graphs and report Valid together with Emb F1 over
 the completed rollouts.
@@ -385,8 +385,8 @@ and values together, leaving the sum unchanged.  The argument assumes that any
 edge dropout and noise sample are permuted consistently with the graph.
 
 \paragraph{Recovery implication.}
-Let $D$ be a deterministic decoder and let $d_T$ be a distance on declared
-targets.  If $d_T(D(\operatorname{Enc}(G)),T(G))\leq\epsilon$ on the evaluation
+Let $D$ be a deterministic decoder and let $d_T$ be a distance on the target
+space.  If $d_T(D(\operatorname{Enc}(G)),T(G))\leq\epsilon$ on the evaluation
 domain, then two graphs $G_1,G_2$ with the same representation satisfy
 \begin{equation}
  d_T(T(G_1),T(G_2))\leq 2\epsilon.
@@ -394,9 +394,9 @@ domain, then two graphs $G_1,G_2$ with the same representation satisfy
 \end{equation}
 Both targets lie within $\epsilon$ of the same decoded representation, so the
 result follows from the triangle inequality.  The statement explains why direct
-recovery metrics matter: they bound how much declared input information a shared
+recovery metrics matter: they bound how much input information a shared
 embedding can merge.  Exact inversion, additional edge attributes, and graph
-isomorphism each require their own declared target and evaluation metric.
+isomorphism each require their own target and evaluation metric.
 
 Each task instance jointly optimizes
 \begin{equation}
@@ -415,7 +415,7 @@ embedding floor while the readout learns the task.
 The encoder aggregates only over $E_{\mathrm{enc}}$, so its layer cost is linear
 in the number of encoded edges up to the head and hidden dimensions.  Relation
 training uses sampled pairs, whereas a complete recovery evaluation may score a
-larger specified pair set.  Set attention and unrestricted pair decoding can
+larger evaluated pair set.  Set attention and unrestricted pair decoding can
 become quadratic in the number of live points.  We therefore treat sampled pair
 training, chunked decoding, and live state capacity as explicit evaluation
 settings for the reported graph sizes.  The

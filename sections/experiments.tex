@@ -2,7 +2,7 @@
 \label{sec:experiments}
 
 \subsection{Questions and setup}
-We ask: (Q1) does the declared point set retain links and node content; (Q2) does
+We ask: (Q1) does the learned point set retain links and node content; (Q2) does
 it support Web relation tasks; (Q3) which encoder and readout components account
 for task utility; (Q4) can the set state grow freely beyond the training scale
 after graph family supervision; (Q5) how do graph semantics and output level
@@ -11,7 +11,7 @@ nonisomorphic graph pairs stratified by first order, second
 order, and third order WL tests?  Each dataset trains its own
 encoder, decoders, and head.  Validation metrics select checkpoints and test
 splits report results. Each task instance learns a dedicated representation and
-reader with its declared data split, input convention, and metric.
+reader with its fixed data split, input convention, and metric.
 
 The listed baselines are MLP, GCN, GraphSAGE, GAT, GIN, APPNP, SGFormer,
 Polynormer, Graph-Mamba, and PST.  Each row fixes its input convention, split,
@@ -26,7 +26,7 @@ within a row.  MLP tests attributes alone.  GCN, GraphSAGE,
 GAT, and GIN represent neighborhood aggregation; APPNP, SGFormer, Polynormer,
 and Graph-Mamba add different propagation or long range mechanisms; PST tests a
 graph to set route.  The comparison answers a row level question: whether the
-declared \method{} configuration improves the task metric for that evaluation setting.
+evaluated \method{} configuration improves the task metric for that evaluation setting.
 
 \subsection{Aligned prediction comparison}
 The frozen comparison record compares the strongest listed baseline and \method{}
@@ -40,11 +40,11 @@ splits, schedules, and baseline set in the workbook.
 \label{sec:wl-diagnostic}
 The WL hierarchy supplies controlled graph pair strata for trained recovery
 experiments \cite{morris2019wl}. BREC provides Basic, Regular, Extension, CFI,
-Four Vertex, and Distance Regular pairs. For each declared pair, IGSSE receives
+Four Vertex, and Distance Regular pairs. For each evaluated pair, IGSSE receives
 unlabeled recovery training and decodes both embeddings under consistent node
 permutations. The experiment reports reconstruction F1/AUC/AP, reconstructed
-graph separation, and permutation deviation by stratum. With the stated
-recovery criteria, trained IGSSE separates the evaluated second order and third
+graph separation, and permutation deviation by stratum. Under the recovery
+criteria, trained IGSSE separates the evaluated second order and third
 order WL collision graph pairs through accurate reconstruction and stable
 separation.
 
@@ -61,7 +61,7 @@ HiGraph, OCB, and TimingPredict change graph semantics and output granularity,
 while AIDS and IMDB add molecular and weak feature social graph conditions
 \cite{chen2025higraph,dong2023cktgnn,guo2022timing,morris2020,yang2015}.
 The point and set interfaces remain available in each setting, with parameters
-trained for the stated task. The tests measure architectural coverage under
+trained for the target task. The tests measure architectural coverage under
 changed semantics.
 
 \subsection{Legality guided autoregressive growth}
@@ -76,7 +76,7 @@ be interpreted separately.
 The training phase supplies a graph family legality signal at the training
 scale.  The evaluation phase fixes the learned parameters, increases the target
 size, and uses learned parameters for every expansion step.  A Legal selection
-rule keeps states satisfying the declared predicate, whereas a Net selection rule
+rule keeps states satisfying the graph family predicate, whereas a Net selection rule
 uses the learned network score to select live states.  The record stores the
 target size, number of samples, maximum live state capacity, selection rule, and
 random seed.
@@ -100,7 +100,7 @@ changes identify which components the suite attributes to the observed utility.
 Removing a recovery term degrades either task utility, the structural probe, or
 both in the full suite.  Frozen-$\Hset$ creates the largest drop in the displayed
 Photo and Cora rows, while replacing set aware readout also reduces the scores.
-These ablations support component attribution within the stated suite and direct
+These ablations support component attribution within the ablation suite and direct
 recovery tables provide the complementary reconstruction evidence.
 
 \subsection{Reproducibility, cost, and limits}
@@ -110,8 +110,8 @@ pairs as a sparse relation objective. This describes implementation cost. Before
 submission, we will report parameter count, effective optimization steps, wall time,
 time per update, peak memory, and inference time for each primary graph family.
 
-The present evidence covers three stated axes.  First, all task instances are
-independently trained.  Second, the recovery target covers declared links and
+The present evidence covers three evaluation axes.  First, all task instances are
+independently trained.  Second, the recovery target covers target links and
 node content, with edge attributes handled by an explicit edge decoder and
 target.  Third, terminal validity is reported together with the graph family
 predicate, live state capacity, and selection rule.  The generation results
