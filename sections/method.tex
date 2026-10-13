@@ -80,18 +80,12 @@ the observed adjacency.  Their sum forms the fused point state
 $\mathbf h_i$.  This design matches the figure: the encoder creates content
 points, relation conditioned writing injects structural deviations, and the
 output point set $\Hset$ is then passed to recovery and downstream readers.
-The first layer path is
-\begin{align}
- \mathbf x_i&\rightarrow\mathbf h_{o,i}\rightarrow
- (\mathbf Q,\mathbf K,\mathbf V)\rightarrow E^{\mathrm{global}}
- \rightarrow\mathbf u_s,\nonumber\\
- \mathbf u_s&\rightarrow\alpha_{si}\rightarrow\mathbf o_i\rightarrow
- \mathbf r_i=\mathbf h_{o,i}+\mathbf o_i\rightarrow\mathbf h_i.
- \label{eq:visual-core}
-\end{align}
-Later layers repeat this path with the preceding point state in place of
-$\mathbf h_o$. The conditional noise filter regulates structural writing when
-global source states contract during aggregation.
+In the first layer, node attributes are encoded as $\mathbf h_o$, projected to
+queries, keys, and values, transformed into global source states, written through
+the adjacency into $\mathbf o$, and fused into $\mathbf h$. Later layers repeat
+this path with the preceding point state in place of $\mathbf h_o$. The
+conditional noise filter regulates structural writing when global source states
+contract during aggregation.
 
 \subsection{Embedding by content coordinates and structural deviations}
 \label{sec:fsde}
@@ -106,15 +100,7 @@ layer this coordinate comes from the attribute encoder,
 For later layers, $\mathbf h_{o,i}^{(\ell)}=\mathbf h_i^{(\ell-1)}$.  In the
 default implementation, $\operatorname{Enc}_X$ applies input layer
 normalization, a linear map to a hidden space, GELU and dropout, a second linear
-map, and output normalization.  Formally,
-\begin{align}
- \widetilde{\mathbf x}_i&=\operatorname{LN}_{\mathrm{in}}(\mathbf x_i),\\
- \mathbf z_i&=\operatorname{Dropout}\bigl(
- \operatorname{GELU}(\widetilde{\mathbf x}_i\mathbf W_1+\mathbf b_1)\bigr),\\
- \mathbf h_{o,i}^{(0)}&=\operatorname{LN}_{\mathrm{out}}(\mathbf z_i\mathbf W_2+\mathbf b_2).
- \label{eq:feature-encoder}
-\end{align}
-This encoder has no access to $E$, so its output provides an explicit content
+map, and output normalization.  This encoder has no access to $E$, so its output provides an explicit content
 reference for the subsequent structural correction and for the content target.
 The baseline gives a concrete location for node content before graph
 conditioning.
@@ -125,49 +111,17 @@ across all subsequent operations in the layer: query, key, and value projections
 are computed from $\mathbf h_{o,i}^{(\ell)}$, and the final fusion keeps a
 direct residual path from this coordinate to $\mathbf h_i^{(\ell)}$.  At layer
 $\ell$, multihead projections produce $\mathbf q_i$, $\mathbf k_i$, and
-$\mathbf v_i$ for every node. For source $s$, target $i$, and head $m$,
-\method{} computes the global pair energy
-\begin{equation}
- e_{si}^{(m)}=\operatorname{LeakyReLU}\left(
- (\mathbf a_{\mathrm{src}}^{(m)})^\top\mathbf q_s^{(m)}+
- (\mathbf a_{\mathrm{dst}}^{(m)})^\top\mathbf k_i^{(m)}\right).
- \label{eq:energy}
-\end{equation}
-
-The global attention field then forms contextual source states
-\begin{equation}
- \mathbf u_s^{(m)}=\sum_{j\in V}
- \operatorname{softmax}_{j}(e_{sj}^{(m)})\mathbf v_j^{(m)}.
- \label{eq:global-source}
-\end{equation}
-The adjacency defines the write set
+$\mathbf v_i$ for every node. Their pairwise attention scores create a global
+attention field, and the weighted values form contextual source states
+$\mathbf u_s$. The adjacency defines the write set
 $N_A(i)=\{s:(s,i)\in E\}\cup\{i\}$ for each target $i$.
 
 \paragraph{Noise curriculum.}
 The noise network $\psi$ receives the mean head energy and a normalized training
-progress $u$.  It predicts a nonnegative scale $\sigma_{si}^{(m)}$, and training
-uses
-\begin{equation}
- \widetilde e_{si}^{(m)}=e_{si}^{(m)}+
- \sigma_{si}^{(m)}g(u)\epsilon_{si}^{(m)},\qquad
- \epsilon_{si}^{(m)}\sim\mathcal P_{\epsilon}.
- \label{eq:noise}
-\end{equation}
-More specifically, the mean energy $\bar e_{si}=M^{-1}\sum_m e_{si}^{(m)}$
-and progress $u$ enter a small MLP:
-\begin{align}
- \log\sigma_{si}&=\operatorname{MLP}_{\psi}([\bar e_{si},u])+
- \log\sigma_0,\\
- \sigma_{si}^{(m)}&=\min\{\operatorname{softplus}(
- \log\sigma_{si}^{(m)})+\epsilon_{\sigma},\sigma_{\max}\}.
- \label{eq:scale}
-\end{align}
-Each head therefore receives its own edge dependent perturbation scale.  The
-survival term in Eq.~\eqref{eq:objective} prevents this scale from trivially
-vanishing during the noise phase.
-Evaluation sets $\widetilde e=e$.  The curriculum perturbs early relation
-weights, then removes the perturbation before selection and test evaluation.
-The noise filter belongs to the structural writing configuration.
+progress $u$, predicts an edge dependent perturbation scale, and injects
+scheduled noise into relation scores during training. Evaluation uses clean
+relation scores. The survival term in the joint objective prevents the scale
+from trivially vanishing during the noise phase.
 
 \paragraph{Structural deviation $\mathbf o_i$.}
 The structural deviation is the relation dependent correction written to the
@@ -186,12 +140,9 @@ coordinate and the graph conditioned point.
 \paragraph{Fusion into $\mathbf h_i$.}
 The point state is produced by adding the original coordinate and the structural
 deviation, then applying normalization and a feedforward map:
-\begin{equation}
- \mathbf r_i^{(\ell)}=\mathbf h_{o,i}^{(\ell)}+
- \operatorname{Dropout}(\mathbf o_i^{(\ell)}).
- \label{eq:add-fusion}
-\end{equation}
 \begin{align}
+ \mathbf r_i^{(\ell)}&=\mathbf h_{o,i}^{(\ell)}+
+ \operatorname{Dropout}(\mathbf o_i^{(\ell)}),\\
  \widehat{\mathbf h}_i^{(\ell)}&=\operatorname{LN}(\mathbf r_i^{(\ell)}),\\
  \mathbf h_i^{(\ell)}&=\widehat{\mathbf h}_i^{(\ell)}+
  \operatorname{FFN}(\widehat{\mathbf h}_i^{(\ell)}).
@@ -301,14 +252,10 @@ pair decoder $D_E(\mathbf h_i,\mathbf h_j)$ and an explicit edge attribute loss.
 The optimization schedule separates three quantities that otherwise become easy
 to conflate: a noisy encoder state during training, a clean deterministic state
 for validation and test, and a task label visible only on training examples.
-For a node task, the normalized progress is
-\begin{equation}
- u=\min\left(u_{\max},\frac{\mathrm{epoch}}{\rho\,\mathrm{epochs}}\right).
- \label{eq:curriculum}
-\end{equation}
-The initial curriculum phase therefore anneals Eq.~\eqref{eq:noise}; later
-updates and all selection passes use unperturbed relation energies.  Gradient
-clipping bounds the joint update, and the validation metric chooses a checkpoint.
+For a node task, normalized progress increases during an initial curriculum
+phase and controls the annealing of relation score perturbations; later updates
+and all selection passes use unperturbed relation energies.  Gradient clipping
+bounds the joint update, and the validation metric chooses a checkpoint.
 The test split is read once from the selected checkpoint.  Embedding dimension,
 encoder depth, head count, hidden width, dropout, optimizer settings, loss
 weights, and pair budgets are treated as experimental configuration and reported
@@ -321,8 +268,8 @@ prediction comparison.
 
 \subsection{Loss attachment and gradient routes}
 \label{sec:losses}
-The joint objective in Eq.~\eqref{eq:objective} has four distinct attachment
-points.  The prediction term supervises a task reader.  The link term sends
+The joint objective below has four distinct attachment points.  The prediction
+term supervises a task reader.  The link term sends
 gradients through pair attention and the final point set.  The feature term
 sends gradients through the content decoder and final point set, with the target
 encoder stopped.  The survival term reaches the scale network and the
@@ -330,6 +277,19 @@ attention energy path. Relation geometry, node content, task relevance, and the
 training filter receive separate signals. $\mathcal L_{\mathrm{pred}}$ reads
 $y$ on the training mask; the remaining three terms use graph
 information.
+
+Each task instance jointly optimizes
+\begin{equation}
+ \mathcal L=\lambda_{\mathrm{pred}}\mathcal L_{\mathrm{pred}}+
+ \lambda_{\mathrm{link}}\mathcal L_{\mathrm{link}}+
+ \lambda_{\mathrm{feat}}\mathcal L_{\mathrm{feat}}+
+ \lambda_{\mathrm{alive}}\mathcal L_{\mathrm{alive}},
+ \label{eq:objective}
+\end{equation}
+where $\mathcal L_{\mathrm{alive}}=-\log(\max(\overline\sigma,\epsilon_{\mathrm{alive}}))$
+keeps the learned training noise scale active.  The prediction loss only accesses
+training labels.  The recovery terms remain active in task mode, preserving an
+embedding floor while the readout learns the task.
 
 For an embedding only run, the prediction term is disabled and the representation
 terms train a point set using only graph recovery targets.  A task run restores
@@ -432,19 +392,6 @@ representation, so the result follows from the triangle inequality.  The stateme
 recovery metrics matter: they bound how much input information a shared
 embedding can merge.  Exact inversion, additional edge attributes, and graph
 isomorphism each require their own target and evaluation metric.
-
-Each task instance jointly optimizes
-\begin{equation}
- \mathcal L=\lambda_{\mathrm{pred}}\mathcal L_{\mathrm{pred}}+
- \lambda_{\mathrm{link}}\mathcal L_{\mathrm{link}}+
- \lambda_{\mathrm{feat}}\mathcal L_{\mathrm{feat}}+
- \lambda_{\mathrm{alive}}\mathcal L_{\mathrm{alive}},
- \label{eq:objective}
-\end{equation}
-where $\mathcal L_{\mathrm{alive}}=-\log(\max(\overline\sigma,\epsilon_{\mathrm{alive}}))$
-keeps the learned training noise scale active.  The prediction loss only accesses
-training labels.  The recovery terms remain active in task mode, preserving an
-embedding floor while the readout learns the task.
 
 \paragraph{Computational boundary.}
 The encoder aggregates only over $E_{\mathrm{enc}}$, so its layer cost is linear
