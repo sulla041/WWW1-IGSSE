@@ -1,7 +1,15 @@
 \section{IGSSE}
 \label{sec:method}
 
-\subsection{Problem boundary and representation target}
+\method{} is organized around three algorithmic stages.  First, the embedding
+stage maps an attributed graph to a point set $\Hset$ by adding an original
+content coordinate $\mathbf h_{o,i}$ and a structural deviation $\mathbf o_i$
+for every node.  Second, graph recovery decodes node content and point pair
+relations from $\Hset$, making recoverability the guarantee of approximate
+equivalence.  Third, downstream readers use $\Hset$ as their modeling object for
+feature prediction, graph prediction, and autoregressive graph modeling.
+
+\subsection{Representation object and notation}
 \label{sec:setup}
 Let $G=(V,E,\mathbf X)$ be an attributed graph with adjacency $\mathbf A$ and
 $n$ nodes.  The task label $y$ is a node class, graph label, or continuous
@@ -22,6 +30,29 @@ for the final state verified by the two decoders, and reserve
 $\Hset_{\mathrm{task}}$ for a final state or jump concatenated reader input.
 This separation fixes the recovered representation object before task readout.
 
+\begin{table}[t]
+  \centering
+  \caption{Notation used by the \method{} algorithm.}
+  \label{tab:notation}
+  \small
+  \begin{tabular}{ll}
+    \hline
+    Symbol & Meaning \\
+    \hline
+    $G=(V,E,\mathbf X)$ & Attributed input graph \\
+    $\mathbf A$ & Adjacency target \\
+    $\mathbf C$ & Content recovery target \\
+    $\mathbf h_{o,i}$ & Original content coordinate for node $i$ \\
+    $\mathbf o_i$ & Structural deviation written to node $i$ \\
+    $\mathbf h_i$ & Final point for node $i$ after fusion \\
+    $\Hset$ & Point set $\{\mathbf h_i\}_{i=1}^{n}$ used for modeling \\
+    $D_A$ & Relation decoder over point pairs \\
+    $D_C$ & Content decoder over single points \\
+    $R$ & Downstream reader over $\Hset$ \\
+    \hline
+  \end{tabular}
+\end{table}
+
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/algorithm_core.drawio.pdf}
@@ -40,11 +71,15 @@ This separation fixes the recovered representation object before task readout.
 
 \paragraph{Core path correspondence.}
 Figure~\ref{fig:algorithm-core} summarizes the computation graph used in this
-section. The core computation first forms original coordinates $\mathbf h_{o,i}$. Global
-Q/K/V attention evaluates an energy field over all source to target pairs and
-forms contextual source states. Incoming adjacency selects the source states
-written into target $i$; their weighted sum forms $\mathbf o_i$, which is fused
-with the original coordinate before the feedforward map produces $\mathbf h_i$.
+section. Table~\ref{tab:notation} lists the symbols used by the algorithm.  The
+embedding stage has two explicit components.  The first component is the
+original coordinate $\mathbf h_{o,i}$, which carries node content before a
+structural write.  The second component is the structural deviation
+$\mathbf o_i$, which is computed from global source states and written through
+the observed adjacency.  Their sum forms the fused point state
+$\mathbf h_i$.  This design matches the figure: the encoder creates content
+points, relation conditioned writing injects structural deviations, and the
+output point set $\Hset$ is then passed to recovery and downstream readers.
 The first layer path is
 \begin{align}
  \mathbf x_i&\rightarrow\mathbf h_{o,i}\rightarrow
@@ -58,29 +93,40 @@ Later layers repeat this path with the preceding point state in place of
 $\mathbf h_o$. The conditional noise filter regulates structural writing when
 global source states contract during aggregation.
 
-\subsection{Feature and structure deviation encoding}
+\subsection{Embedding by content coordinates and structural deviations}
 \label{sec:fsde}
-First, a shared attribute map forms an attribute only baseline:
+The embedding stage constructs $\Hset$ by repeating the same two component
+operation over layers.  At layer $\ell$, let $\mathbf h_{o,i}^{(\ell)}$ denote
+the original coordinate that will receive the structural write.  At the first
+layer this coordinate comes from the attribute encoder,
 \begin{equation}
-  \mathbf h^{(0)}_i=\operatorname{Enc}_X(\mathbf x_i).
+  \mathbf h_{o,i}^{(0)}=\operatorname{Enc}_X(\mathbf x_i).
   \label{eq:baseline}
 \end{equation}
-In the default implementation, $\operatorname{Enc}_X$ applies input layer
+For later layers, $\mathbf h_{o,i}^{(\ell)}=\mathbf h_i^{(\ell-1)}$.  In the
+default implementation, $\operatorname{Enc}_X$ applies input layer
 normalization, a linear map to a hidden space, GELU and dropout, a second linear
 map, and output normalization.  Formally,
 \begin{align}
  \widetilde{\mathbf x}_i&=\operatorname{LN}_{\mathrm{in}}(\mathbf x_i),\\
  \mathbf z_i&=\operatorname{Dropout}\bigl(
  \operatorname{GELU}(\widetilde{\mathbf x}_i\mathbf W_1+\mathbf b_1)\bigr),\\
- \mathbf h^{(0)}_i&=\operatorname{LN}_{\mathrm{out}}(\mathbf z_i\mathbf W_2+\mathbf b_2).
+ \mathbf h_{o,i}^{(0)}&=\operatorname{LN}_{\mathrm{out}}(\mathbf z_i\mathbf W_2+\mathbf b_2).
  \label{eq:feature-encoder}
 \end{align}
 This encoder has no access to $E$, so its output provides an explicit content
 reference for the subsequent structural correction and for the content target.
 The baseline gives a concrete location for node content before graph
-conditioning. At layer $\ell$, multihead projections produce $\mathbf q_i$,
-$\mathbf k_i$, and $\mathbf v_i$ for every node. For source $s$, target $i$,
-and head $m$, \method{} computes the global pair energy
+conditioning.
+
+\paragraph{Original coordinate $\mathbf h_{o,i}$.}
+The original coordinate is the content carrier of each point.  It is shared
+across all subsequent operations in the layer: query, key, and value projections
+are computed from $\mathbf h_{o,i}^{(\ell)}$, and the final fusion keeps a
+direct residual path from this coordinate to $\mathbf h_i^{(\ell)}$.  At layer
+$\ell$, multihead projections produce $\mathbf q_i$, $\mathbf k_i$, and
+$\mathbf v_i$ for every node. For source $s$, target $i$, and head $m$,
+\method{} computes the global pair energy
 \begin{equation}
  e_{si}^{(m)}=\operatorname{LeakyReLU}\left(
  (\mathbf a_{\mathrm{src}}^{(m)})^\top\mathbf q_s^{(m)}+
@@ -123,18 +169,29 @@ Evaluation sets $\widetilde e=e$.  The curriculum perturbs early relation
 weights, then removes the perturbation before selection and test evaluation.
 The noise filter belongs to the structural writing configuration.
 
-For each target, a softmax over $N_A(i)$ gives $\alpha_{si}^{(m)}$. The
-structural deviation is the projected multihead sum
+\paragraph{Structural deviation $\mathbf o_i$.}
+The structural deviation is the relation dependent correction written to the
+original coordinate.  For each target, a softmax over $N_A(i)$ gives
+$\alpha_{si}^{(m)}$.  The projected multihead sum defines
 \begin{equation}
- \mathbf o_i=\mathbf W_O\left\Vert_m
+ \mathbf o_i^{(\ell)}=\mathbf W_O\left\Vert_m
  \sum_{s\in N_A(i)}\alpha_{si}^{(m)}\mathbf u_s^{(m)}
  \right\Vert.
  \label{eq:deviation}
 \end{equation}
-Residual fusion then updates the point state:
+In the embedding path, this term summarizes relation selected global source
+states and therefore encodes the structural deviation between the content
+coordinate and the graph conditioned point.
+
+\paragraph{Fusion into $\mathbf h_i$.}
+The point state is produced by adding the original coordinate and the structural
+deviation, then applying normalization and a feedforward map:
+\begin{equation}
+ \mathbf r_i^{(\ell)}=\mathbf h_{o,i}^{(\ell)}+
+ \operatorname{Dropout}(\mathbf o_i^{(\ell)}).
+ \label{eq:add-fusion}
+\end{equation}
 \begin{align}
- \mathbf r_i^{(\ell)}&=\mathbf h_i^{(\ell-1)}+
- \operatorname{Dropout}(\mathbf o_i^{(\ell)}),\\
  \widehat{\mathbf h}_i^{(\ell)}&=\operatorname{LN}(\mathbf r_i^{(\ell)}),\\
  \mathbf h_i^{(\ell)}&=\widehat{\mathbf h}_i^{(\ell)}+
  \operatorname{FFN}(\widehat{\mathbf h}_i^{(\ell)}).
@@ -142,30 +199,40 @@ Residual fusion then updates the point state:
 \end{align}
 After $L$ layers, $\Hset_{\mathrm{dec}}=\mathbf H^{(L)}$ is used for recovery.
 Node tasks may use this final state or a jump concatenated state
-$\mathbf h^{(0)}_i\Vert\cdots\Vert\mathbf h^{(L)}_i$.
+$\mathbf h_{o,i}^{(0)}\Vert\mathbf h_i^{(1)}\Vert\cdots\Vert\mathbf h_i^{(L)}$.
 
-\paragraph{Pseudocode 1: Feature and structure deviation encoding.}
+\paragraph{Pseudocode 1: embedding by content coordinate and structural deviation.}
 \begin{quote}\small
 \textbf{Input:} $\mathbf X$, $E_{\mathrm{enc}}$, and progress $u$.\\
 \textbf{Output:} $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, and
 mean noise scale $\overline\sigma$.\\
-\textbf{1.} Set $\mathbf H^{(0)}\leftarrow\operatorname{Enc}_X(\mathbf X)$.\\
-\textbf{2.} For each layer, project points to queries, keys, and values. For
-each source to target edge $(s,i)$, compute $e_{si}$, normalize incoming scores,
-and sum $\alpha_{si}\mathbf v_s$ into $\mathbf o_i$.\\
-\textbf{3.} Perturb energies with Eq.~\eqref{eq:noise} during training; use
-clean energies otherwise. Form $\mathbf r_i=\mathbf h_i^{(\ell-1)}+
-\mathbf o_i$ and apply the normalized feedforward fusion in Eq.~\eqref{eq:fusion}.\\
-\textbf{4.} Return $\Hset_{\mathrm{dec}}\leftarrow\mathbf H^{(L)}$ and the
-configured final or jump concatenated task state.
+\textbf{1.} Initialize $\mathbf h_{o,i}^{(0)}\leftarrow
+\operatorname{Enc}_X(\mathbf x_i)$ for every node.\\
+\textbf{2.} At layer $\ell$, set $\mathbf h_{o,i}^{(\ell)}$ to the current
+content coordinate, then project it to queries, keys, and values.\\
+\textbf{3.} Compute global pair energies $e_{si}$ and contextual source states
+$\mathbf u_s$. Use $N_A(i)$ to normalize incoming scores and form the structural
+deviation $\mathbf o_i^{(\ell)}$ by Eq.~\eqref{eq:deviation}.\\
+\textbf{4.} Perturb energies with Eq.~\eqref{eq:noise} during training; use
+clean energies otherwise. Form $\mathbf r_i^{(\ell)}=\mathbf h_{o,i}^{(\ell)}
++\mathbf o_i^{(\ell)}$ and apply Eq.~\eqref{eq:fusion} to obtain
+$\mathbf h_i^{(\ell)}$.\\
+\textbf{5.} Return the final point set $\Hset_{\mathrm{dec}}$ and the configured
+task state.
 \end{quote}
 
-\subsection{Pair attention reconstruction and content recovery}
+\subsection{Graph recovery from the point set}
 \label{sec:recovery}
-The pair attention relation decoder is the mainline relation reconstruction operator.  It projects
-final point rows to head specific queries and keys, scores their scaled inner
-product, symmetrizes the two directions for an undirected relation, and applies
-a learned scale and bias.  Its projections are independent of the encoder:
+Graph recovery uses $\Hset$ as the modeling target.  The relation decoder reads
+two points from $\Hset$ and recovers whether a graph relation exists between
+them; the content decoder reads one point from $\Hset$ and recovers its content
+target.  Together they make the learned point set an approximate equivalence
+class of the graph under the chosen recovery targets.
+
+The pair attention relation decoder projects final point rows to head specific
+queries and keys, scores their scaled inner product, symmetrizes the two
+directions for an undirected relation, and applies a learned scale and bias.  Its
+projections are independent of the encoder:
 $\overline{\mathbf q}_i^{(m)}=\mathbf h_i\mathbf U_Q^{(m)}$ and
 $\overline{\mathbf k}_i^{(m)}=\mathbf h_i\mathbf U_K^{(m)}$.  For a candidate
 pair $(i,j)$,
@@ -282,8 +349,14 @@ experimental modes explicit: representation training assesses the point set
 alone, and a joint task run assesses the representation and reader system while
 keeping the information objectives active.
 
-\subsection{Point, set, and growth interfaces}
+\subsection{Downstream modeling over the point set}
 \label{sec:interfaces}
+All downstream tasks use $\Hset$ as the modeling target.  Node prediction reads
+one point, graph prediction pools the whole set, and autoregressive graph
+modeling expands the set before relation decoding.  This keeps the task
+interface consistent with graph recovery: recovery and prediction both operate
+on the same learned point set.
+
 A shared point head maps each $\mathbf h_i$ to a node label or value.  A graph
 task uses invariant attention pooling,
 \begin{equation}
@@ -353,7 +426,7 @@ and make their live state selection rule explicit.
 
 \paragraph{Growth objective.}
 For a candidate graph $G_s$ produced from $\Hset_s$, let
-$c_s=\mathbb{I}[\operatorname{legal}(G_s)]$ be the family predicate.  A
+$c_s=\mathbb{I}[\operatorname{legal}(G_s)]$ be the graph rule predicate.  A
 legality head can optimize a binary loss $\mathcal L_{\mathrm{legal}}$ during
 training, while the relation decoder continues to score the candidate graph.
 The full generator objective combines the set transition signal, pairwise
