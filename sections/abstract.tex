@@ -18,9 +18,9 @@ feature and structure deviation encoder that combines local graph neighborhoods,
 global attention states, and relation conditions.  The resulting point set
 aligned with nodes becomes an approximate equivalence class of the graph:
 single point decoding recovers node content, pair attention decoding recovers
-links, and downstream readers model points and point pair relations.  Recovery
-therefore serves as the audit that supports the equivalence class view, while
-the main modeling object is the point set consumed by downstream tasks.  A set
+links, and downstream readers model points and point pair relations.
+Recoverability therefore guarantees the approximate equivalence between the
+graph and the point set, while the main modeling object is the point set consumed by downstream tasks.  A set
 expansion module further supports legality guided autoregressive growth on the
 same representation interface.  We evaluate \method{} on aligned prediction
 tasks over product purchase relations, collaboration, citation, program,
