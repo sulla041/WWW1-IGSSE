@@ -41,7 +41,10 @@ $\Hset$ and produces the prediction $\widehat Y$.  The recovery target is
  \label{eq:recovery-target}
 \end{equation}
 The task label is denoted by $Y$ and can be a node label, a graph label, or a
-continuous target.
+continuous target.  Thus, the notation fixes a single data flow: the encoder
+constructs $\Hset$, the recovery decoders define what graph information
+$\Hset$ must preserve, and the downstream reader consumes the same $\Hset$ for
+prediction.
 
 \begin{table}[t]
   \centering
@@ -74,7 +77,7 @@ continuous target.
   \caption{Core architecture of \method{}. The input graph is mapped to an
   attribute baseline, structural deviations are written into the point set by
   combining global structural bias with adjacency guided writes, and recovery
-  decoders reconstruct node content and relations between points. The recovered
+  decoders reconstruct node content and relations between points. The learned
   point set provides the approximate equivalence class used by feature
   prediction, graph prediction, and autoregressive graph modeling.}
   \Description{A system diagram of IGSSE. The graph input is encoded into point
@@ -86,7 +89,7 @@ continuous target.
 
 The embedding stage computes three quantities in sequence.  First, it maps node
 attributes to the original coordinate $\mathbf h_{o,i}$, which preserves the
-row-wise node identity before structural writing.  Second, it computes the
+row wise node identity before structural writing.  Second, it computes the
 structural deviation $\mathbf o_i$ by forming a global structural bias and
 writing adjacency selected components into each target point.  Third, it fuses
 the two terms into the final point $\mathbf h_i$ and stacks all points into
@@ -111,9 +114,9 @@ and its output dimension is the model width.  This original coordinate records
 the node content before relation information is written into the point.  The
 data flow at this stage is row preserving: the input row for node $i$ is mapped
 to the point row for the same node, and no edge information is consumed by this
-attribute-only transformation.  The result is a content coordinate matrix that
+attribute only transformation.  The result is a content coordinate matrix that
 supplies the input to the structural write.  Thus, this step outputs the
-row-aligned content state on which all later attention projections operate.
+row aligned content state on which all later attention projections operate.
 
 \paragraph{Structural deviation $\mathbf o_i$.}
 The purpose of this step is to convert relation information into an additive
@@ -128,7 +131,7 @@ compute
 \mathbf v_i^{(m)}=\mathbf W_V^{(m)}\mathbf h_{o,i}^{(\ell)}.
 \label{eq:qkv}
 \end{equation}
-These projections produce a complete point-to-point compatibility field.  For
+These projections produce a complete point to point compatibility field.  For
 each source point, dense attention over all points collects node information into
 a global structural bias:
 \begin{equation}
@@ -163,7 +166,7 @@ softmax controls the incoming write strength for each target.  A scheduled noise
 term can perturb write logits during optimization to encourage separate
 exploration when nodes have identical content; the deterministic forward path
 uses the unperturbed write logits.  Thus, this step outputs $\mathbf o_i$ as the
-structure-aware correction aligned with the same row as $\mathbf h_{o,i}$.
+structure aware correction aligned with the same row as $\mathbf h_{o,i}$.
 
 \paragraph{Fusion into $\mathbf h_i$.}
 The purpose of this step is to combine content and structure into the final
@@ -186,7 +189,7 @@ the structural deviation followed by fusion, producing a node aligned point set
 $\Hset$ for graph recovery, prediction, and autoregressive graph modeling.  The
 layer data flow is closed: the output matrix of one layer becomes the content
 coordinate matrix of the next layer, so repeated layers refine the same
-node-aligned point set without changing its row correspondence.  Thus, this step
+node aligned point set without changing its row correspondence.  Thus, this step
 outputs $\mathbf h_i$ at each row and the full point set $\Hset$ at the graph
 level.
 
@@ -294,7 +297,9 @@ Under this condition, two graphs with the same representation satisfy
 Both targets lie within the recovery tolerance of the same decoded
 representation, so the result follows from the triangle inequality.  Direct
 recovery metrics therefore bound how much input information a shared embedding
-can merge.
+can merge.  Relation recovery constrains pair geometry, content recovery
+constrains single point information, and together they provide the guarantee
+that $\Hset$ functions as an approximate equivalence class.
 
 \subsection{Downstream modeling over the point set}
 \label{sec:interfaces}
@@ -359,7 +364,10 @@ points sampled from a learned proposal distribution and updates existing points
 through the same set interface.  The relation decoder then converts the expanded
 set into candidate edges.  The selector ranks candidates using legality signals
 in supervised training and learned scores in free rollout, so generation reuses
-the same point representation and relation decoder as recovery.
+the same point representation and relation decoder as recovery.  Thus, point
+prediction, graph prediction, and autoregressive graph modeling are different
+readers over one object.  The task head changes with the output type, while the
+representation target remains the same point set $\Hset$.
 
 \begin{table}[t]
   \centering
@@ -390,7 +398,7 @@ the same point representation and relation decoder as recovery.
   \end{tabular}
 \end{table}
 
-\subsection{End-to-end optimization}
+\subsection{End to end optimization}
 \label{sec:training}
 Each downstream task is trained end to end by combining task supervision with
 the two recovery losses.  The prediction loss reads labels only on the training
@@ -423,4 +431,6 @@ four times the model width, and dropout 0.1.  Relation recovery samples up to
 pairs.  Optimization uses AdamW with learning rate 0.001, weight decay 0.0001,
 and gradient clipping at 1.0.
 Relation perturbations are strongest at the beginning of training and vanish as
-the deterministic encoder path takes over.
+the deterministic encoder path takes over.  The training objective therefore
+keeps the embedding, recovery decoders, and downstream readers coupled through a
+single point set throughout optimization.

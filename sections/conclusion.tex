@@ -1,22 +1,23 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-\method{} treats an attributed graph as a point set whose rows correspond to nodes, and
-uses feature and link recovery to make that point set an approximate equivalence
-class of the graph.  This formulation converts graph modeling into neural set
-modeling while using recoverability to guarantee that the hidden object retains
-the graph information needed by downstream tasks.  The feature baseline
-identifies node content, the structural deviation identifies the correction
-conditioned on relations, and two decoders specify what the representation must
-preserve.  Point and invariant set readouts use this representation for
-prediction; set expansion and pairwise relation recovery extend it to legality
-guided growth.  The matched comparison record shows strong results across Web
-relation, program, circuit, timing, molecular, and social graphs, while the
-autoregressive study reports legality guided free growth separately from
-representation reconstruction quality for the configured evaluation setting.
+\method{} establishes a graph modeling interface in which a node aligned point
+set serves as an approximate equivalence class of an attributed graph.  The
+central idea is that recoverability gives this representative its meaning: if
+content and relations can be decoded from the point set, downstream tasks can
+model the set while still relying on graph information preserved by the
+embedding.
 
-\method{} reports link recovery, feature recovery, measured cost, and
-distributional generation quality as dedicated evidence streams.  This structure
-evaluates represented information, task utility, and rule guided growth behavior
-through their respective evaluation settings
-(Sections~\ref{sec:recovery}--\ref{sec:ar-results}).
+The method realizes this idea through three connected components.  The embedding
+stage constructs each point by adding a content coordinate and a structural
+deviation.  The recovery stage decodes node content and pair relations from the
+same point set, making approximate equivalence a measurable property of the
+representation.  The downstream stage reads or expands the point set for
+prediction and graph growth.  Across Web relation, program, circuit, timing,
+molecular, and social graph settings, the experiments evaluate task utility,
+recoverability, and rule guided growth through their corresponding metrics.
+
+Overall, \method{} turns graph modeling into recoverable set modeling.  This
+view keeps the object used by prediction, recovery, and generation consistent,
+and it highlights the role of the point set as a controlled representative of
+the original graph rather than a task specific hidden state alone.

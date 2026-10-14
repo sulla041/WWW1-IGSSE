@@ -15,7 +15,7 @@ We propose \method{} (Invertible Graph Set Space Embedding), a recoverable set
 space embedding for attributed graphs.  \method{} maps node attributes to an
 attribute only content embedding, then writes structural deviations through a
 feature and structure deviation encoder that combines local graph neighborhoods,
-global attention states, and relation conditions.  The resulting point set, with
+global structural bias, and relation conditions.  The resulting point set, with
 rows corresponding to graph nodes, becomes an approximate equivalence class of
 the graph: single point decoding recovers node content, pair attention decoding
 recovers relations between points, and downstream readers model points and point

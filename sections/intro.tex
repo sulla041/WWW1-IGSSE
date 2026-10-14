@@ -54,7 +54,7 @@ reconstruction is usually introduced through a separate autoencoding objective
   structural deviations, and uses recovery decoders to make the embedded node
   set an approximate equivalence class of the graph. Downstream tasks then model
   the learned point set efficiently.}
-  \Description{A two-row conceptual comparison. The upper row is traditional
+  \Description{A two row conceptual comparison. The upper row is traditional
   message passing: input graph, message passing, feature aggregation, feature
   matrix, irreversible embedding, downstream tasks, and results. The lower row
   is IGSSE: input graph, node feature encoding, node embedding with a feature
@@ -82,6 +82,8 @@ supports graph growth.
 
 We propose \method{} (Invertible Graph Set Space Embedding), a recoverable graph
 set space embedding that implements this approximate equivalence class view.
+\method{} realizes the idea by separating content formation, structural
+deviation writing, recovery, and downstream reading over one point set.
 Figure~\ref{fig:mp-igsse} organizes the comparison as two pipelines.  The upper
 pipeline represents the conventional message passing paradigm: an input graph is
 processed by message passing, feature aggregation, and a feature matrix, then the
@@ -92,7 +94,7 @@ as depth increases \cite{li2018deeper,oono2020}.  The lower pipeline represents
 the \method{} mechanism.  The input graph is first mapped by node feature
 encoding into an original point set without structural deviation.  The feature
 and structure deviation encoder then combines local neighborhoods, global
-attention states, and adjacency based writing to produce a point set carrying
+structural bias, and adjacency based writing to produce a point set carrying
 global structural deviations.  Content and relation decoders verify that this
 point set preserves node features and links, so recoverability guarantees its
 approximate equivalence to the original graph.  Downstream
@@ -106,7 +108,10 @@ The resulting representation gives prediction, recovery, and graph growth a
 shared object.  Prediction readers consume the point set directly.  Recovery
 decoders define the content and relation targets that make the point set an
 approximate equivalence class.  Set expansion reuses the same representation
-interface for autoregressive graph modeling.  The paper evaluates these three
+interface for autoregressive graph modeling.  Together, these components support
+the central claim: recoverability makes the point set a controlled
+representative of the graph, and downstream tasks can operate on that
+representative through neural set operations.  The paper evaluates these three
 uses with matched prediction tasks, direct recovery, WL collision separation,
 and rule guided graph growth.
 
