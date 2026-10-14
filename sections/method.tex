@@ -123,6 +123,13 @@ a global structural bias:
 \mathbf v_j^{(m)}.
 \label{eq:source-summary}
 \end{equation}
+The query and key projections determine which points interact in the global
+bias, while the value projection determines what information is carried by that
+bias.  Since the bias is later written into the final point set, gradients from
+recovery losses and prediction losses flow through the fused points back to
+these three projection matrices.  In this way, the attention field is trained to
+produce structural bias that is useful for both graph reconstruction and the
+downstream reader.
 The adjacency defines the write set for each target:
 \begin{equation}
  N_A(i)=\{s:(s,i)\in E\}\cup\{i\}.
@@ -212,14 +219,23 @@ applies a learned scale and bias.  For a candidate pair $(i,j)$,
  \label{eq:pairattn}
 \end{equation}
 The link loss applies binary cross entropy to the relation score and the
-adjacency target.  The content decoder is
+adjacency target.  Its gradient updates the pair decoder projections, the
+learned scale and bias, and the encoder parameters that produced the two endpoint
+points.  Positive pairs increase the compatibility of endpoint projections,
+while sampled negative pairs reduce the compatibility of nonedge projections.
+Because the endpoint points come from the same point set consumed by the task
+reader, link recovery also shapes the embedding geometry used by downstream
+prediction.  The content decoder is
 \begin{equation}
  \widehat{\mathbf C}=D_C(\Hset_{\mathrm{dec}}).
  \label{eq:feat}
 \end{equation}
 The content loss measures mean squared error between the predicted content and
-the content target.  Relation recovery evaluates point pair geometry; content
-recovery evaluates information decodable from one point.
+the content target.  Its gradient updates the point level decoder and the
+encoder path that forms each point, encouraging each point to retain its content
+coordinate while accepting relation conditioned structural deviation.  Relation
+recovery evaluates point pair geometry; content recovery evaluates information
+decodable from one point.
 The relation decoder uses normalized projections before the scaled inner
 product.  This keeps the score controlled by angular compatibility and a learned
 global scale, which is useful when different graphs have different sizes or
@@ -273,6 +289,13 @@ For graph tasks, we use attention pooling,
  \label{eq:pool}
 \end{equation}
 where $\beta_i$ is normalized over the graph.
+The pooling reader computes a scalar score for each point, normalizes the scores
+within the graph, and uses the resulting weights to collect projected point
+values.  The task loss therefore updates the pooling scorer, the value
+projection, the graph reader, and the encoder parameters that produce the point
+set.  Points that carry information useful to the graph target receive larger
+pooling weights, while the value projection learns what information should enter
+the graph state.
 The same reader interface is used after every embedding run.  For point
 prediction, a shared multilayer perceptron reads each row of
 the point set prepared for the task.  For graph prediction, attention pooling
@@ -363,6 +386,16 @@ The survival term keeps the learned training noise scale active.  For an
 embedding only run, the prediction term is disabled and the representation is
 trained only through graph recovery targets; for task runs, the task loss and
 recovery losses are optimized together.
+The objective links the attention mechanisms through the point set.  The
+prediction term updates node readers, set attention pooling, graph readers,
+autoregressive selectors, and the encoder projections that formed the points.
+The link term updates the pair attention decoder and backpropagates through the
+endpoint points into the embedding projections.  The content term updates the
+content decoder and the attribute path into the points.  The survival term
+updates the noise scale network used during structural writes.  Joint
+optimization therefore trains the global structural bias, pair attention
+recovery, and set attention pooling through a shared point set rather than as
+separate modules.
 Unless otherwise stated, prediction and link recovery losses use unit weight,
 content recovery uses weight 0.1, and the survival term uses weight 0.001.  The
 default encoder uses width 128, three layers, four attention heads, hidden width
