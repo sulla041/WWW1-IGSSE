@@ -101,6 +101,9 @@ point set preserves node features and links, so recoverability guarantees its
 approximate equivalence to the original graph.  Downstream
 modeling then operates on the point set for element prediction, graph
 prediction, and autoregressive growth.
+Here, global interaction forms candidate source states, the observed adjacency
+decides which structural deviations are written, and recovery fixes the point
+set as the representation object before task readout.
 
 This design supplies both a modeling framework and an evaluation route.  On
 matched prediction tasks, \method{} compares the learned point set and its
