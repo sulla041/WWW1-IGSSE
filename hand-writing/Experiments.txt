@@ -6,9 +6,9 @@
 
 主实验评估异质图任务上的监督预测。Amazon Photo、Coauthor CS 和 Cora 分别表示产品共同购买、学术协作和引文网络。HiGraph 评估用于恶意软件分类的层次程序控制流图。OCB 与 TimingPredict 评估模拟电路性能和布线前时序预测。AIDS 与 IMDB 评估标准图学习基准中的分子图和社会图分类。这些任务覆盖节点标签、图标签和连续图属性，因此可以检验学习到的点集在不同下游读出形式下的有效性。
 
-基线覆盖只使用属性的预测、邻域聚合、传播、长程图序列建模和图到点集建模。MLP 只使用属性，不输入关系。GCN、GraphSAGE、GAT 和 GIN 代表常用邻域计算机制。APPNP 在预测后加入 personalized PageRank 传播。Graph Mamba 通过选择性状态空间建模图上的长程依赖。PST 将图映射为点集表示。表 1 来自实验结果_表A_表B.xlsx 的表甲，报告每个方法的 Emb 与 Result，并把两者拆成相邻两格。十个比较行中，IGSSE 在最终任务结果上均取得最优，说明可恢复点集可以作为有效的监督表示。
+基线覆盖邻域聚合、传播、长程图序列建模和图到点集建模。GCN、GraphSAGE、GAT 和 GIN 代表常用邻域计算机制。APPNP 在预测后加入 personalized PageRank 传播。Graph Mamba 通过选择性状态空间建模图上的长程依赖。PST 将图映射为点集表示。表 1 来自实验结果_表A_表B.xlsx 的表甲，报告每个方法的 Emb 与 Result，并把两者拆成相邻两格。十个比较行中，IGSSE 在最终任务结果上均取得最优，说明可恢复点集可以作为有效的监督表示。
 
-表 1：特征预测主实验结果。每个方法以 Emb 和 Result 两个单独单元格报告，小数保留两位。数据集包括 HiGraph IID、OCB Ckt-Bench-101、TimingPredict、Amazon Photo、Coauthor CS、Amazon Photo interact、Cora、AIDS、IMDB-MULTI 和 IMDB-BINARY。比较方法包括 MLP、GCN、GraphSAGE、GAT、GIN、APPNP、SGFormer、Polynormer、Graph-Mamba、PST 和 IGSSE。IGSSE 在十个最终任务结果中均为最优。
+表 1：特征预测主实验结果。每个方法以 Emb 和 Result 两个单独单元格报告，小数保留两位。数据集包括 HiGraph IID、OCB Ckt-Bench-101、TimingPredict、Amazon Photo、Coauthor CS、Amazon Photo interact、Cora、AIDS、IMDB-MULTI 和 IMDB-BINARY。比较方法包括 GCN、GraphSAGE、GAT、GIN、APPNP、SGFormer、Polynormer、Graph-Mamba、PST 和 IGSSE。IGSSE 在十个最终任务结果中均为最优。
 
 4.2 Autoregressive Graph Modeling
 

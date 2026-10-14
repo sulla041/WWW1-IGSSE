@@ -28,9 +28,8 @@ benchmarks \cite{morris2020,yang2015}.  These tasks cover node labels, graph
 labels, and continuous graph properties, so the learned point set is tested
 under several downstream readout forms.
 
-The baselines cover attribute only prediction, neighborhood aggregation,
-propagation, long range graph sequence modeling, and graph to point set
-modeling.  MLP uses attributes without relation input.  GCN, GraphSAGE, GAT, and
+The baselines cover neighborhood aggregation, propagation, long range graph
+sequence modeling, and graph to point set modeling.  GCN, GraphSAGE, GAT, and
 GIN represent widely used neighborhood computation mechanisms
 \cite{kipf2017,hamilton2017,velickovic2018,xu2019}.  APPNP adds personalized
 PageRank propagation after prediction \cite{gasteiger2019}.  Graph Mamba models
@@ -46,13 +45,12 @@ supervised representation.
   \centering
   \caption{Feature prediction main results from Experiment Result Table A. Each method keeps Emb and Result as separate columns.}
   \label{tab:feature-results}
-  \tiny
-  \setlength{\tabcolsep}{1.1pt}
+  \scriptsize
+  \setlength{\tabcolsep}{1.2pt}
   \resizebox{\textwidth}{!}{%
-  \begin{tabular}{llcccccccccccccccccccccc}
+  \begin{tabular}{llcccccccccccccccccccc}
     \toprule
     Dataset & Metric
-    & \multicolumn{2}{c}{MLP}
     & \multicolumn{2}{c}{GCN}
     & \multicolumn{2}{c}{GraphSAGE}
     & \multicolumn{2}{c}{GAT}
@@ -66,21 +64,21 @@ supervised representation.
     \cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
     \cmidrule(lr){9-10}\cmidrule(lr){11-12}\cmidrule(lr){13-14}
     \cmidrule(lr){15-16}\cmidrule(lr){17-18}\cmidrule(lr){19-20}
-    \cmidrule(lr){21-22}\cmidrule(lr){23-24}
+    \cmidrule(lr){21-22}
     & & Emb & Result & Emb & Result & Emb & Result & Emb & Result
     & Emb & Result & Emb & Result & Emb & Result & Emb & Result
-    & Emb & Result & Emb & Result & Emb & Result \\
+    & Emb & Result & Emb & Result \\
     \midrule
-    HiGraph & F1 & 0.52 & 0.45 & 0.67 & 0.62 & 0.52 & 0.60 & 0.52 & 0.59 & 0.61 & 0.51 & 0.56 & 0.40 & 0.57 & 0.41 & 0.57 & 0.41 & 0.56 & 0.40 & 0.61 & 0.55 & \textbf{0.81} & \textbf{0.86} \\
-    OCB & r & 0.68 & 0.70 & 0.71 & 0.69 & 0.71 & 0.69 & 0.72 & 0.71 & 0.71 & 0.70 & 0.68 & 0.62 & 0.67 & 0.60 & 0.68 & 0.61 & 0.65 & 0.56 & 0.70 & 0.68 & \textbf{0.84} & \textbf{0.90} \\
-    Timing & R\textsuperscript{2} & 0.74 & 0.52 & 0.85 & 0.68 & 0.83 & 0.66 & 0.79 & 0.64 & 0.83 & 0.65 & 0.86 & 0.70 & 0.74 & 0.74 & 0.75 & 0.76 & 0.74 & 0.73 & 0.77 & 0.71 & \textbf{1.00} & \textbf{0.95} \\
-    Photo & Acc & 0.80 & 0.85 & 0.87 & 0.91 & 0.79 & 0.91 & 0.84 & 0.88 & 0.78 & 0.87 & 0.85 & 0.90 & 0.88 & 0.94 & 0.86 & 0.95 & 0.88 & 0.94 & 0.85 & 0.92 & \textbf{0.88} & \textbf{0.95} \\
-    Coauthor & Acc & 0.86 & 0.94 & 0.87 & 0.94 & 0.88 & 0.94 & 0.87 & 0.94 & 0.86 & 0.94 & 0.89 & 0.93 & 0.87 & 0.95 & 0.82 & 0.94 & 0.86 & 0.94 & 0.87 & 0.94 & \textbf{0.90} & \textbf{0.95} \\
-    Photo int. & Acc & 0.76 & 0.80 & 0.82 & 0.88 & 0.80 & 0.90 & 0.82 & 0.84 & 0.78 & 0.83 & 0.86 & 0.88 & 0.88 & 0.93 & 0.86 & 0.94 & 0.88 & 0.93 & 0.85 & 0.91 & \textbf{0.97} & \textbf{0.94} \\
-    Cora & Acc & 0.43 & 0.47 & 0.84 & 0.75 & 0.73 & 0.70 & 0.78 & 0.73 & 0.70 & 0.65 & 0.87 & 0.80 & 0.81 & 0.66 & 0.80 & 0.73 & 0.86 & 0.69 & 0.81 & 0.76 & \textbf{0.89} & \textbf{0.82} \\
-    AIDS & Acc & 0.67 & 0.68 & 0.77 & 0.80 & 0.76 & 0.80 & 0.76 & 0.80 & 0.76 & 0.80 & 0.75 & 0.75 & 0.76 & 0.77 & 0.76 & 0.78 & 0.75 & 0.76 & 0.78 & 0.84 & \textbf{0.89} & \textbf{0.99} \\
-    IMDB-M & Acc & 0.51 & 0.35 & 0.54 & 0.36 & 0.52 & 0.35 & 0.52 & 0.34 & 0.56 & 0.40 & 0.53 & 0.35 & 0.54 & 0.35 & 0.52 & 0.35 & 0.50 & 0.35 & 0.55 & 0.41 & \textbf{0.63} & \textbf{0.52} \\
-    IMDB-B & Acc & 0.55 & 0.43 & 0.61 & 0.50 & 0.61 & 0.50 & 0.61 & 0.50 & 0.61 & 0.51 & 0.60 & 0.47 & 0.61 & 0.48 & 0.61 & 0.49 & 0.60 & 0.48 & 0.62 & 0.55 & \textbf{0.75} & \textbf{0.75} \\
+    HiGraph & F1 & 0.67 & 0.62 & 0.52 & 0.60 & 0.52 & 0.59 & 0.61 & 0.51 & 0.56 & 0.40 & 0.57 & 0.41 & 0.57 & 0.41 & 0.56 & 0.40 & 0.61 & 0.55 & \textbf{0.81} & \textbf{0.86} \\
+    OCB & r & 0.71 & 0.69 & 0.71 & 0.69 & 0.72 & 0.71 & 0.71 & 0.70 & 0.68 & 0.62 & 0.67 & 0.60 & 0.68 & 0.61 & 0.65 & 0.56 & 0.70 & 0.68 & \textbf{0.84} & \textbf{0.90} \\
+    Timing & R\textsuperscript{2} & 0.85 & 0.68 & 0.83 & 0.66 & 0.79 & 0.64 & 0.83 & 0.65 & 0.86 & 0.70 & 0.74 & 0.74 & 0.75 & 0.76 & 0.74 & 0.73 & 0.77 & 0.71 & \textbf{1.00} & \textbf{0.95} \\
+    Photo & Acc & 0.87 & 0.91 & 0.79 & 0.91 & 0.84 & 0.88 & 0.78 & 0.87 & 0.85 & 0.90 & 0.88 & 0.94 & 0.86 & 0.95 & 0.88 & 0.94 & 0.85 & 0.92 & \textbf{0.88} & \textbf{0.95} \\
+    Coauthor & Acc & 0.87 & 0.94 & 0.88 & 0.94 & 0.87 & 0.94 & 0.86 & 0.94 & 0.89 & 0.93 & 0.87 & 0.95 & 0.82 & 0.94 & 0.86 & 0.94 & 0.87 & 0.94 & \textbf{0.90} & \textbf{0.95} \\
+    Photo int. & Acc & 0.82 & 0.88 & 0.80 & 0.90 & 0.82 & 0.84 & 0.78 & 0.83 & 0.86 & 0.88 & 0.88 & 0.93 & 0.86 & 0.94 & 0.88 & 0.93 & 0.85 & 0.91 & \textbf{0.97} & \textbf{0.94} \\
+    Cora & Acc & 0.84 & 0.75 & 0.73 & 0.70 & 0.78 & 0.73 & 0.70 & 0.65 & 0.87 & 0.80 & 0.81 & 0.66 & 0.80 & 0.73 & 0.86 & 0.69 & 0.81 & 0.76 & \textbf{0.89} & \textbf{0.82} \\
+    AIDS & Acc & 0.77 & 0.80 & 0.76 & 0.80 & 0.76 & 0.80 & 0.76 & 0.80 & 0.75 & 0.75 & 0.76 & 0.77 & 0.76 & 0.78 & 0.75 & 0.76 & 0.78 & 0.84 & \textbf{0.89} & \textbf{0.99} \\
+    IMDB-M & Acc & 0.54 & 0.36 & 0.52 & 0.35 & 0.52 & 0.34 & 0.56 & 0.40 & 0.53 & 0.35 & 0.54 & 0.35 & 0.52 & 0.35 & 0.50 & 0.35 & 0.55 & 0.41 & \textbf{0.63} & \textbf{0.52} \\
+    IMDB-B & Acc & 0.61 & 0.50 & 0.61 & 0.50 & 0.61 & 0.50 & 0.61 & 0.51 & 0.60 & 0.47 & 0.61 & 0.48 & 0.61 & 0.49 & 0.60 & 0.48 & 0.62 & 0.55 & \textbf{0.75} & \textbf{0.75} \\
     \bottomrule
   \end{tabular}}
 \end{table*}
