@@ -19,10 +19,9 @@ functions instantiate this template across semi supervised node prediction,
 inductive learning, and graph prediction tasks
 \cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.  APPNP separates
 prediction and propagation through personalized PageRank
-\cite{gasteiger2019}.  Global attention graph architectures introduce
-all pair interactions with structural encodings, and hybrid local and global designs
-combine neighborhood aggregation with global attention in scalable recipes
-\cite{ying2021graphormer,rampasek2022graphgps}.
+\cite{gasteiger2019}.  Graph Mamba introduces selective state space modeling to
+capture long range graph dependencies on graph derived token orders
+\cite{wang2024graphmamba}.
 These algorithms define the current graph learning toolkit used by Web
 recommendation, citation analysis, program reasoning, electronic design, and
 scientific graph prediction.
@@ -37,24 +36,21 @@ and computational cost \cite{xu2019,morris2019wl}.  Long range dependence
 creates a second bottleneck: information from many distant nodes must be
 compressed into fixed width states along narrow graph cuts, a phenomenon studied
 as oversquashing and linked to graph curvature and bottlenecks
-\cite{alon2021bottleneck,topping2022oversquashing}.  Global attention graph
-architectures reduce locality through all pair interactions, yet standard
-attention has quadratic cost, and its structural knowledge often depends on
-positional or structural encodings
-\cite{ying2021graphormer,rampasek2022graphgps,shirzad2023exphormer}.  These
-limitations motivate representations that preserve graph content and relations
-before task readout and make the retained information directly recoverable.
+\cite{alon2021bottleneck,topping2022oversquashing}.  Recent long range graph
+models, including Graph Mamba, reduce locality by processing graph derived
+sequences with selective state spaces, yet the learned state still needs an
+explicit guarantee that graph content and relations remain recoverable before
+task readout \cite{wang2024graphmamba}.  These limitations motivate
+representations that preserve graph content and relations before task readout
+and make the retained information directly recoverable.
 
 \paragraph{Recent attempts to address these limits.}
-Recent work has explored several routes.  Sparse and hybrid attention based
-graph models reduce the cost of global interactions by using expander based
-sparse attention, virtual global nodes, or local and global layer composition
-\cite{rampasek2022graphgps,shirzad2023exphormer}.  Rewiring
-methods alter graph connectivity to improve information flow; locality aware
+Recent work has explored several routes.  Graph Mamba uses selective state
+space modeling to carry long range information over graph derived sequences
+\cite{wang2024graphmamba}.  Rewiring methods alter graph connectivity to
+improve information flow; locality aware
 rewiring explicitly balances reducing oversquashing, respecting graph locality,
-and preserving sparsity \cite{barbero2024locality}.  State space models for
-graphs, including Graph Mamba, use selective sequence modeling to capture long
-range dependencies on graph derived token orders \cite{wang2024graphmamba}.
+and preserving sparsity \cite{barbero2024locality}.
 NeuralWalker combines random walk sequences with local message passing so that
 sequence models can carry long range graph information \cite{chen2025neuralwalker}.
 These advances improve interaction range and efficiency, and they still leave a

@@ -1,118 +1,238 @@
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{Questions and setup}
-We ask: (Q1) does the learned point set retain links and node content; (Q2) does
-it support Web relation tasks; (Q3) which encoder and readout components account
-for task utility; (Q4) can the set state grow freely beyond the training scale
-after graph rule supervision; (Q5) how do graph semantics and output level
-affect the result; and (Q6) where does a learned point set signature collide on
-nonisomorphic graph pairs stratified by first order, second
-order, and third order WL tests?  Each dataset trains its own
-encoder, decoders, and head.  Validation metrics select checkpoints and test
-splits report results. Each task instance learns a dedicated representation and
-reader with its fixed data split, input convention, and metric.
+The experiments evaluate \method{} along four complementary axes.  The feature
+prediction experiment is the main comparison and tests whether the recovered
+point set supports supervised graph learning across Web relation, program,
+circuit, timing, molecular, and social graph data.  The autoregressive
+experiment tests whether the same set object can be expanded under graph rule
+supervision.  The ablation experiment separates the contribution of recovery,
+structural deviation, training perturbation, and set reading.  The WL collision
+experiment tests whether recovery trained point sets separate controlled
+nonisomorphic graph pairs.  Across all experiments, each dataset uses its own
+encoder, recovery decoders, and task reader; validation metrics select
+checkpoints and test splits report the final metric.
 
-The listed baselines are MLP, GCN, GraphSAGE, GAT, GIN, APPNP, SGFormer,
-Polynormer, Graph-Mamba, and PST.  Each row fixes its input convention, split,
-and primary metric. The \emph{Emb} column reports structural separability, while
-the pair decoder and content decoder report direct recovery. The camera ready
-recovery table reports link F1/AUC/AP and feature R$^2$/cosine
-for each primary graph rule setting, together with optimization steps and wall time.
+\subsection{Feature Prediction Main Experiment}
+\label{sec:feature-main}
 
-\paragraph{Baseline matching.}
-The prediction comparison uses the same split, input attributes, and task metric
-within a row.  MLP tests attributes alone.  GCN, GraphSAGE,
-GAT, and GIN represent neighborhood aggregation; APPNP, SGFormer, Polynormer,
-and Graph-Mamba add different propagation or long range mechanisms; PST tests a
-graph to set route.  The comparison answers a row level question: whether the
-evaluated \method{} configuration improves the task metric for that evaluation setting.
+The main experiment compares \method{} with graph learning baselines under
+matched splits, input attributes, and task metrics.  The datasets cover four
+types of graph semantics.  Amazon Photo, Coauthor CS, and Cora represent product
+purchase, academic collaboration, and citation relations
+\cite{shchur2018,sen2008,yang2016}.  HiGraph evaluates hierarchical program
+graphs for malware analysis \cite{chen2025higraph}.  OCB and TimingPredict
+evaluate circuit connectivity and pre routing timing prediction
+\cite{dong2023cktgnn,guo2022timing}.  AIDS and IMDB provide molecular and
+social graph benchmarks from standard graph learning collections
+\cite{morris2020,yang2015}.  These datasets test whether the point set remains
+useful when the label lives on a node, a graph, or a continuous property.
 
-\subsection{Matched prediction comparison}
-The frozen comparison record compares the strongest listed baseline and \method{}
-for each task.  \method{} exceeds the listed comparison set in all ten matched
-rows.  The result spans purchase relations,
-collaboration, citation, program, circuit, timing, molecular, and social graph
-settings.  This statement is scoped to the record: it applies to the frozen inputs,
-splits, schedules, and baseline set in the workbook.
+The baselines are grouped by the computation they test.  MLP uses attributes
+without graph structure.  GCN, GraphSAGE, GAT, and GIN represent neighborhood
+aggregation, inductive sampling, attention over neighborhoods, and expressive
+aggregation \cite{kipf2017,hamilton2017,velickovic2018,xu2019}.  APPNP tests
+prediction followed by personalized PageRank propagation \cite{gasteiger2019}.
+Graph Mamba tests recent long range sequence style graph modeling mechanisms
+\cite{wang2024graphmamba}.  PST tests a graph to point set route
+\cite{wang2024graphpointset}.  \method{} is evaluated by feeding the learned
+point set to the corresponding point or set reader.  Table~\ref{tab:feature-exp}
+summarizes the main comparison.
 
-\subsection{WL collision resolution through recovery training}
-\label{sec:wl-diagnostic}
-The WL hierarchy supplies controlled graph pair strata for trained recovery
-experiments \cite{morris2019wl}. BREC provides Basic, Regular, Extension, CFI,
-Four Vertex, and Distance Regular pairs. For each evaluated pair, IGSSE receives
-unlabeled recovery training and decodes both embeddings under consistent node
-permutations. The experiment reports reconstruction F1/AUC/AP, reconstructed
-graph separation, and permutation deviation by stratum. Under the recovery
-criteria, trained IGSSE separates the evaluated second order and third
-order WL collision graph pairs through accurate reconstruction and stable
-separation.
+\begin{table*}[t]
+  \centering
+  \caption{Feature prediction main experiment.}
+  \label{tab:feature-exp}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{p{0.16\textwidth}p{0.27\textwidth}p{0.30\textwidth}p{0.10\textwidth}}
+    \hline
+    Setting & Dataset content & Compared methods & Metric \\
+    \hline
+    Web relation graphs & Amazon Photo, Coauthor CS, and Cora model purchase,
+    collaboration, and citation relations
+    \cite{shchur2018,sen2008,yang2016} &
+    MLP; GCN, GraphSAGE, GAT, GIN; APPNP; Graph Mamba; PST; \method{} &
+    Accuracy or F1 \\
+    Program graphs & HiGraph models hierarchical program behavior for malware
+    analysis \cite{chen2025higraph} &
+    Attribute, neighborhood, long range, and point set baselines &
+    Accuracy or F1 \\
+    Circuit and timing graphs & OCB and TimingPredict model circuit structure
+    and timing targets \cite{dong2023cktgnn,guo2022timing} &
+    Attribute, neighborhood, long range, and point set baselines &
+    Regression or classification metric \\
+    Molecular and social graphs & AIDS and IMDB evaluate molecule and social
+    graph prediction \cite{morris2020,yang2015} &
+    Attribute, neighborhood, long range, and point set baselines &
+    Accuracy or F1 \\
+    \hline
+  \end{tabular}
+\end{table*}
 
-\paragraph{Web relation tasks.}
-Amazon Photo, Coauthor CS, and Cora respectively represent product purchase relations,
-academic collaboration, and citation relations \cite{shchur2018,sen2008,yang2016}.
-\method{} is best among the listed baselines in all four Web rows, including the
-Photo interact setting.  The gains on Photo and Coauthor CS are narrow, which
-is consistent with strong matched baselines; the Cora row has a larger gap.
-The record reports Web task utility with matched training settings.
+This experiment is the primary task utility test.  A gain in this table means
+that the point set produced by \method{} can support the supervised prediction
+target under the same split and input convention as the listed baselines.
 
-\paragraph{Cross semantic stress tests.}
-HiGraph, OCB, and TimingPredict change graph semantics and output granularity,
-while AIDS and IMDB add molecular and weak feature social graph conditions
-\cite{chen2025higraph,dong2023cktgnn,guo2022timing,morris2020,yang2015}.
-The point and set interfaces remain available in each setting, with parameters
-trained for the target task. The tests measure architectural coverage under
-changed semantics.
-
-\subsection{Legality guided autoregressive growth}
+\subsection{Autoregressive Graph Modeling}
 \label{sec:ar-results}
-The generation experiment trains set expansion with graph rule supervision,
-then freezes parameters and removes the step wise rule teacher for free growth.
-The result workbook reports terminal validity and the Emb F1 probe at the target
-size.  Legal and Net use distinct live state selection rules, so their validity values must
-be interpreted separately.
 
-\paragraph{Evaluation setup.}
-The training phase supplies a graph rule legality signal at the training
-scale.  The evaluation phase fixes the learned parameters, increases the target
-size, and uses learned parameters for every expansion step.  A Legal selection
-rule keeps states satisfying the graph rule predicate, whereas a Net selection rule
-uses the learned network score to select live states.  The record stores the
-target size, number of samples, maximum live state capacity, selection rule, and
-random seed.
-These details identify the source of terminal validity by separating the learned
-transition, filtering rule, live state capacity, and training teacher.
+The autoregressive experiment evaluates graph growth on the same representation
+interface used by prediction.  Training supplies a graph rule legality signal at
+the training size.  During rollout, the learned set expansion operator appends
+new live points, updates the current point set, and uses the relation decoder to
+recover candidate edges.  The evaluation records terminal validity, target size,
+number of sampled graphs, live state capacity, selection rule, and random seed.
 
-The planar result shows that the selection rule changes terminal validity.  The chordal
-and bipartite rows test changed graph rules as an additional evaluation axis.
-The result supports legality guided growth against the listed mechanism
-proxies.  Distributional fidelity evidence requires degree or clustering
-statistics, an appropriate MMD, uniqueness and novelty, and node order
-sensitivity.
+The graph rules are planar, chordal, and bipartite predicates.  Planar graphs
+test whether growth respects a global embeddability constraint; chordal graphs
+test whether the generated graph admits the required cycle structure; bipartite
+graphs test whether the live state preserves a two part relation constraint.
+The comparison includes autoregressive and generative graph baselines such as
+GraphRNN, GRAN, GraphVAE, GraphAF, score based graph generation, and DiGress
+\cite{you2018,liao2019,simonyan2018graphvae,shi2020,jo2022,vignac2023}.  These
+methods represent recurrent, attention based, variational, flow based, score
+based, and diffusion based graph generation.  Table~\ref{tab:ar-exp} lists the
+growth settings.
 
-\subsection{Ablation and evidence boundaries}
-The ablation workbook separates recovery losses, noise, the frozen
-representation, and readout choices.  The Full column comes from the main
-comparison; the variants come from a common ablation suite.  The absolute values
-are therefore not a second implementation of the main table.  Their directional
-changes identify which components the suite attributes to the observed utility.
+\begin{table*}[t]
+  \centering
+  \caption{Autoregressive graph modeling experiment.}
+  \label{tab:ar-exp}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{p{0.14\textwidth}p{0.30\textwidth}p{0.28\textwidth}p{0.10\textwidth}}
+    \hline
+    Rule & Growth target & Compared methods & Metrics \\
+    \hline
+    Planar & Expand a point set while maintaining planar legality &
+    GraphRNN, GRAN, GraphVAE, GraphAF, score based generation, DiGress, and
+    \method{} &
+    Validity, recovery F1/AUC/AP \\
+    Chordal & Expand a point set while maintaining chordal legality &
+    Autoregressive, variational, flow, score, diffusion, and \method{} variants &
+    Validity, recovery F1/AUC/AP \\
+    Bipartite & Expand a point set while maintaining bipartite legality &
+    Autoregressive, variational, flow, score, diffusion, and \method{} variants &
+    Validity, recovery F1/AUC/AP \\
+    Selection rule & Legal selection keeps states satisfying the rule; network
+    selection ranks live states by learned scores &
+    Legal and network selection versions of \method{} &
+    Terminal validity and target size \\
+    \hline
+  \end{tabular}
+\end{table*}
 
-Removing a recovery term degrades either task utility, the structural probe, or
-both in the full suite.  Frozen-$\Hset$ creates the largest drop in the displayed
-Photo and Cora rows, while replacing set aware readout also reduces the scores.
-These ablations support component attribution within the ablation suite and direct
-recovery tables provide the complementary reconstruction evidence.
+This experiment tests whether graph recovery and set expansion can share one
+point set.  Terminal validity evaluates whether the final decoded graph satisfies
+the rule, while relation recovery metrics check whether the expanded set still
+supports graph decoding.
 
-\subsection{Reproducibility, cost, and limits}
-The released package provides pretrained checkpoints, an end to end toy test,
-and checks for OCB, HiGraph, and planar metadata.  Link training samples point
-pairs as a sparse relation objective. This describes implementation cost. Before
-submission, we will report parameter count, effective optimization steps, wall time,
-time per update, peak memory, and inference time for each primary graph rule setting.
+\subsection{Ablation Experiment}
+\label{sec:ablation}
 
-The present evidence covers three evaluation axes.  First, all task instances are
-independently trained.  Second, the recovery target covers target links and
-node content, with edge attributes handled by an explicit edge decoder and
-target.  Third, terminal validity is reported together with the graph rule
-predicate, live state capacity, and selection rule.  The generation results
-cover the tested graph rules.
+The ablation experiment isolates which parts of \method{} account for task
+utility and recoverability.  The full model uses content encoding, structural
+deviation writing, relation recovery, content recovery, training perturbation,
+and the set reader.  Each ablation removes or replaces one component while
+keeping the dataset split and metric fixed.  The goal is to separate whether the
+observed behavior comes from recoverability, structural writing, the training
+perturbation, or the downstream reader.
+
+Table~\ref{tab:ablation-exp} defines the ablation variants.  Removing link
+recovery tests whether pair geometry is needed for downstream prediction.
+Removing content recovery tests whether single point content preservation
+matters after structural writing.  Removing structural deviation keeps the
+attribute path but removes relation conditioned correction.  Freezing the point
+set tests whether end to end adaptation is necessary.  Replacing the set reader
+with a simpler reader tests whether the set level aggregation contributes to
+graph prediction.
+
+\begin{table*}[t]
+  \centering
+  \caption{Ablation experiment.}
+  \label{tab:ablation-exp}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{p{0.20\textwidth}p{0.38\textwidth}p{0.25\textwidth}}
+    \hline
+    Variant & Modified component & Measured effect \\
+    \hline
+    Full \method{} & Uses content coordinate, structural deviation, content
+    recovery, relation recovery, perturbation, and set reader &
+    Reference task and recovery behavior \\
+    No relation recovery & Removes the pair relation decoder loss &
+    Effect of point pair recoverability \\
+    No content recovery & Removes the single point content decoder loss &
+    Effect of content preservation \\
+    No structural deviation & Uses the content coordinate without relation
+    conditioned deviation &
+    Effect of structural writing \\
+    No perturbation & Removes scheduled write noise during training &
+    Effect on separation of initially similar points \\
+    Frozen point set & Stops task loss from updating the encoder &
+    Effect of end to end task adaptation \\
+    Simplified reader & Replaces set attention pooling with a simpler reader &
+    Effect of set level aggregation \\
+    \hline
+  \end{tabular}
+\end{table*}
+
+The ablation table is interpreted directionally.  Drops in task metrics measure
+task utility, while drops in link or content recovery measure whether the point
+set still behaves as an approximate equivalence class under the chosen recovery
+targets.
+
+\subsection{WL Collision Experiment}
+\label{sec:wl-diagnostic}
+
+The WL collision experiment evaluates representation separation on controlled
+nonisomorphic graph pairs.  The Weisfeiler Leman hierarchy provides the
+expressivity reference for neighborhood aggregation and higher order tests
+\cite{morris2019wl}.  BREC supplies graph pairs from Basic, Regular, Extension,
+CFI, Four Vertex, and Distance Regular strata, which are designed to expose
+different levels of realized graph neural network expressiveness
+\cite{wang2023brec}.  For each pair, \method{} is trained only with recovery
+targets and decodes both graphs under consistent node permutations.
+
+The experiment compares recovery trained \method{} with the expected behavior of
+standard neighborhood aggregation and higher order WL inspired baselines
+\cite{xu2019,morris2019wl}.  Separation is measured by reconstructed graph
+difference, relation F1/AUC/AP, and permutation deviation.  Table~\ref{tab:wl-exp}
+summarizes the WL diagnostic.
+
+\begin{table*}[t]
+  \centering
+  \caption{WL collision experiment.}
+  \label{tab:wl-exp}
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{p{0.14\textwidth}p{0.32\textwidth}p{0.26\textwidth}p{0.10\textwidth}}
+    \hline
+    Stratum & Pair content & Compared methods & Metrics \\
+    \hline
+    Basic & Nonisomorphic pairs grouped by first order WL behavior
+    \cite{wang2023brec} &
+    Neighborhood aggregation, higher order WL inspired baselines, and \method{} &
+    Separation and recovery \\
+    Regular & Regular, strongly regular, Four Vertex, and Distance Regular
+    pairs \cite{wang2023brec} &
+    Neighborhood aggregation, higher order WL inspired baselines, and \method{} &
+    Separation and recovery \\
+    Extension & Pairs selected to separate finer levels between first order and
+    higher order tests \cite{wang2023brec} &
+    Neighborhood aggregation, higher order WL inspired baselines, and \method{} &
+    Separation and recovery \\
+    CFI & Cai Furer Immerman style pairs with high WL difficulty
+    \cite{wang2023brec} &
+    Neighborhood aggregation, higher order WL inspired baselines, and \method{} &
+    Separation and recovery \\
+    \hline
+  \end{tabular}
+\end{table*}
+
+This experiment closes the evidence chain.  The main experiment measures
+supervised task utility, the autoregressive experiment measures graph growth, the
+ablation experiment attributes components, and the WL collision experiment tests
+whether recovery trained point sets separate controlled graph pairs beyond the
+standard neighborhood aggregation regime.
