@@ -84,12 +84,23 @@ continuous target.
   \label{fig:algorithm-core}
 \end{figure*}
 
+The embedding stage computes three quantities in sequence.  First, it maps node
+attributes to the original coordinate $\mathbf h_{o,i}$, which preserves the
+row-wise node identity before structural writing.  Second, it computes the
+structural deviation $\mathbf o_i$ by forming a global structural bias and
+writing adjacency selected components into each target point.  Third, it fuses
+the two terms into the final point $\mathbf h_i$ and stacks all points into
+$\Hset$.  The data flow is therefore:
+\[
+\mathbf h_{o,i}\quad\longrightarrow\quad \mathbf o_i\quad\longrightarrow\quad
+\mathbf h_i\quad\longrightarrow\quad \Hset .
+\]
+
 \paragraph{Original coordinate $\mathbf h_{o,i}$.}
-Figure~\ref{fig:algorithm-core} shows the embedding stage as the construction of
-a point from two terms.  The first term is the original coordinate
-$\mathbf h_{o,i}$.  At layer $\ell$, this coordinate is the point state before
-structural writing.  At the first layer it is produced only from node
-attributes:
+The purpose of this step is to construct the content coordinate that enters the
+structural write.  At layer $\ell$, $\mathbf h_{o,i}^{(\ell)}$ denotes the point
+state before relation information is added.  At the first layer it is produced
+only from the attribute row of node $i$:
 \begin{equation}
   \mathbf h_{o,i}^{(0)}=\operatorname{Enc}_X(\mathbf x_i).
   \label{eq:baseline}
@@ -101,13 +112,16 @@ the node content before relation information is written into the point.  The
 data flow at this stage is row preserving: the input row for node $i$ is mapped
 to the point row for the same node, and no edge information is consumed by this
 attribute-only transformation.  The result is a content coordinate matrix that
-supplies the input to the structural write.
+supplies the input to the structural write.  Thus, this step outputs the
+row-aligned content state on which all later attention projections operate.
 
 \paragraph{Structural deviation $\mathbf o_i$.}
-The second term is the structural deviation $\mathbf o_i$.  It is computed by
-first forming a global structural bias and then writing only the components
-selected by adjacency.  Query, key, and value vectors are obtained from the
-original coordinate.  For each attention head, we compute
+The purpose of this step is to convert relation information into an additive
+deviation for each point.  The computation first forms a global structural bias
+from the current content coordinates, and then uses adjacency to decide which
+parts of that bias are written into each target point.  Query, key, and value
+vectors are obtained from the original coordinate.  For each attention head, we
+compute
 \begin{equation}
 \mathbf q_i^{(m)}=\mathbf W_Q^{(m)}\mathbf h_{o,i}^{(\ell)},\quad
 \mathbf k_i^{(m)}=\mathbf W_K^{(m)}\mathbf h_{o,i}^{(\ell)},\quad
@@ -148,11 +162,14 @@ original coordinate.  The self term keeps isolated nodes active, and the
 softmax controls the incoming write strength for each target.  A scheduled noise
 term can perturb write logits during optimization to encourage separate
 exploration when nodes have identical content; the deterministic forward path
-uses the unperturbed write logits.
+uses the unperturbed write logits.  Thus, this step outputs $\mathbf o_i$ as the
+structure-aware correction aligned with the same row as $\mathbf h_{o,i}$.
 
 \paragraph{Fusion into $\mathbf h_i$.}
-The final point is obtained by adding the original coordinate and structural
-deviation, followed by a normalized feedforward update:
+The purpose of this step is to combine content and structure into the final
+point representation.  The original coordinate and structural deviation are
+added, regularized through dropout on the deviation branch, and passed through a
+normalized feedforward update:
 \begin{equation}
  \mathbf h_i^{(\ell)}=\Phi\!\left(\mathbf h_{o,i}^{(\ell)}+\operatorname{Dropout}(\mathbf o_i^{(\ell)})\right).
  \label{eq:fusion}
@@ -169,7 +186,9 @@ the structural deviation followed by fusion, producing a node aligned point set
 $\Hset$ for graph recovery, prediction, and autoregressive graph modeling.  The
 layer data flow is closed: the output matrix of one layer becomes the content
 coordinate matrix of the next layer, so repeated layers refine the same
-node-aligned point set without changing its row correspondence.
+node-aligned point set without changing its row correspondence.  Thus, this step
+outputs $\mathbf h_i$ at each row and the full point set $\Hset$ at the graph
+level.
 
 \begin{table}[t]
   \centering
