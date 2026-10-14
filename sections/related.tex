@@ -51,10 +51,10 @@ range dependencies on graph derived token orders \cite{wang2024graphmamba}.
 NeuralWalker combines random walk sequences with local message passing so that
 sequence models can carry long range graph information \cite{chen2025neuralwalker}.
 These advances improve interaction range and efficiency, and they still leave a
-central representation question: whether the learned state retains enough graph
-information to reconstruct the content and relations needed by downstream tasks.
-\method{} addresses this question by making recoverability the guarantee that
-the learned point set is an approximate equivalence class of the input graph.
+central representation question: how the learned state preserves graph content
+and relations before task readout.  \method{} addresses this question by making
+recoverability the guarantee that the learned point set is an approximate
+equivalence class of the input graph.
 
 \paragraph{Equivalence classes and graph representation.}
 Equivalence classes provide a mathematical language for replacing an object by a
@@ -67,9 +67,9 @@ expressivity and stability tradeoff induced by canonical representatives
 be transformed into a set of independent points in a way that preserves graph
 information for set encoders \cite{wang2024graphpointset}.  \method{} follows
 the same mathematical spirit while defining an approximate equivalence relation
-through recoverability: if the content and relation decoders recover the target
-$T(G)=(\mathbf A,\mathbf C)$ within the evaluation tolerance, the point set
-serves as the graph representative for downstream modeling.
+through recoverability: if the content and relation decoders recover the
+prescribed content and adjacency targets, the point set serves as the graph
+representative for downstream modeling.
 
 \paragraph{Algorithms for set modeling.}
 Set modeling supplies the neural interface used after this transformation.  Deep

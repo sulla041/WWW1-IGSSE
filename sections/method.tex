@@ -73,7 +73,7 @@ continuous target.
   \includegraphics[width=\textwidth]{figures/algorithm_core.drawio.pdf}
   \caption{Core architecture of \method{}. The input graph is mapped to an
   attribute baseline, structural deviations are written into the point set by
-  combining global attention states with adjacency guided writes, and recovery
+  combining global structural bias with adjacency guided writes, and recovery
   decoders reconstruct node content and relations between points. The recovered
   point set provides the approximate equivalence class used by feature
   prediction, graph prediction, and autoregressive graph modeling.}
@@ -97,7 +97,11 @@ attributes:
 For later layers, the previous fused point becomes the new original coordinate.
 The attribute encoder is a shared multilayer perceptron with layer normalization,
 and its output dimension is the model width.  This original coordinate records
-the node content before relation information is written into the point.
+the node content before relation information is written into the point.  The
+data flow at this stage is row preserving: the input row for node $i$ is mapped
+to the point row for the same node, and no edge information is consumed by this
+attribute-only transformation.  The result is a content coordinate matrix that
+supplies the input to the structural write.
 
 \paragraph{Structural deviation $\mathbf o_i$.}
 The second term is the structural deviation $\mathbf o_i$.  It is computed by
@@ -110,7 +114,9 @@ original coordinate.  For each attention head, we compute
 \mathbf v_i^{(m)}=\mathbf W_V^{(m)}\mathbf h_{o,i}^{(\ell)}.
 \label{eq:qkv}
 \end{equation}
-The dense attention scores define the global structural bias:
+These projections produce a complete point-to-point compatibility field.  For
+each source point, dense attention over all points collects node information into
+a global structural bias:
 \begin{equation}
 \mathbf u_s^{(m)}=\sum_j\operatorname{softmax}_j\!\left(
 \frac{(\mathbf q_s^{(m)})^\top\mathbf k_j^{(m)}}{\sqrt{d_h}}\right)
@@ -132,10 +138,10 @@ projected multihead write defines the structural deviation:
 \end{equation}
 This deviation is the relation conditioned structural correction added to the
 original coordinate.  The self term keeps isolated nodes active, and the
-softmax controls the incoming write strength for each target.  During training,
-a scheduled noise term can perturb write logits to encourage separate
-exploration when nodes have identical content; evaluation uses clean relation
-scores.
+softmax controls the incoming write strength for each target.  A scheduled noise
+term can perturb write logits during optimization to encourage separate
+exploration when nodes have identical content; the deterministic forward path
+uses the unperturbed write logits.
 
 \paragraph{Fusion into $\mathbf h_i$.}
 The final point is obtained by adding the original coordinate and structural
@@ -153,7 +159,10 @@ downstream readers:
 \end{equation}
 The core embedding relation is therefore the sum of the original coordinate and
 the structural deviation followed by fusion, producing a node aligned point set
-$\Hset$ for graph recovery, prediction, and autoregressive graph modeling.
+$\Hset$ for graph recovery, prediction, and autoregressive graph modeling.  The
+layer data flow is closed: the output matrix of one layer becomes the content
+coordinate matrix of the next layer, so repeated layers refine the same
+node-aligned point set without changing its row correspondence.
 
 \begin{table}[t]
   \centering
@@ -300,9 +309,9 @@ a larger set, and the same relation decoder recovers the expanded graph:
  \qquad E_{s+1}=\{(i,j):\sigma(D_A(\mathbf h_i,\mathbf h_j))\geq\tau\}.
  \label{eq:grow}
 \end{equation}
-Training uses graph rule legality signals for candidate transitions; evaluation
-uses fixed parameters to produce free growth rollouts and then reports terminal
-validity and relational embedding probes.
+Training uses graph rule legality signals for candidate transitions.  During
+rollout, fixed parameters repeatedly expand the live set and decode relations
+from the current point set.
 In the autoregressive case, the set expansion operator appends one or more live
 points sampled from a learned proposal distribution and updates existing points
 through the same set interface.  The relation decoder then converts the expanded
@@ -334,12 +343,12 @@ the same point representation and relation decoder as recovery.
     10 & \quad \textbf{end for} \\
     11 & \quad $\mathcal B\leftarrow\operatorname{Select}(\mathcal C)$ \\
     12 & \textbf{end while} \\
-    13 & \textbf{return} terminal graphs, validity, relation probe metrics \\
+    13 & \textbf{return} terminal point sets and decoded graphs \\
     \hline
   \end{tabular}
 \end{table}
 
-\subsection{End-to-end training}
+\subsection{End-to-end optimization}
 \label{sec:training}
 Each downstream task is trained end to end by combining task supervision with
 the two recovery losses.  The prediction loss reads labels only on the training
@@ -361,16 +370,5 @@ four times the model width, and dropout 0.1.  Relation recovery samples up to
 4096 positive pairs per update and matches them with the same number of negative
 pairs.  Optimization uses AdamW with learning rate 0.001, weight decay 0.0001,
 and gradient clipping at 1.0.
-Relation perturbations are strongest at the beginning of training and vanish for
-clean selection and testing.
-
-\paragraph{Evaluation setup.}
-Training separates noisy encoder states from clean validation and test states.
-The normalized training progress only controls noise annealing; all selection
-passes and test evaluation use unperturbed relation energies.  The validation
-metric selects the checkpoint, and the test split is read once from that
-checkpoint.  For classification tasks we use cross entropy on labeled training
-instances; for regression tasks we use mean squared error or mean absolute error
-according to the dataset metric.  The recovery losses are computed on the same
-minibatch as the task loss, and the clean validation pass disables relation
-noise and dropout.
+Relation perturbations are strongest at the beginning of training and vanish as
+the deterministic encoder path takes over.
