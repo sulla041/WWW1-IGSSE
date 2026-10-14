@@ -108,18 +108,27 @@ graph growth interface.
   \caption{Autoregressive validity from Experiment Result Table B. Only the final Valid metric is reported.}
   \label{tab:autoregressive-results}
   \scriptsize
-  \setlength{\tabcolsep}{1.2pt}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{lcccccccccc}
+  \setlength{\tabcolsep}{0.7pt}
+  \begin{tabular}{@{}lcccccccccc@{}}
     \toprule
-    Task & ER/BA~\cite{erdos1959,barabasi1999} & RNN~\cite{you2018} & GRAN~\cite{liao2019} & BiGG~\cite{dai2020} & AF~\cite{shi2020} & SPECTRE~\cite{martinkus2022spectre} & DiGress~\cite{vignac2023} & EDGE~\cite{chen2023edge} & GDSS~\cite{jo2022} & \method{} \\
+    Task
+    & \shortstack{ER/BA\\\cite{erdos1959,barabasi1999}}
+    & \shortstack{RNN\\\cite{you2018}}
+    & \shortstack{GRAN\\\cite{liao2019}}
+    & \shortstack{BiGG\\\cite{dai2020}}
+    & \shortstack{AF\\\cite{shi2020}}
+    & \shortstack{SPECTRE\\\cite{martinkus2022spectre}}
+    & \shortstack{DiGress\\\cite{vignac2023}}
+    & \shortstack{EDGE\\\cite{chen2023edge}}
+    & \shortstack{GDSS\\\cite{jo2022}}
+    & \method{} \\
     \midrule
     Planar Legal~\cite{diestel2017} & 0.00 & 0.00 & 0.00 & 0.85 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.94} \\
     Planar Net~\cite{diestel2017} & 0.00 & 0.00 & 0.00 & 0.85 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.97} \\
     Chordal~\cite{golumbic2004} & 0.00 & 0.00 & 0.00 & 0.05 & 0.00 & 0.01 & 0.00 & 0.24 & 0.00 & \textbf{0.83} \\
     Bipartite~\cite{diestel2017} & 0.00 & 0.00 & 0.00 & 0.18 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.74} \\
     \bottomrule
-  \end{tabular}}
+  \end{tabular}
 \end{table}
 
 \subsection{Ablation Experiment}
@@ -147,9 +156,8 @@ objective.
   \caption{Ablation results from Experiment Result Ablation Table A format. Only the final Result metric is reported.}
   \label{tab:ablation-results}
   \scriptsize
-  \setlength{\tabcolsep}{2.4pt}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{lcccccc}
+  \setlength{\tabcolsep}{2.0pt}
+  \begin{tabular}{@{}lcccccc@{}}
     \toprule
     Dataset & Full & \(-L_f\) & \(-\psi\) & \(-L_l\) & \(-L_e\) & freeze \\
     \midrule
@@ -164,7 +172,7 @@ objective.
     IMDB-M~\cite{yang2015} & 0.52 & 0.45 & 0.43 & 0.38 & \textbf{0.52} & 0.48 \\
     IMDB-B~\cite{yang2015} & \textbf{0.75} & 0.64 & 0.62 & 0.52 & 0.57 & 0.64 \\
     \bottomrule
-  \end{tabular}}
+  \end{tabular}
 \end{table}
 
 \subsection{WL Collision Experiment}
@@ -194,8 +202,7 @@ the collision rate among the twenty three passing pairs is zero.
   \label{tab:wl-results}
   \scriptsize
   \setlength{\tabcolsep}{2.4pt}
-  \resizebox{\columnwidth}{!}{%
-  \begin{tabular}{lccc}
+  \begin{tabular}{@{}lccc@{}}
     \toprule
     BREC category & Covered & Recovery & Collision \\
     \midrule
@@ -206,7 +213,7 @@ the collision rate among the twenty three passing pairs is zero.
     4-Vertex~\cite{wang2023brec} & pending & -- & -- \\
     Distance Reg.~\cite{wang2023brec} & pending & -- & -- \\
     \bottomrule
-  \end{tabular}}
+  \end{tabular}
 \end{table}
 
 These four experiments form a compact evidence chain.  The main experiment
