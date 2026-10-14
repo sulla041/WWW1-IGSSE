@@ -284,21 +284,3 @@ metric selects the checkpoint, and the test split is read once from that
 checkpoint.  Embedding dimension, encoder depth, head count, hidden width,
 dropout, optimizer settings, loss weights, and pair budgets are treated as
 experimental configuration and reported with the corresponding experiments.
-
-\subsection{Symmetry and computational boundary}
-\label{sec:objective}
-Shared point maps and relation scoring preserve the intended permutation
-structure.  For a consistent node permutation $\mathbf P$,
-\begin{equation}
- F(\mathbf P G)=\mathbf P F(G),\qquad R(\mathbf P\Hset)=R(\Hset).
- \label{eq:symmetry}
-\end{equation}
-Here $F$ denotes point-set embedding and $R$ denotes a permutation-invariant graph
-reader; the relation decoder follows the same simultaneous row and column
-permutation on adjacency scores.  The encoder aggregates only over
-$E_{\mathrm{enc}}$, so its layer cost is linear in the number of encoded edges up
-to the head and hidden dimensions.  Relation training uses sampled pairs,
-whereas complete recovery evaluation may score a larger evaluated pair set.
-Set attention and unrestricted pair decoding can become quadratic in the number
-of live points, so sampled pair training, chunked decoding, and live state
-capacity are reported as part of the evaluation setting.
