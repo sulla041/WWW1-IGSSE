@@ -87,6 +87,17 @@ this path with the preceding point state in place of $\mathbf h_o$. The
 conditional noise filter regulates structural writing when global source states
 contract during aggregation.
 
+\paragraph{Difference from global-attention graph encoders.}
+The global attention field in \method{} is an intermediate source-state
+constructor, while graph structure enters through a separate adjacency
+conditioned write into $\mathbf o_i$.  This separation gives the model three
+distinct objects: an attribute-only coordinate $\mathbf h_{o,i}$, a relation
+conditioned deviation $\mathbf o_i$, and the fused point $\mathbf h_i$.  The
+point set is then constrained by content and relation recovery before any task
+reader consumes it.  Thus, global interaction supplies candidate context, the
+observed graph selects what is written, and recoverability makes the resulting
+point set an approximate equivalence class for graph modeling.
+
 \subsection{Embedding by content coordinates and structural deviations}
 \label{sec:fsde}
 The embedding stage constructs $\Hset$ by repeating the same two component

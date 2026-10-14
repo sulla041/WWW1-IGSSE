@@ -12,9 +12,10 @@ functions instantiate this template across semi supervised node prediction,
 inductive learning, and graph prediction tasks
 \cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.  APPNP separates
 prediction and propagation through personalized PageRank
-\cite{gasteiger2019}.  Graph Transformers introduce global attention with
-structural encodings, while GraphGPS combines local message passing with global
-attention in a scalable recipe \cite{ying2021graphormer,rampasek2022graphgps}.
+\cite{gasteiger2019}.  Global-attention graph architectures introduce
+all-pair interactions with structural encodings, and hybrid local-global designs
+combine neighborhood aggregation with global attention in scalable recipes
+\cite{ying2021graphormer,rampasek2022graphgps}.
 These algorithms define the current graph learning toolkit used by Web
 recommendation, citation analysis, program reasoning, electronic design, and
 scientific graph prediction.
@@ -29,18 +30,19 @@ and computational cost \cite{xu2019,morris2019wl}.  Long range dependence
 creates a second bottleneck: information from many distant nodes must be
 compressed into fixed width states along narrow graph cuts, a phenomenon studied
 as oversquashing and linked to graph curvature and bottlenecks
-\cite{alon2021bottleneck,topping2022oversquashing}.  Graph Transformers reduce
-locality through global attention, yet standard attention has quadratic cost, and
-its structural knowledge often depends on positional or structural encodings
+\cite{alon2021bottleneck,topping2022oversquashing}.  Global-attention graph
+architectures reduce locality through all-pair interactions, yet standard
+attention has quadratic cost, and its structural knowledge often depends on
+positional or structural encodings
 \cite{ying2021graphormer,rampasek2022graphgps,shirzad2023exphormer}.  These
 limitations motivate representations that preserve graph content and relations
 before task readout and make the retained information directly recoverable.
 
 \paragraph{Recent attempts to address these limits.}
-Recent work has explored several routes.  Sparse and hybrid Graph Transformers
-such as Exphormer and GraphGPS reduce the cost of global interactions by using
-expander based sparse attention, virtual global nodes, or a local and global
-layer composition \cite{rampasek2022graphgps,shirzad2023exphormer}.  Rewiring
+Recent work has explored several routes.  Sparse and hybrid attention based
+graph models reduce the cost of global interactions by using expander based
+sparse attention, virtual global nodes, or local-global layer composition
+\cite{rampasek2022graphgps,shirzad2023exphormer}.  Rewiring
 methods alter graph connectivity to improve information flow; locality aware
 rewiring explicitly balances reducing oversquashing, respecting graph locality,
 and preserving sparsity \cite{barbero2024locality}.  State space models for
