@@ -39,14 +39,13 @@ The recovery target contains adjacency and content:
 \end{equation}
 Here the stop gradient operator blocks updates through the content target.  A
 configuration may instead recover a standardized raw feature target.  In either
-case, labels are excluded from recovery.  We use the decoder point set for the
-final state verified by the content and relation decoders, and the task point
-set for the final state or a reader input built by concatenating layer states.
-The separation between $\Hset_{\mathrm{dec}}$ and $\Hset_{\mathrm{task}}$
-allows the reader to choose the most useful predictive state while the recovery
-decoders always inspect a fixed representation object.  This design makes the
-point set a stable carrier of graph content and relations before any task head
-is applied.
+case, labels are excluded from recovery.  During training, the embedding process
+is shaped by recoverability and downstream supervision at the same time.
+Content and relation recovery require the point set to retain the graph
+information needed for approximate equivalence, while the prediction objective
+guides the same point set toward the task that the model must solve.  The
+learned embedding therefore uses recoverability as the guarantee of approximate
+equivalence and ultimately serves downstream prediction and graph modeling.
 
 \begin{table}[t]
   \centering
@@ -92,16 +91,19 @@ Figure~\ref{fig:algorithm-core} summarizes the computation graph.  The algorithm
 first forms an original content coordinate $\mathbf h_{o,i}$.  Trainable
 projections then produce queries, keys, and values, from which the global
 attention field constructs contextual source states.  The observed adjacency
-selects which source states can be written to each target node, and their
-weighted sum forms the structural deviation $\mathbf o_i$.  The final point
-$\mathbf h_i$ is obtained by fusing $\mathbf h_{o,i}$ and $\mathbf o_i$.  Later
-layers repeat the same path with the previous point state as the new original
-coordinate.
+selects which contextual source states can be written to each target node, and
+their weighted sum forms the structural deviation $\mathbf o_i$.  Thus, the
+deviation is injected through adjacency, while the source states already carry
+global attention information before the write.  The final point $\mathbf h_i$
+is obtained by fusing $\mathbf h_{o,i}$ and $\mathbf o_i$, forming a point set
+that acts as an approximate equivalence class of the input graph and becomes the
+direct modeling object for later prediction and generation.  Later layers repeat
+the same path with the previous point set as the new original coordinate.
 The computation is intentionally staged.  The content coordinate records what is
-available without reading relations.  The global field computes reusable source
-states from all points.  The adjacency then decides where these source states are
-written.  These stages determine how the content coordinate and the structural
-deviation jointly form the final point.
+carried by the node itself.  The global field computes a structural bias from
+global pairwise affinities and node information.  The adjacency then decides
+where this bias is written.  These stages determine how the original coordinate
+and the structural bias jointly form the final point.
 
 \subsection{Embedding as a point set}
 \label{sec:fsde}
@@ -168,9 +170,10 @@ control the write operation.  The self term in $N_A(i)$ keeps every point live
 even for isolated vertices, and the softmax normalizes incoming writes for each
 target.  The noise network receives the clean relation energy and normalized
 training progress, predicts a nonnegative scale $\sigma_{si}$, and injects
-a scheduled noise term into write logits during training.  This exposes the
-encoder to small relation uncertainty while preserving deterministic validation
-and test computation.
+a scheduled noise term into write logits during training.  This encourages
+separate exploration when nodes have identical content, maintains effective
+structural writes during training, and preserves deterministic validation and
+test computation.
 
 \paragraph{Fusion into $\mathbf h_i$.}
 The final point is produced by fusing the original coordinate and structural
@@ -304,10 +307,10 @@ For graph tasks, we use attention pooling,
 where $\beta_i$ is normalized over the graph.
 The same reader interface is used after every embedding run.  For point
 prediction, a shared multilayer perceptron reads each row of
-the task point set.  For graph prediction, attention pooling computes point
-weights, normalizes them within each graph, and then applies the graph reader to
-the pooled state.  This keeps the task head small and makes the recoverable
-point set the common object for all prediction types.
+the point set prepared for the task.  For graph prediction, attention pooling
+computes point weights, normalizes them within each graph, and then applies the
+graph reader to the pooled state.  This keeps the task head small and makes the
+recoverable point set the common object for all prediction types.
 
 \begin{table}[t]
   \centering
