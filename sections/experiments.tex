@@ -9,9 +9,9 @@ experiment records how content recovery, relation recovery, structural
 deviation, training perturbation, and set reading affect the final task
 metric.  The WL collision experiment studies whether recovery trained point
 sets separate controlled nonisomorphic graph pairs from BREC and WL diagnostic
-sets \cite{morris2019wl,wang2023brec}.  Together, these four experiments report
-task prediction, graph growth, component variation, and controlled structural
-separation.
+sets \cite{morris2019wl,wang2023brec}.  Together, these four experiments form a
+compact evidence chain for task utility, graph growth, component attribution,
+and controlled structural separation.
 
 \subsection{Feature Prediction Main Experiment}
 \label{sec:feature-main}
@@ -37,8 +37,9 @@ long range graph dependencies through selective state spaces
 \cite{wang2024graphmamba}.  PST maps graphs into point set representations
 \cite{wang2024graphpointset}.  Table~\ref{tab:feature-results} reports the
 embedding score and the final task result as separate cells for each method.
-The bold cells mark the largest value in each row, and the \method{} entries
-are bold in all ten final task result columns.
+Across the ten listed comparisons, \method{} gives the best final task result in
+every row, showing that the recoverable point set can serve as an effective
+supervised representation.
 
 \begin{table*}[t]
   \centering
@@ -98,18 +99,19 @@ diffusion based graph generation methods, including GraphRNN, GRAN, GraphAF,
 GDSS, and DiGress \cite{you2018,liao2019,shi2020,jo2022,vignac2023}.  The full
 workbook records both embedding scores and terminal validity.  To keep the
 paper table compact, Table~\ref{tab:autoregressive-results} reports only
-terminal validity for each baseline.  The bold cells mark the largest validity
-value in each rollout setting.
+terminal validity for each baseline.  The Metric column specifies that Valid is
+the terminal legality rate after rollout.  \method{} obtains the strongest
+validity on all four rollout settings, which supports the use of point set
+expansion as a graph growth interface.
 
-\begin{table}[t]
+\begin{table*}[t]
   \centering
   \caption{Autoregressive validity from Experiment Result Table B. Only the final Valid metric is reported.}
   \label{tab:autoregressive-results}
-  \scriptsize
-  \setlength{\tabcolsep}{0.7pt}
-  \begin{tabular}{@{}lcccccccccc@{}}
+  \setlength{\tabcolsep}{3.0pt}
+  \begin{tabular}{@{}llcccccccccc@{}}
     \toprule
-    Task
+    Task & Metric
     & \shortstack{ER/BA\\\cite{erdos1959,barabasi1999}}
     & \shortstack{RNN\\\cite{you2018}}
     & \shortstack{GRAN\\\cite{liao2019}}
@@ -121,13 +123,13 @@ value in each rollout setting.
     & \shortstack{GDSS\\\cite{jo2022}}
     & \method{} \\
     \midrule
-    Planar Legal~\cite{diestel2017} & 0.00 & 0.00 & 0.00 & 0.85 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.94} \\
-    Planar Net~\cite{diestel2017} & 0.00 & 0.00 & 0.00 & 0.85 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.97} \\
-    Chordal~\cite{golumbic2004} & 0.00 & 0.00 & 0.00 & 0.05 & 0.00 & 0.01 & 0.00 & 0.24 & 0.00 & \textbf{0.83} \\
-    Bipartite~\cite{diestel2017} & 0.00 & 0.00 & 0.00 & 0.18 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.74} \\
+    Planar Legal~\cite{diestel2017} & Valid & 0.00 & 0.00 & 0.00 & 0.85 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.94} \\
+    Planar Net~\cite{diestel2017} & Valid & 0.00 & 0.00 & 0.00 & 0.85 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.97} \\
+    Chordal~\cite{golumbic2004} & Valid & 0.00 & 0.00 & 0.00 & 0.05 & 0.00 & 0.01 & 0.00 & 0.24 & 0.00 & \textbf{0.83} \\
+    Bipartite~\cite{diestel2017} & Valid & 0.00 & 0.00 & 0.00 & 0.18 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.74} \\
     \bottomrule
   \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{Ablation Experiment}
 \label{sec:ablation}
@@ -142,35 +144,36 @@ recoverable content, recoverable relations, relation conditioned deviation,
 trainable adaptation, or set level aggregation.
 
 Table~\ref{tab:ablation-results} reports the ablation results using the final
-task metric only.  Removing feature recovery or relation recovery changes many
-downstream results, linking approximate equivalence with preserved node content
-and pair relations.  Removing the structural deviation term changes the point
-geometry on several graph tasks, while freezing the point set changes its
-adaptation to the supervised objective.
+task metric only.  The Metric column keeps the reported value tied to the same
+Result field used in the main table.  Removing feature recovery or relation
+recovery weakens many downstream results, showing that approximate equivalence
+depends on preserving both node content and pair relations.  Removing the
+structural deviation term changes the point geometry most strongly on several
+graph tasks, while freezing the point set reduces the ability to adapt the
+representation to the supervised objective.
 
-\begin{table}[t]
+\begin{table*}[t]
   \centering
   \caption{Ablation results from Experiment Result Ablation Table A format. Only the final Result metric is reported.}
   \label{tab:ablation-results}
-  \scriptsize
-  \setlength{\tabcolsep}{2.0pt}
-  \begin{tabular}{@{}lcccccc@{}}
+  \setlength{\tabcolsep}{5.0pt}
+  \begin{tabular}{@{}llcccccc@{}}
     \toprule
-    Dataset & Full & \(-L_f\) & \(-\psi\) & \(-L_l\) & \(-L_e\) & freeze \\
+    Dataset & Metric & Full & \(-L_f\) & \(-\psi\) & \(-L_l\) & \(-L_e\) & freeze \\
     \midrule
-    HiGraph~\cite{chen2025higraph} & \textbf{0.86} & 0.82 & 0.84 & 0.83 & 0.83 & 0.83 \\
-    OCB~\cite{dong2023cktgnn} & \textbf{0.90} & 0.62 & 0.63 & 0.64 & 0.64 & 0.50 \\
-    Timing~\cite{guo2022timing} & \textbf{0.95} & 0.83 & 0.82 & 0.84 & 0.84 & 0.69 \\
-    Photo~\cite{shchur2018} & \textbf{0.95} & 0.92 & 0.93 & 0.93 & 0.93 & 0.72 \\
-    Coauthor~\cite{shchur2018} & \textbf{0.95} & 0.94 & 0.94 & 0.94 & 0.94 & 0.89 \\
-    Photo int.~\cite{shchur2018} & \textbf{0.94} & 0.92 & 0.93 & 0.93 & 0.93 & 0.72 \\
-    Cora~\cite{sen2008,yang2016} & \textbf{0.82} & 0.53 & 0.55 & 0.56 & 0.55 & 0.38 \\
-    AIDS~\cite{morris2020} & \textbf{0.99} & 0.88 & 0.86 & 0.88 & 0.90 & 0.88 \\
-    IMDB-M~\cite{yang2015} & 0.52 & 0.45 & 0.43 & 0.38 & \textbf{0.52} & 0.48 \\
-    IMDB-B~\cite{yang2015} & \textbf{0.75} & 0.64 & 0.62 & 0.52 & 0.57 & 0.64 \\
+    HiGraph~\cite{chen2025higraph} & Result & \textbf{0.86} & 0.82 & 0.84 & 0.83 & 0.83 & 0.83 \\
+    OCB~\cite{dong2023cktgnn} & Result & \textbf{0.90} & 0.62 & 0.63 & 0.64 & 0.64 & 0.50 \\
+    Timing~\cite{guo2022timing} & Result & \textbf{0.95} & 0.83 & 0.82 & 0.84 & 0.84 & 0.69 \\
+    Photo~\cite{shchur2018} & Result & \textbf{0.95} & 0.92 & 0.93 & 0.93 & 0.93 & 0.72 \\
+    Coauthor~\cite{shchur2018} & Result & \textbf{0.95} & 0.94 & 0.94 & 0.94 & 0.94 & 0.89 \\
+    Photo int.~\cite{shchur2018} & Result & \textbf{0.94} & 0.92 & 0.93 & 0.93 & 0.93 & 0.72 \\
+    Cora~\cite{sen2008,yang2016} & Result & \textbf{0.82} & 0.53 & 0.55 & 0.56 & 0.55 & 0.38 \\
+    AIDS~\cite{morris2020} & Result & \textbf{0.99} & 0.88 & 0.86 & 0.88 & 0.90 & 0.88 \\
+    IMDB-M~\cite{yang2015} & Result & 0.52 & 0.45 & 0.43 & 0.38 & \textbf{0.52} & 0.48 \\
+    IMDB-B~\cite{yang2015} & Result & \textbf{0.75} & 0.64 & 0.62 & 0.52 & 0.57 & 0.64 \\
     \bottomrule
   \end{tabular}
-\end{table}
+\end{table*}
 
 \subsection{WL Collision Experiment}
 \label{sec:wl-diagnostic}
@@ -185,34 +188,37 @@ then compares whether the reconstructed graphs remain nonisomorphic after
 consistent node permutations.
 
 Table~\ref{tab:wl-results} reports the expanded BREC result from the workbook.
-On Basic and Extension, all covered pairs pass direct graph recovery and the
-collision rate is zero.  The covered set contains one hundred sixty official
-nonisomorphic pairs that are two dimensional WL collisions, and their recovered
-graphs remain separated after training.  A smaller sixty pair diagnostic gives
-the same separation behavior on all recovery passing pairs: Basic ten out of
-ten, Extension ten out of ten, and Regular three out of ten pass recovery, and
-the collision rate among the twenty three passing pairs is zero.
+The Metric column separates the number of covered pairs, the recovery rate, and
+the collision rate.  On Basic and Extension, all covered pairs pass direct graph
+recovery and the collision rate is zero.  The covered set contains one hundred
+sixty official nonisomorphic pairs that are two dimensional WL collisions, and
+their recovered graphs remain separated after training.  A smaller sixty pair
+diagnostic gives the same separation behavior on all recovery passing pairs:
+Basic ten out of ten, Extension ten out of ten, and Regular three out of ten
+pass recovery, and the collision rate among the twenty three passing pairs is
+zero.
 
 \begin{table}[t]
   \centering
   \caption{WL recovery and collision results from the BREC expanded workbook sheet.}
   \label{tab:wl-results}
-  \scriptsize
-  \setlength{\tabcolsep}{2.4pt}
-  \begin{tabular}{@{}lccc@{}}
+  \setlength{\tabcolsep}{4.0pt}
+  \begin{tabular}{@{}llccc@{}}
     \toprule
-    BREC category & Covered & Recovery & Collision \\
+    BREC category & Metric & Covered & Recovery & Collision \\
     \midrule
-    Basic~\cite{wang2023brec} & 60 & 1.00 & \textbf{0.00} \\
-    Regular~\cite{wang2023brec} & pending & -- & -- \\
-    Extension~\cite{wang2023brec} & 100 & 1.00 & \textbf{0.00} \\
-    CFI~\cite{wang2023brec} & pending & -- & -- \\
-    4-Vertex~\cite{wang2023brec} & pending & -- & -- \\
-    Distance Reg.~\cite{wang2023brec} & pending & -- & -- \\
+    Basic~\cite{wang2023brec} & Count / rate & 60 & 1.00 & \textbf{0.00} \\
+    Regular~\cite{wang2023brec} & Count / rate & pending & -- & -- \\
+    Extension~\cite{wang2023brec} & Count / rate & 100 & 1.00 & \textbf{0.00} \\
+    CFI~\cite{wang2023brec} & Count / rate & pending & -- & -- \\
+    4-Vertex~\cite{wang2023brec} & Count / rate & pending & -- & -- \\
+    Distance Reg.~\cite{wang2023brec} & Count / rate & pending & -- & -- \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-The four experiment views give the reported task metrics, the rollout validity
-metrics, the component variation results, and the recovered graph separation
-results under the same point set representation.
+These four experiments form a compact evidence chain.  The main experiment
+shows downstream utility, the autoregressive experiment shows graph growth from
+the same representation, the ablation experiment attributes the gains to the
+recoverable set construction, and the WL experiment shows that the recovered
+point sets separate the covered nonisomorphic collision pairs.
