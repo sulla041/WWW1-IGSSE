@@ -8,7 +8,7 @@
 
 基线覆盖邻域聚合、传播、长程图序列建模和图到点集建模。GCN、GraphSAGE、GAT 和 GIN 代表常用邻域计算机制。APPNP 在预测后加入 personalized PageRank 传播。Graph Mamba 通过选择性状态空间建模图上的长程依赖。PST 将图映射为点集表示。表 1 来自实验结果_表A_表B.xlsx 的表甲，报告每个方法的 Emb 与 Result，并把两者拆成相邻两格。十个比较行中，IGSSE 在最终任务结果上均取得最优，说明可恢复点集可以作为有效的监督表示。
 
-表 1：特征预测主实验结果。每个方法以 Emb 和 Result 两个单独单元格报告，小数保留两位。数据集包括 HiGraph IID、OCB Ckt-Bench-101、TimingPredict、Amazon Photo、Coauthor CS、Amazon Photo interact、Cora、AIDS、IMDB-MULTI 和 IMDB-BINARY。比较方法包括 GCN、GraphSAGE、GAT、GIN、APPNP、SGFormer、Polynormer、Graph-Mamba、PST 和 IGSSE。表内数据集和 baseline 名称均加入引用，粗体表示每行最大值。
+表 1：特征预测主实验结果。该表前移到实验章节开头附近，每个方法以 Emb 和 Result 两个单独单元格报告，小数保留两位。数据集包括 HiGraph IID、OCB Ckt-Bench-101、TimingPredict、Amazon Photo、Coauthor CS、Amazon Photo interact、Cora、AIDS、IMDB-MULTI 和 IMDB-BINARY。比较方法包括 GCN、GraphSAGE、GAT、GIN、APPNP、SGFormer、Polynormer、Graph-Mamba、PST 和 IGSSE。表内数据集和 baseline 名称均加入引用，粗体表示每行最大值。
 
 4.2 Autoregressive Graph Modeling
 
@@ -16,7 +16,7 @@
 
 比较方法包括循环式、注意力式、流式、score based 和 diffusion based 图生成方法，例如 GraphRNN、GRAN、GraphAF、GDSS 和 DiGress。完整工作簿记录 Emb 和 Valid 两类指标。论文表格保留所有 baseline 列，但每列只报告终止有效性这个结果指标。Metric 列说明 Valid 表示 rollout 结束后的终止合法率。IGSSE 在四个 rollout 设置上均取得最高终止有效性，支持将点集扩展作为图增长接口。
 
-表 2：自回归图建模结果。表格使用单栏和正文字号，并保留 Metric 列。为避免压缩字号，表内按任务列出关键 baseline 和 IGSSE 的 Valid 指标。任务包括 Planar Legal、Planar Net、Chordal 和 Bipartite。表内任务和 baseline 名称均加入引用，粗体表示每个任务的最大值。
+表 2：自回归图建模结果。表格使用单栏和正文字号，并保留 Metric 列。为避免压缩字号，表内按任务逐行列出大部分 baseline 和 IGSSE 的 Valid 指标，只省略 ER/BA 和 GraphAF 两项。任务包括 Planar Legal、Planar Net、Chordal 和 Bipartite。表内任务和 baseline 名称均加入引用，粗体表示每个任务的最大值。
 
 4.3 Ablation Experiment
 

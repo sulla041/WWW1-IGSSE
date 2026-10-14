@@ -13,34 +13,6 @@ sets \cite{morris2019wl,wang2023brec}.  Together, these four experiments form a
 compact evidence chain for task utility, graph growth, component attribution,
 and controlled structural separation.
 
-\subsection{Feature Prediction Main Experiment}
-\label{sec:feature-main}
-
-The main experiment evaluates supervised prediction on heterogeneous graph
-tasks.  Amazon Photo, Coauthor CS, and Cora represent product co-purchase,
-academic collaboration, and citation networks
-\cite{shchur2018,sen2008,yang2016}.  HiGraph evaluates hierarchical program
-control flow graphs for malware classification \cite{chen2025higraph}.  OCB and
-TimingPredict evaluate analog circuit performance and pre-routing timing
-prediction \cite{dong2023cktgnn,guo2022timing}.  AIDS and IMDB evaluate
-molecular and social graph classification from standard graph learning
-benchmarks \cite{morris2020,yang2015}.  These tasks cover node labels, graph
-labels, and continuous graph properties, so the learned point set is tested
-under several downstream readout forms.
-
-The baselines cover neighborhood aggregation, propagation, long range graph
-sequence modeling, and graph to point set modeling.  GCN, GraphSAGE, GAT, and
-GIN represent widely used neighborhood computation mechanisms
-\cite{kipf2017,hamilton2017,velickovic2018,xu2019}.  APPNP adds personalized
-PageRank propagation after prediction \cite{gasteiger2019}.  Graph Mamba models
-long range graph dependencies through selective state spaces
-\cite{wang2024graphmamba}.  PST maps graphs into point set representations
-\cite{wang2024graphpointset}.  Table~\ref{tab:feature-results} reports the
-embedding score and the final task result as separate cells for each method.
-Across the ten listed comparisons, \method{} gives the best final task result in
-every row, showing that the recoverable point set can serve as an effective
-supervised representation.
-
 \begin{table*}[t]
   \centering
   \caption{Feature prediction main results from Experiment Result Table A. Each method keeps Emb and Result as separate columns.}
@@ -83,6 +55,34 @@ supervised representation.
   \end{tabular}}
 \end{table*}
 
+\subsection{Feature Prediction Main Experiment}
+\label{sec:feature-main}
+
+The main experiment evaluates supervised prediction on heterogeneous graph
+tasks.  Amazon Photo, Coauthor CS, and Cora represent product co-purchase,
+academic collaboration, and citation networks
+\cite{shchur2018,sen2008,yang2016}.  HiGraph evaluates hierarchical program
+control flow graphs for malware classification \cite{chen2025higraph}.  OCB and
+TimingPredict evaluate analog circuit performance and pre-routing timing
+prediction \cite{dong2023cktgnn,guo2022timing}.  AIDS and IMDB evaluate
+molecular and social graph classification from standard graph learning
+benchmarks \cite{morris2020,yang2015}.  These tasks cover node labels, graph
+labels, and continuous graph properties, so the learned point set is tested
+under several downstream readout forms.
+
+The baselines cover neighborhood aggregation, propagation, long range graph
+sequence modeling, and graph to point set modeling.  GCN, GraphSAGE, GAT, and
+GIN represent widely used neighborhood computation mechanisms
+\cite{kipf2017,hamilton2017,velickovic2018,xu2019}.  APPNP adds personalized
+PageRank propagation after prediction \cite{gasteiger2019}.  Graph Mamba models
+long range graph dependencies through selective state spaces
+\cite{wang2024graphmamba}.  PST maps graphs into point set representations
+\cite{wang2024graphpointset}.  Table~\ref{tab:feature-results} reports the
+embedding score and the final task result as separate cells for each method.
+Across the ten listed comparisons, \method{} gives the best final task result in
+every row, showing that the recoverable point set can serve as an effective
+supervised representation.
+
 \subsection{Autoregressive Graph Modeling}
 \label{sec:ar-results}
 
@@ -100,9 +100,10 @@ GDSS, and DiGress \cite{you2018,liao2019,shi2020,jo2022,vignac2023}.  The full
 workbook records both embedding scores and terminal validity.  To keep the
 paper table compact, Table~\ref{tab:autoregressive-results} reports only
 terminal validity for each baseline.  The Metric column specifies that Valid is
-the terminal legality rate after rollout.  \method{} obtains the strongest
-validity on all four rollout settings, which supports the use of point set
-expansion as a graph growth interface.
+the terminal legality rate after rollout.  The single column table keeps the
+main learned baselines and omits ER/BA and GraphAF only for layout.  \method{}
+obtains the strongest validity on all four rollout settings, which supports the
+use of point set expansion as a graph growth interface.
 
 \begin{table}[t]
   \centering
@@ -113,13 +114,37 @@ expansion as a graph growth interface.
     \toprule
     Task & Metric & Method & Value \\
     \midrule
+    Planar Legal~\cite{diestel2017} & Valid & RNN~\cite{you2018} & 0.00 \\
+    Planar Legal~\cite{diestel2017} & Valid & GRAN~\cite{liao2019} & 0.00 \\
     Planar Legal~\cite{diestel2017} & Valid & BiGG~\cite{dai2020} & 0.85 \\
+    Planar Legal~\cite{diestel2017} & Valid & SPECTRE~\cite{martinkus2022spectre} & 0.00 \\
+    Planar Legal~\cite{diestel2017} & Valid & DiGress~\cite{vignac2023} & 0.00 \\
+    Planar Legal~\cite{diestel2017} & Valid & EDGE~\cite{chen2023edge} & 0.00 \\
+    Planar Legal~\cite{diestel2017} & Valid & GDSS~\cite{jo2022} & 0.00 \\
     Planar Legal~\cite{diestel2017} & Valid & \method{} & \textbf{0.94} \\
+    Planar Net~\cite{diestel2017} & Valid & RNN~\cite{you2018} & 0.00 \\
+    Planar Net~\cite{diestel2017} & Valid & GRAN~\cite{liao2019} & 0.00 \\
     Planar Net~\cite{diestel2017} & Valid & BiGG~\cite{dai2020} & 0.85 \\
+    Planar Net~\cite{diestel2017} & Valid & SPECTRE~\cite{martinkus2022spectre} & 0.00 \\
+    Planar Net~\cite{diestel2017} & Valid & DiGress~\cite{vignac2023} & 0.00 \\
+    Planar Net~\cite{diestel2017} & Valid & EDGE~\cite{chen2023edge} & 0.00 \\
+    Planar Net~\cite{diestel2017} & Valid & GDSS~\cite{jo2022} & 0.00 \\
     Planar Net~\cite{diestel2017} & Valid & \method{} & \textbf{0.97} \\
+    Chordal~\cite{golumbic2004} & Valid & RNN~\cite{you2018} & 0.00 \\
+    Chordal~\cite{golumbic2004} & Valid & GRAN~\cite{liao2019} & 0.00 \\
+    Chordal~\cite{golumbic2004} & Valid & BiGG~\cite{dai2020} & 0.05 \\
+    Chordal~\cite{golumbic2004} & Valid & SPECTRE~\cite{martinkus2022spectre} & 0.01 \\
+    Chordal~\cite{golumbic2004} & Valid & DiGress~\cite{vignac2023} & 0.00 \\
     Chordal~\cite{golumbic2004} & Valid & EDGE~\cite{chen2023edge} & 0.24 \\
+    Chordal~\cite{golumbic2004} & Valid & GDSS~\cite{jo2022} & 0.00 \\
     Chordal~\cite{golumbic2004} & Valid & \method{} & \textbf{0.83} \\
+    Bipartite~\cite{diestel2017} & Valid & RNN~\cite{you2018} & 0.00 \\
+    Bipartite~\cite{diestel2017} & Valid & GRAN~\cite{liao2019} & 0.00 \\
     Bipartite~\cite{diestel2017} & Valid & BiGG~\cite{dai2020} & 0.18 \\
+    Bipartite~\cite{diestel2017} & Valid & SPECTRE~\cite{martinkus2022spectre} & 0.00 \\
+    Bipartite~\cite{diestel2017} & Valid & DiGress~\cite{vignac2023} & 0.00 \\
+    Bipartite~\cite{diestel2017} & Valid & EDGE~\cite{chen2023edge} & 0.00 \\
+    Bipartite~\cite{diestel2017} & Valid & GDSS~\cite{jo2022} & 0.00 \\
     Bipartite~\cite{diestel2017} & Valid & \method{} & \textbf{0.74} \\
     \bottomrule
   \end{tabular}
