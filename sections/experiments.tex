@@ -5,12 +5,12 @@ The experiments evaluate \method{} through four result views.  The feature
 prediction experiment is the main comparison across Web relation, program,
 circuit, timing, molecular, and social graphs.  The autoregressive experiment
 uses the same point set object for rule guided graph expansion.  The ablation
-experiment measures how content recovery, relation recovery, structural
-deviation, training perturbation, and set reading contribute to the final
-performance.  The WL collision experiment studies whether recovery trained point
+experiment records how content recovery, relation recovery, structural
+deviation, training perturbation, and set reading affect the final task
+metric.  The WL collision experiment studies whether recovery trained point
 sets separate controlled nonisomorphic graph pairs from BREC and WL diagnostic
-sets \cite{morris2019wl,wang2023brec}.  Together, these four experiments test
-task utility, graph growth, component attribution, and controlled structural
+sets \cite{morris2019wl,wang2023brec}.  Together, these four experiments report
+task prediction, graph growth, component variation, and controlled structural
 separation.
 
 \subsection{Feature Prediction Main Experiment}
@@ -37,9 +37,8 @@ long range graph dependencies through selective state spaces
 \cite{wang2024graphmamba}.  PST maps graphs into point set representations
 \cite{wang2024graphpointset}.  Table~\ref{tab:feature-results} reports the
 embedding score and the final task result as separate cells for each method.
-Across the ten listed comparisons, \method{} gives the best final task result in
-every row, showing that the recoverable point set can serve as an effective
-supervised representation.
+The bold cells mark the largest value in each row, and the \method{} entries
+are bold in all ten final task result columns.
 
 \begin{table*}[t]
   \centering
@@ -99,9 +98,8 @@ diffusion based graph generation methods, including GraphRNN, GRAN, GraphAF,
 GDSS, and DiGress \cite{you2018,liao2019,shi2020,jo2022,vignac2023}.  The full
 workbook records both embedding scores and terminal validity.  To keep the
 paper table compact, Table~\ref{tab:autoregressive-results} reports only
-terminal validity for each baseline.  \method{} obtains the strongest validity
-on all four rollout settings, which supports the use of point set expansion as a
-graph growth interface.
+terminal validity for each baseline.  The bold cells mark the largest validity
+value in each rollout setting.
 
 \begin{table}[t]
   \centering
@@ -139,17 +137,16 @@ The ablation experiment attributes performance to the main components of
 deviation coordinate, feature recovery, relation recovery, training
 perturbation, and the set reader.  Each variant removes one part or replaces the
 reader while preserving the same dataset row and metric as the main table.
-These variants measure whether the point set gains its task value from
+These variants measure whether the point set changes its task value through
 recoverable content, recoverable relations, relation conditioned deviation,
 trainable adaptation, or set level aggregation.
 
 Table~\ref{tab:ablation-results} reports the ablation results using the final
-task metric only.  Removing feature recovery or relation recovery weakens many
-downstream results, showing that approximate equivalence depends on preserving
-both node content and pair relations.  Removing the structural deviation term
-changes the point geometry most strongly on several graph tasks, while freezing
-the point set reduces the ability to adapt the representation to the supervised
-objective.
+task metric only.  Removing feature recovery or relation recovery changes many
+downstream results, linking approximate equivalence with preserved node content
+and pair relations.  Removing the structural deviation term changes the point
+geometry on several graph tasks, while freezing the point set changes its
+adaptation to the supervised objective.
 
 \begin{table}[t]
   \centering
@@ -216,8 +213,6 @@ the collision rate among the twenty three passing pairs is zero.
   \end{tabular}
 \end{table}
 
-These four experiments form a compact evidence chain.  The main experiment
-shows downstream utility, the autoregressive experiment shows graph growth from
-the same representation, the ablation experiment attributes the gains to the
-recoverable set construction, and the WL experiment shows that the recovered
-point sets separate the covered nonisomorphic collision pairs.
+The four experiment views give the reported task metrics, the rollout validity
+metrics, the component variation results, and the recovered graph separation
+results under the same point set representation.
