@@ -14,17 +14,17 @@
 
 自回归实验在预测所用的同一集合表示上评估图扩展。rollout 时，集合扩展模块加入新的 live points，关系解码器把更新后的点集恢复为图，合法性信号选择满足目标规则的状态。三个规则检验互补的结构要求：平面图有效性对应全局可嵌入约束，弦图有效性对应所需环结构，二部图有效性对应二分关系约束。
 
-比较方法包括循环式、注意力式、流式、score based 和 diffusion based 图生成方法，例如 GraphRNN、GRAN、GraphAF、GDSS 和 DiGress。完整工作簿记录 Emb 和 Valid 两类指标。论文表格为了压缩版面，只在半栏表中保留终止有效性这个关键指标。IGSSE 在四个 rollout 设置上均取得最高终止有效性，支持将点集扩展作为图增长接口。
+比较方法包括循环式、注意力式、流式、score based 和 diffusion based 图生成方法，例如 GraphRNN、GRAN、GraphAF、GDSS 和 DiGress。完整工作簿记录 Emb 和 Valid 两类指标。论文表格保留所有 baseline 列，但每列只报告终止有效性这个结果指标。IGSSE 在四个 rollout 设置上均取得最高终止有效性，支持将点集扩展作为图增长接口。
 
-表 2：自回归图建模结果。表格使用半栏，只保留 Valid 指标。任务包括 Planar Legal、Planar Net、Chordal 和 Bipartite。表中比较 best baseline 与 IGSSE，小数保留两位。IGSSE 在四个任务的 Valid 指标上均为最优。
+表 2：自回归图建模结果。表格只保留 Valid 指标。任务包括 Planar Legal、Planar Net、Chordal 和 Bipartite。列包括 ER/BA、GraphRNN、GRAN、BiGG、GraphAF、SPECTRE、DiGress、EDGE、GDSS 和 IGSSE，小数保留两位。IGSSE 在四个任务的 Valid 指标上均为最优。
 
 4.3 Ablation Experiment
 
 消融实验解释 IGSSE 的主要组件如何贡献性能。完整模型结合内容坐标、结构偏差坐标、特征恢复、关系恢复、训练扰动和集合读出。每个变体移除一个部分或替换读出器，同时保持与主表相同的数据集行和指标。消融用于判断点集的任务价值来自可恢复内容、可恢复关系、关系条件化偏差、可训练适配还是集合级聚合。
 
-表 3 来自实验结果_消融_表A格式.xlsx，使用与主实验相同的 Emb 与 Result 两格分开的格式。移除特征恢复或关系恢复会削弱许多下游结果，说明近似等价依赖节点内容和点对关系同时保留。移除结构偏差项会在多个图任务上显著改变点几何；冻结点集会降低表示适配监督目标的能力。读出器替换主要影响图级任务行，这与集合聚合在图预测中的作用一致。
+表 3 来自实验结果_消融_表A格式.xlsx，使用半栏形式并只保留最终 Result 指标。移除特征恢复或关系恢复会削弱许多下游结果，说明近似等价依赖节点内容和点对关系同时保留。移除结构偏差项会在多个图任务上显著改变点几何；冻结点集会降低表示适配监督目标的能力。
 
-表 3：消融结果。每个变体以 Emb 与 Result 两个单独单元格报告，小数保留两位。列包括 Full、去掉特征恢复损失、去掉结构偏差项、去掉关系恢复损失、去掉 embedding 辅助项、freeze-H、mean-pool 和 point-MLP。行与主实验表甲一致。
+表 3：消融结果。表格只报告 Result，小数保留两位。列包括 Full、去掉特征恢复损失、去掉结构偏差项、去掉关系恢复损失、去掉 embedding 辅助项和 freeze-H。去掉 mean-pool 和 point-MLP 两列。行与主实验表甲一致。
 
 4.4 WL Collision Experiment
 
