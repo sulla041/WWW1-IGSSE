@@ -406,7 +406,7 @@ mask.  The link loss and content loss attach directly to $\Hset_{\mathrm{dec}}$,
 so the point set remains constrained while the downstream reader learns the task.
 The joint objective is
 \begin{equation}
- \mathcal L=\sum_{t\in\{\mathrm{pred},\mathrm{link},\mathrm{feat},\mathrm{alive}\}}\lambda_t\mathcal L_t.
+ \mathcal L=\sum\nolimits_{t\in\{\mathrm{pred},\mathrm{link},\mathrm{feat},\mathrm{alive}\}}\lambda_t\mathcal L_t.
  \label{eq:objective}
 \end{equation}
 The survival term keeps the learned training noise scale active.  For an

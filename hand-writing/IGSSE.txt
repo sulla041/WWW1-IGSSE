@@ -118,7 +118,7 @@ N_A(i)=\{s:(s,i)\in E\}\cup\{i\}.
 每个下游任务都可以构造端到端训练目标，将任务监督与两类恢复损失聚合。预测损失只在训练标签上读取任务标签。链接损失和内容损失直接附着在用于恢复的点集上，因此读出器学习任务时，点集仍然受到内容和关系恢复约束。联合目标为：
 
 \[
-\mathcal L=\sum_{t\in\{\mathrm{pred},\mathrm{link},\mathrm{feat},\mathrm{alive}\}}\lambda_t\mathcal L_t.
+\mathcal L=\sum\nolimits_{t\in\{\mathrm{pred},\mathrm{link},\mathrm{feat},\mathrm{alive}\}}\lambda_t\mathcal L_t.
 \]
 
 其中 prediction 项监督下游任务，link 项监督关系恢复，feature 项监督内容恢复，alive 项保持训练噪声尺度活跃。联合目标通过同一个点集连接各个注意力机制：prediction 项更新节点读出器、集合注意力池化、图读出器、自回归选择器以及形成点集的编码器投影；link 项更新成对注意力解码器，并经过端点反传到嵌入投影；feature 项更新内容解码器和属性进入点集的路径；alive 项更新结构写入中的噪声尺度网络。因此，全局结构偏置、成对注意力恢复和集合注意力池化会通过同一个点集共同优化。默认设置中，prediction 和 link 权重为 1.0，feature 权重为 0.1，alive 权重为千分之一；模型宽度为 128，编码器深度为 3 层，注意力头数为 4，隐藏宽度为模型宽度的四倍，dropout 为 0.1；关系恢复每次更新最多抽取 4096 个正样本和等量负样本；优化器为 AdamW，学习率为千分之一，weight decay 为万分之一，梯度裁剪阈值为 1.0；噪声调度从 1 线性衰减到 0，使关系扰动在训练初期较强，并在确定性编码路径接管时消失。仅训练嵌入时关闭 prediction 项；任务训练时同时优化任务损失和恢复损失。
