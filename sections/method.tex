@@ -23,29 +23,25 @@ checked by recovery losses.
 
 \subsection{Representation object and notation}
 \label{sec:setup}
-Let the input be an attributed graph with node set, edge set, and node
-attributes.  The graph has an adjacency recovery target and $n$ nodes.  The task
-label can be a node label, graph label, or continuous target.  \method{}
-produces an $n$ by $d$ point set matrix, where row $i$ remains associated with
-node $i$.  This row correspondence is essential: a content decoder reads node
-content from one point, while a relation decoder reads graph relations from
-point pairs.
+\method{} uses one point set as the common object for embedding, recovery, and
+downstream modeling.  The input is an attributed graph with node set $V$, edge
+set $E$, and attribute matrix $\mathbf X$.  The encoder maps this graph to a
+matrix $\Hset$ with $n$ rows and $d$ columns.  Row $i$ is the point
+$\mathbf h_i$ associated with node $i$.
 
-The recovery target contains adjacency and content:
+The embedding stage forms each point by combining an original content coordinate
+$\mathbf h_{o,i}$ and a structural deviation $\mathbf o_i$.  The recovery stage
+uses a content decoder $D_C$ to recover the content target $\mathbf C$ from
+single points and a relation decoder $D_A$ to recover the adjacency target
+$\mathbf A$ from point pairs.  The downstream stage applies a reader $R$ to
+$\Hset$ and produces the prediction $\widehat Y$.  The recovery target is
 \begin{equation}
  T(G)=(\mathbf A,\mathbf C),\qquad
  \mathbf C=\operatorname{sg}(\operatorname{Enc}_{X}(\mathbf X)).
  \label{eq:recovery-target}
 \end{equation}
-Here the stop gradient operator blocks updates through the content target.  A
-configuration may instead recover a standardized raw feature target.  In either
-case, labels are excluded from recovery.  During training, the embedding process
-is shaped by recoverability and downstream supervision at the same time.
-Content and relation recovery require the point set to retain the graph
-information needed for approximate equivalence, while the prediction objective
-guides the same point set toward the task that the model must solve.  The
-learned embedding therefore uses recoverability as the guarantee of approximate
-equivalence and ultimately serves downstream prediction and graph modeling.
+The task label is denoted by $Y$ and can be a node label, a graph label, or a
+continuous target.
 
 \begin{table}[t]
   \centering
@@ -70,6 +66,8 @@ equivalence and ultimately serves downstream prediction and graph modeling.
   \end{tabular}
 \end{table}
 
+\subsection{Embedding as a point set}
+\label{sec:fsde}
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\textwidth]{figures/algorithm_core.drawio.pdf}
@@ -105,8 +103,6 @@ global pairwise affinities and node information.  The adjacency then decides
 where this bias is written.  These stages determine how the original coordinate
 and the structural bias jointly form the final point.
 
-\subsection{Embedding as a point set}
-\label{sec:fsde}
 At layer $\ell$, let $\mathbf h_{o,i}^{(\ell)}$ denote the original coordinate
 that will receive the structural write.  At the first layer,
 \begin{equation}
