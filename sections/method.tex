@@ -17,8 +17,8 @@ relations from $\Hset$, making recoverability the guarantee of approximate
 equivalence.  Third, downstream readers operate directly on $\Hset$ for node
 prediction, graph prediction, and autoregressive graph modeling.
 This route is defined through local operations: every point starts from its own
-content coordinate, every structural update is a write from relation selected
-source states, and every downstream prediction reads the same point set that is
+content coordinate, every structural update writes an adjacency selected
+structural bias, and every downstream prediction reads the same point set that is
 checked by recovery losses.
 
 \subsection{Representation object and notation}
@@ -101,7 +101,7 @@ the node content before relation information is written into the point.
 
 \paragraph{Structural deviation $\mathbf o_i$.}
 The second term is the structural deviation $\mathbf o_i$.  It is computed by
-first forming global contextual source states and then writing only the sources
+first forming a global structural bias and then writing only the components
 selected by adjacency.  Query, key, and value vectors are obtained from the
 original coordinate.  For each attention head, we compute
 \begin{equation}
@@ -110,7 +110,7 @@ original coordinate.  For each attention head, we compute
 \mathbf v_i^{(m)}=\mathbf W_V^{(m)}\mathbf h_{o,i}^{(\ell)}.
 \label{eq:qkv}
 \end{equation}
-The dense attention scores define a source summary:
+The dense attention scores define the global structural bias:
 \begin{equation}
 \mathbf u_s^{(m)}=\sum_j\operatorname{softmax}_j\!\left(
 \frac{(\mathbf q_s^{(m)})^\top\mathbf k_j^{(m)}}{\sqrt{d_h}}\right)
@@ -122,8 +122,8 @@ The adjacency defines the write set for each target:
  N_A(i)=\{s:(s,i)\in E\}\cup\{i\}.
  \label{eq:write-set}
 \end{equation}
-Thus, the source state already contains global attention information, while the
-adjacency decides which source states are written to each target point.  For
+Thus, the structural bias already contains global attention information, while
+the adjacency decides which components are written to each target point.  For
 each target, a softmax over the write set gives $\alpha_{si}^{(m)}$.  The
 projected multihead write defines the structural deviation:
 \begin{equation}
@@ -171,7 +171,7 @@ $\Hset$ for graph recovery, prediction, and autoregressive graph modeling.
     5 & \quad $(\mathbf q_i,\mathbf k_i,\mathbf v_i)\leftarrow
     \operatorname{Proj}_{\ell}(\mathbf h_{o,i}^{(\ell)})$ \\
     6 & \quad $e_{sj}\leftarrow \operatorname{Energy}(\mathbf q_s,\mathbf k_j)$ \\
-    7 & \quad $\mathbf u_s\leftarrow \operatorname{GlobalAttn}(e_{s:},\mathbf v)$ \\
+    7 & \quad $\mathbf u_s\leftarrow \operatorname{GlobalBias}(e_{s:},\mathbf v)$ \\
     8 & \quad $r_{si}\leftarrow e_{si}$ for $s\in N_A(i)$ \\
     9 & \quad \textbf{if} train \textbf{then} perturb $r_{si}$ by
     $\sigma_{si}g(u)\epsilon_{si}$ before write \\
@@ -373,5 +373,4 @@ checkpoint.  For classification tasks we use cross entropy on labeled training
 instances; for regression tasks we use mean squared error or mean absolute error
 according to the dataset metric.  The recovery losses are computed on the same
 minibatch as the task loss, and the clean validation pass disables relation
-noise and dropout.  Dataset specific changes to dimension, depth, pair budget,
-or optimizer schedule are reported with the corresponding experiment.
+noise and dropout.
