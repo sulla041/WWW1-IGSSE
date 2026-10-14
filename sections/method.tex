@@ -84,55 +84,26 @@ continuous target.
   \label{fig:algorithm-core}
 \end{figure*}
 
-\paragraph{Core path correspondence.}
-Figure~\ref{fig:algorithm-core} summarizes the computation graph.  The algorithm
-first forms an original content coordinate $\mathbf h_{o,i}$.  Trainable
-projections then produce queries, keys, and values, from which the global
-attention field constructs contextual source states.  The observed adjacency
-selects which contextual source states can be written to each target node, and
-their weighted sum forms the structural deviation $\mathbf o_i$.  Thus, the
-deviation is injected through adjacency, while the source states already carry
-global attention information before the write.  The final point $\mathbf h_i$
-is obtained by fusing $\mathbf h_{o,i}$ and $\mathbf o_i$, forming a point set
-that acts as an approximate equivalence class of the input graph and becomes the
-direct modeling object for later prediction and generation.  Later layers repeat
-the same path with the previous point set as the new original coordinate.
-The computation is intentionally staged.  The content coordinate records what is
-carried by the node itself.  The global field computes a structural bias from
-global pairwise affinities and node information.  The adjacency then decides
-where this bias is written.  These stages determine how the original coordinate
-and the structural bias jointly form the final point.
-
-At layer $\ell$, let $\mathbf h_{o,i}^{(\ell)}$ denote the original coordinate
-that will receive the structural write.  At the first layer,
+\paragraph{Original coordinate $\mathbf h_{o,i}$.}
+Figure~\ref{fig:algorithm-core} shows the embedding stage as the construction of
+a point from two terms.  The first term is the original coordinate
+$\mathbf h_{o,i}$.  At layer $\ell$, this coordinate is the point state before
+structural writing.  At the first layer it is produced only from node
+attributes:
 \begin{equation}
   \mathbf h_{o,i}^{(0)}=\operatorname{Enc}_X(\mathbf x_i).
   \label{eq:baseline}
 \end{equation}
 For later layers, the previous fused point becomes the new original coordinate.
-The attribute encoder only reads node attributes, so it supplies a content
-reference before graph conditioned writing.
-In implementation, $\operatorname{Enc}_X$ is a shared multilayer perceptron with
-layer normalization.  Missing or categorical attributes are first mapped to the
-same numeric feature space used by the task input, and the output dimension is
-the model width $d$.  The same encoder also defines the default content target
-$\mathbf C$ through a stopped gradient copy, which keeps content recovery tied to
-the input attributes while preventing the decoder from updating the target
-encoder.
+The attribute encoder is a shared multilayer perceptron with layer normalization,
+and its output dimension is the model width.  This original coordinate records
+the node content before relation information is written into the point.
 
-\paragraph{Original coordinate $\mathbf h_{o,i}$.}
-The original coordinate is the content carrier of each point.  Query, key, and
-value vectors are obtained from $\mathbf h_{o,i}^{(\ell)}$ through trainable
-projections.  Their pairwise attention scores create a global attention field,
-and the weighted values form contextual source states $\mathbf u_s$.  The
-adjacency defines the write set
-$N_A(i)$ for each target.  The write set contains the target itself and all
-source nodes connected to it:
-\begin{equation}
- N_A(i)=\{s:(s,i)\in E\}\cup\{i\}.
- \label{eq:write-set}
-\end{equation}
-For each attention head $m$, we compute
+\paragraph{Structural deviation $\mathbf o_i$.}
+The second term is the structural deviation $\mathbf o_i$.  It is computed by
+first forming global contextual source states and then writing only the sources
+selected by adjacency.  Query, key, and value vectors are obtained from the
+original coordinate.  For each attention head, we compute
 \begin{equation}
 \mathbf q_i^{(m)}=\mathbf W_Q^{(m)}\mathbf h_{o,i}^{(\ell)},\quad
 \mathbf k_i^{(m)}=\mathbf W_K^{(m)}\mathbf h_{o,i}^{(\ell)},\quad
@@ -146,51 +117,43 @@ The dense attention scores define a source summary:
 \mathbf v_j^{(m)}.
 \label{eq:source-summary}
 \end{equation}
-The later adjacency restricted write uses these source states, so long range
-attribute context is available before topology selects the actual write
-locations.
-
-\paragraph{Structural deviation $\mathbf o_i$.}
-For each target, a softmax over $N_A(i)$ gives $\alpha_{si}^{(m)}$.  The
+The adjacency defines the write set for each target:
+\begin{equation}
+ N_A(i)=\{s:(s,i)\in E\}\cup\{i\}.
+ \label{eq:write-set}
+\end{equation}
+Thus, the source state already contains global attention information, while the
+adjacency decides which source states are written to each target point.  For
+each target, a softmax over the write set gives $\alpha_{si}^{(m)}$.  The
 projected multihead write defines the structural deviation:
 \begin{equation}
  \mathbf o_i^{(\ell)}=\mathbf W_O\Vert_m\sum_{s\in N_A(i)}\alpha_{si}^{(m)}\mathbf u_s^{(m)}.
  \label{eq:deviation}
 \end{equation}
-This term summarizes relation selected global source states and encodes the
-structural correction to the original content coordinate.  During training, a
-noise network may perturb relation scores according to training progress; during
-evaluation, clean relation scores are used.
-The structural deviation is computed only over $N_A(i)$ so that graph relations
-control the write operation.  The self term in $N_A(i)$ keeps every point live
-even for isolated vertices, and the softmax normalizes incoming writes for each
-target.  The noise network receives the clean relation energy and normalized
-training progress, predicts a nonnegative scale $\sigma_{si}$, and injects
-a scheduled noise term into write logits during training.  This encourages
-separate exploration when nodes have identical content, maintains effective
-structural writes during training, and preserves deterministic validation and
-test computation.
+This deviation is the relation conditioned structural correction added to the
+original coordinate.  The self term keeps isolated nodes active, and the
+softmax controls the incoming write strength for each target.  During training,
+a scheduled noise term can perturb write logits to encourage separate
+exploration when nodes have identical content; evaluation uses clean relation
+scores.
 
 \paragraph{Fusion into $\mathbf h_i$.}
-The final point is produced by fusing the original coordinate and structural
-deviation with a normalized feedforward update $\Phi$:
+The final point is obtained by adding the original coordinate and structural
+deviation, followed by a normalized feedforward update:
 \begin{equation}
  \mathbf h_i^{(\ell)}=\Phi\!\left(\mathbf h_{o,i}^{(\ell)}+\operatorname{Dropout}(\mathbf o_i^{(\ell)})\right).
  \label{eq:fusion}
 \end{equation}
-After all layers, the final point matrix is used for recovery:
+The fused point becomes the original coordinate for the next layer.  After the
+last layer, stacking all final points gives the point set used by recovery and
+downstream readers:
 \begin{equation}
  \Hset_{\mathrm{dec}}=\mathbf H^{(L)}.
  \label{eq:decoder-state}
 \end{equation}
-Node tasks may use this final state or a jump concatenation of layer states.
-The fusion keeps the content coordinate as the residual backbone and treats the
-structural deviation as an additive correction.  This is the main reason the
-point set can support recovery and prediction together: each point retains an
-attribute reference while relation conditioned information is written into the
-same coordinate system.  Dropout is applied only to the deviation before the
-feedforward block, which regularizes relation writes without erasing the content
-coordinate.
+The core embedding relation is therefore the sum of the original coordinate and
+the structural deviation followed by fusion, producing a node aligned point set
+$\Hset$ for graph recovery, prediction, and autoregressive graph modeling.
 
 \begin{table}[t]
   \centering
