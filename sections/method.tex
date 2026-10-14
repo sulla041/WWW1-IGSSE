@@ -16,10 +16,10 @@ structural deviation $\mathbf o_i$.  Second, graph recovery decodes content and
 relations from $\Hset$, making recoverability the guarantee of approximate
 equivalence.  Third, downstream readers operate directly on $\Hset$ for node
 prediction, graph prediction, and autoregressive graph modeling.
-This route keeps the algorithm reproducible from local operations: every point
-starts from its own content coordinate, every structural update is a write from
-relation selected source states, and every downstream prediction reads the same
-point set that is checked by recovery losses.
+This route is defined through local operations: every point starts from its own
+content coordinate, every structural update is a write from relation selected
+source states, and every downstream prediction reads the same point set that is
+checked by recovery losses.
 
 \subsection{Representation object and notation}
 \label{sec:setup}
@@ -95,8 +95,8 @@ coordinate.
 The computation is intentionally staged.  The content coordinate records what is
 available without reading relations.  The global field computes reusable source
 states from all points.  The adjacency then decides where these source states are
-written.  This gives a direct implementation recipe and explains the role of
-the two terms in $\mathbf h_i=\mathbf h_{o,i}+\mathbf o_i$.
+written.  These stages determine the role of the two terms in
+$\mathbf h_i=\mathbf h_{o,i}+\mathbf o_i$.
 
 \subsection{Embedding as a point set}
 \label{sec:fsde}
