@@ -16,7 +16,7 @@
 
 比较方法包括循环式、注意力式、流式、score based 和 diffusion based 图生成方法，例如 GraphRNN、GRAN、GraphAF、GDSS 和 DiGress。完整工作簿记录 Emb 和 Valid 两类指标。论文表格保留所有 baseline 列，但每列只报告终止有效性这个结果指标。Metric 列说明 Valid 表示 rollout 结束后的终止合法率。IGSSE 在四个 rollout 设置上均取得最高终止有效性，支持将点集扩展作为图增长接口。
 
-表 2：自回归图建模结果。表格使用正文字号，为保证字号不缩小采用跨双栏排版，并保留 Metric 列。任务包括 Planar Legal、Planar Net、Chordal 和 Bipartite。列包括 ER/BA、GraphRNN、GRAN、BiGG、GraphAF、SPECTRE、DiGress、EDGE、GDSS 和 IGSSE，小数保留两位。表内任务和 baseline 名称均加入引用，粗体表示每行最大值。
+表 2：自回归图建模结果。表格使用单栏和正文字号，并保留 Metric 列。为避免压缩字号，表内按任务列出关键 baseline 和 IGSSE 的 Valid 指标。任务包括 Planar Legal、Planar Net、Chordal 和 Bipartite。表内任务和 baseline 名称均加入引用，粗体表示每个任务的最大值。
 
 4.3 Ablation Experiment
 
