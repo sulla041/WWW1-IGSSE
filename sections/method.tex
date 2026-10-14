@@ -392,33 +392,13 @@ The survival term keeps the learned training noise scale active.  For an
 embedding only run, the prediction term is disabled and the representation is
 trained only through graph recovery targets; for task runs, the task loss and
 recovery losses are optimized together.
-\begin{table}[t]
-  \centering
-  \caption{Default training configuration.}
-  \label{tab:training-config}
-  \small
-  \begin{tabular}{ll}
-    \hline
-    Item & Value \\
-    \hline
-    Prediction loss weight & 1.0 \\
-    Link recovery loss weight & 1.0 \\
-    Content recovery loss weight & 0.1 \\
-    Survival loss weight & $10^{-3}$ \\
-    Model width & 128 \\
-    Encoder depth & 3 layers \\
-    Attention heads & 4 \\
-    Hidden width & four times the model width \\
-    Dropout & 0.1 \\
-    Relation pair budget & 4096 positives and matched negatives \\
-    Optimizer & AdamW \\
-    Learning rate & $10^{-3}$ \\
-    Weight decay & $10^{-4}$ \\
-    Gradient clipping & 1.0 \\
-    Noise schedule & linear decay from one to zero \\
-    \hline
-  \end{tabular}
-\end{table}
+Unless otherwise stated, prediction and link recovery losses use unit weight,
+content recovery uses weight 0.1, and the survival term uses weight 0.001.  The
+default encoder uses width 128, three layers, four attention heads, hidden width
+four times the model width, and dropout 0.1.  Relation recovery samples up to
+4096 positive pairs per update and matches them with the same number of negative
+pairs.  Optimization uses AdamW with learning rate 0.001, weight decay 0.0001,
+and gradient clipping at 1.0.
 Relation perturbations are strongest at the beginning of training and vanish for
 clean selection and testing.
 
