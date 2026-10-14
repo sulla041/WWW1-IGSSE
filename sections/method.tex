@@ -23,20 +23,25 @@ checked by recovery losses.
 
 \subsection{Representation object and notation}
 \label{sec:setup}
-Let $G=(V,E,\mathbf X)$ be an attributed graph with adjacency target
-$\mathbf A$ and $n$ nodes.  The task label $y$ can be a node label, graph label,
-or continuous target.  \method{} produces
-$\Hset\in\mathbb R^{n\times d}$, where row $i$ remains associated with node
-$i$.  This row correspondence is essential: a content decoder reads node content
-from one point, while a relation decoder reads graph relations from point pairs.
+Let the input be an attributed graph with node set, edge set, and node
+attributes.  The graph has an adjacency recovery target and $n$ nodes.  The task
+label can be a node label, graph label, or continuous target.  \method{}
+produces an $n$ by $d$ point set matrix, where row $i$ remains associated with
+node $i$.  This row correspondence is essential: a content decoder reads node
+content from one point, while a relation decoder reads graph relations from
+point pairs.
 
-The recovery target is $T(G)=(\mathbf A,\mathbf C)$, where
-$\mathbf C=\operatorname{sg}(\operatorname{Enc}_{X}(\mathbf X))$ and
-$\operatorname{sg}$ stops gradients.  A configuration may instead recover a
-standardized raw feature target.  In either case, labels are excluded from
-recovery.  We use $\Hset_{\mathrm{dec}}$ for the final state verified by the
-content and relation decoders, and $\Hset_{\mathrm{task}}$ for the final state
-or a reader input built by concatenating layer states.
+The recovery target contains adjacency and content:
+\begin{equation}
+ T(G)=(\mathbf A,\mathbf C),\qquad
+ \mathbf C=\operatorname{sg}(\operatorname{Enc}_{X}(\mathbf X)).
+ \label{eq:recovery-target}
+\end{equation}
+Here the stop gradient operator blocks updates through the content target.  A
+configuration may instead recover a standardized raw feature target.  In either
+case, labels are excluded from recovery.  We use the decoder point set for the
+final state verified by the content and relation decoders, and the task point
+set for the final state or a reader input built by concatenating layer states.
 The separation between $\Hset_{\mathrm{dec}}$ and $\Hset_{\mathrm{task}}$
 allows the reader to choose the most useful predictive state while the recovery
 decoders always inspect a fixed representation object.  This design makes the
@@ -95,8 +100,8 @@ coordinate.
 The computation is intentionally staged.  The content coordinate records what is
 available without reading relations.  The global field computes reusable source
 states from all points.  The adjacency then decides where these source states are
-written.  These stages determine the role of the two terms in
-$\mathbf h_i=\mathbf h_{o,i}+\mathbf o_i$.
+written.  These stages determine how the content coordinate and the structural
+deviation jointly form the final point.
 
 \subsection{Embedding as a point set}
 \label{sec:fsde}
@@ -106,9 +111,9 @@ that will receive the structural write.  At the first layer,
   \mathbf h_{o,i}^{(0)}=\operatorname{Enc}_X(\mathbf x_i).
   \label{eq:baseline}
 \end{equation}
-For later layers, $\mathbf h_{o,i}^{(\ell)}=\mathbf h_i^{(\ell-1)}$.  The
-attribute encoder only reads $\mathbf X$, so it supplies a content reference
-before graph conditioned writing.
+For later layers, the previous fused point becomes the new original coordinate.
+The attribute encoder only reads node attributes, so it supplies a content
+reference before graph conditioned writing.
 In implementation, $\operatorname{Enc}_X$ is a shared multilayer perceptron with
 layer normalization.  Missing or categorical attributes are first mapped to the
 same numeric feature space used by the task input, and the output dimension is
@@ -123,16 +128,29 @@ value vectors are obtained from $\mathbf h_{o,i}^{(\ell)}$ through trainable
 projections.  Their pairwise attention scores create a global attention field,
 and the weighted values form contextual source states $\mathbf u_s$.  The
 adjacency defines the write set
-$N_A(i)=\{s:(s,i)\in E\}\cup\{i\}$ for each target $i$.
+$N_A(i)$ for each target.  The write set contains the target itself and all
+source nodes connected to it:
+\begin{equation}
+ N_A(i)=\{s:(s,i)\in E\}\cup\{i\}.
+ \label{eq:write-set}
+\end{equation}
 For each attention head $m$, we compute
-$\mathbf q_i^{(m)}=\mathbf W_Q^{(m)}\mathbf h_{o,i}^{(\ell)}$,
-$\mathbf k_i^{(m)}=\mathbf W_K^{(m)}\mathbf h_{o,i}^{(\ell)}$, and
-$\mathbf v_i^{(m)}=\mathbf W_V^{(m)}\mathbf h_{o,i}^{(\ell)}$.  The dense
-attention scores define a source summary
-$\mathbf u_s^{(m)}=\sum_j\operatorname{softmax}_j((\mathbf q_s^{(m)})^\top
-\mathbf k_j^{(m)}/\sqrt{d_h})\mathbf v_j^{(m)}$.  The later adjacency
-restricted write uses these $\mathbf u_s^{(m)}$ values, so long range attribute
-context is available before topology selects the actual write locations.
+\begin{equation}
+\mathbf q_i^{(m)}=\mathbf W_Q^{(m)}\mathbf h_{o,i}^{(\ell)},\quad
+\mathbf k_i^{(m)}=\mathbf W_K^{(m)}\mathbf h_{o,i}^{(\ell)},\quad
+\mathbf v_i^{(m)}=\mathbf W_V^{(m)}\mathbf h_{o,i}^{(\ell)}.
+\label{eq:qkv}
+\end{equation}
+The dense attention scores define a source summary:
+\begin{equation}
+\mathbf u_s^{(m)}=\sum_j\operatorname{softmax}_j\!\left(
+\frac{(\mathbf q_s^{(m)})^\top\mathbf k_j^{(m)}}{\sqrt{d_h}}\right)
+\mathbf v_j^{(m)}.
+\label{eq:source-summary}
+\end{equation}
+The later adjacency restricted write uses these source states, so long range
+attribute context is available before topology selects the actual write
+locations.
 
 \paragraph{Structural deviation $\mathbf o_i$.}
 For each target, a softmax over $N_A(i)$ gives $\alpha_{si}^{(m)}$.  The
@@ -150,9 +168,9 @@ control the write operation.  The self term in $N_A(i)$ keeps every point live
 even for isolated vertices, and the softmax normalizes incoming writes for each
 target.  The noise network receives the clean relation energy and normalized
 training progress, predicts a nonnegative scale $\sigma_{si}$, and injects
-$\sigma_{si}g(u)\epsilon_{si}$ into write logits during training.  This exposes
-the encoder to small relation uncertainty while preserving deterministic
-validation and test computation.
+a scheduled noise term into write logits during training.  This exposes the
+encoder to small relation uncertainty while preserving deterministic validation
+and test computation.
 
 \paragraph{Fusion into $\mathbf h_i$.}
 The final point is produced by fusing the original coordinate and structural
@@ -161,7 +179,11 @@ deviation with a normalized feedforward update $\Phi$:
  \mathbf h_i^{(\ell)}=\Phi\!\left(\mathbf h_{o,i}^{(\ell)}+\operatorname{Dropout}(\mathbf o_i^{(\ell)})\right).
  \label{eq:fusion}
 \end{equation}
-After $L$ layers, $\Hset_{\mathrm{dec}}=\mathbf H^{(L)}$ is used for recovery.
+After all layers, the final point matrix is used for recovery:
+\begin{equation}
+ \Hset_{\mathrm{dec}}=\mathbf H^{(L)}.
+ \label{eq:decoder-state}
+\end{equation}
 Node tasks may use this final state or a jump concatenation of layer states.
 The fusion keeps the content coordinate as the residual backbone and treats the
 structural deviation as an additive correction.  This is the main reason the
@@ -218,22 +240,22 @@ applies a learned scale and bias.  For a candidate pair $(i,j)$,
  s_{ij}=\rho\,\operatorname{Mean}_{m,\leftrightarrow}\!\left(\frac{(\overline{\mathbf q}_i^{(m)})^\top\overline{\mathbf k}_j^{(m)}}{\sqrt{d_h}}\right)+\beta,\quad \widehat A_{ij}=\sigma(s_{ij}).
  \label{eq:pairattn}
 \end{equation}
-The link loss applies binary cross entropy to $s_{ij}$ and $A_{ij}$.  The
-content decoder is
+The link loss applies binary cross entropy to the relation score and the
+adjacency target.  The content decoder is
 \begin{equation}
  \widehat{\mathbf C}=D_C(\Hset_{\mathrm{dec}}).
  \label{eq:feat}
 \end{equation}
-The content loss measures mean squared error between $\widehat{\mathbf C}$ and
-$\mathbf C$.  Relation recovery evaluates point pair geometry; content recovery
-evaluates information decodable from one point.
+The content loss measures mean squared error between the predicted content and
+the content target.  Relation recovery evaluates point pair geometry; content
+recovery evaluates information decodable from one point.
 The relation decoder uses normalized projections before the scaled inner
 product.  This keeps the score controlled by angular compatibility and a learned
 global scale, which is useful when different graphs have different sizes or
 feature magnitudes.  For directed graphs the symmetrization operator is removed;
 for undirected graphs both directions share the same recovered score.  Edge
 attributes, when present, are predicted by a separate pair decoder over
-$(\mathbf h_i,\mathbf h_j)$ after the binary relation score selects the relevant
+the two endpoint points after the binary relation score selects the relevant
 pairs.
 
 \paragraph{Sampling and target hygiene.}
@@ -253,8 +275,12 @@ balanced relation recovery objective.
 
 \paragraph{Recovery implication.}
 Let $D$ be a deterministic decoder and let $d_T$ be a distance on the target
-space.  If $d_T(D(\operatorname{Enc}(G)),T(G))\leq\epsilon$ on the evaluation
-domain, then two graphs $G_1,G_2$ with the same representation satisfy
+space.  The recovery condition is
+\begin{equation}
+ d_T(D(\operatorname{Enc}(G)),T(G))\leq\epsilon .
+ \label{eq:recovery-condition}
+\end{equation}
+Under this condition, two graphs with the same representation satisfy
 \begin{equation}
  d_T(T(G_1),T(G_2))\leq \epsilon_{\triangle}.
  \label{eq:recoverability}
@@ -278,10 +304,10 @@ For graph tasks, we use attention pooling,
 where $\beta_i$ is normalized over the graph.
 The same reader interface is used after every embedding run.  For point
 prediction, a shared multilayer perceptron reads each row of
-$\Hset_{\mathrm{task}}$.  For graph prediction, attention pooling computes
-$\beta_i$ from point scores, normalizes them within each graph, and then applies
-the graph reader to $\mathbf g$.  This keeps the task head small and makes the
-recoverable point set the common object for all prediction types.
+the task point set.  For graph prediction, attention pooling computes point
+weights, normalizes them within each graph, and then applies the graph reader to
+the pooled state.  This keeps the task head small and makes the recoverable
+point set the common object for all prediction types.
 
 \begin{table}[t]
   \centering
@@ -315,7 +341,7 @@ a larger set, and the same relation decoder recovers the expanded graph:
 Training uses graph rule legality signals for candidate transitions; evaluation
 uses fixed parameters to produce free growth rollouts and then reports terminal
 validity and relational embedding probes.
-In the autoregressive case, $\operatorname{StepSet}$ appends one or more live
+In the autoregressive case, the set expansion operator appends one or more live
 points sampled from a learned proposal distribution and updates existing points
 through the same set interface.  The relation decoder then converts the expanded
 set into candidate edges.  The selector ranks candidates using legality signals
@@ -366,16 +392,35 @@ The survival term keeps the learned training noise scale active.  For an
 embedding only run, the prediction term is disabled and the representation is
 trained only through graph recovery targets; for task runs, the task loss and
 recovery losses are optimized together.
-Unless otherwise stated, we use $\lambda_{\mathrm{pred}}=1.0$,
-$\lambda_{\mathrm{link}}=1.0$, $\lambda_{\mathrm{feat}}=0.1$, and
-$\lambda_{\mathrm{alive}}=10^{-3}$.  The default encoder uses model width
-$d=128$, $L=3$ layers, four attention heads, hidden width $4d$, dropout $0.1$,
-and relation pair budget $4096$ positives with the same number of negatives per
-update.  Optimization uses AdamW with learning rate $10^{-3}$, weight decay
-$10^{-4}$, gradient norm clipping at $1.0$, and early selection on the
-validation metric.  The noise schedule uses $g(u)=\max(0,1-u)$ so that relation
-perturbations are strongest at the beginning of training and vanish for clean
-selection and testing.
+\begin{table}[t]
+  \centering
+  \caption{Default training configuration.}
+  \label{tab:training-config}
+  \small
+  \begin{tabular}{ll}
+    \hline
+    Item & Value \\
+    \hline
+    Prediction loss weight & 1.0 \\
+    Link recovery loss weight & 1.0 \\
+    Content recovery loss weight & 0.1 \\
+    Survival loss weight & $10^{-3}$ \\
+    Model width & 128 \\
+    Encoder depth & 3 layers \\
+    Attention heads & 4 \\
+    Hidden width & four times the model width \\
+    Dropout & 0.1 \\
+    Relation pair budget & 4096 positives and matched negatives \\
+    Optimizer & AdamW \\
+    Learning rate & $10^{-3}$ \\
+    Weight decay & $10^{-4}$ \\
+    Gradient clipping & 1.0 \\
+    Noise schedule & linear decay from one to zero \\
+    \hline
+  \end{tabular}
+\end{table}
+Relation perturbations are strongest at the beginning of training and vanish for
+clean selection and testing.
 
 \paragraph{Evaluation setup.}
 Training separates noisy encoder states from clean validation and test states.
