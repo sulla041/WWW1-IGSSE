@@ -126,29 +126,35 @@ deviation with a normalized feedforward update $\Phi$:
 After $L$ layers, $\Hset_{\mathrm{dec}}=\mathbf H^{(L)}$ is used for recovery.
 Node tasks may use this final state or a jump concatenation of layer states.
 
-\paragraph{Algorithm 1: point set embedding.}
-\begin{quote}\small
-\setlength{\fboxsep}{5pt}%
-\noindent\fbox{%
-\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
-\begin{tabular}{@{}p{0.19\linewidth}@{\hspace{0.5em}}p{0.72\linewidth}@{}}
-\textbf{Input} & $\mathbf X$, $E_{\mathrm{enc}}$, progress $u$ \\
-\textbf{Output} & $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, $\overline\sigma$ \\
-\textbf{Init} & $\mathbf h_{o,i}^{(0)} \leftarrow \operatorname{Enc}_X(\mathbf x_i)$ \\
-\textbf{for $\ell$} & $(\mathbf q_i,\mathbf k_i,\mathbf v_i)\leftarrow
-\operatorname{Proj}_{\ell}(\mathbf h_{o,i}^{(\ell)})$ \\
-& $e_{si}\leftarrow \operatorname{Energy}(\mathbf q_s,\mathbf k_i)$ \\
-& $\mathbf u_s\leftarrow \operatorname{GlobalAttn}(e_{s:},\mathbf v)$ \\
-& $\alpha_{si}\leftarrow \operatorname{Softmax}_{s\in N_A(i)}(e_{si})$ \\
-& $\mathbf o_i^{(\ell)}\leftarrow
-\operatorname{Write}(\alpha_{:i},\mathbf u)$ \\
-& \textbf{if train:} $e_{si}\leftarrow e_{si}+\sigma_{si}g(u)\epsilon_{si}$ \\
-& $\mathbf h_i^{(\ell)}\leftarrow
-\Phi(\mathbf h_{o,i}^{(\ell)}+\mathbf o_i^{(\ell)})$ \\
-\textbf{return} & $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, $\overline\sigma$ \\
-\end{tabular}
-\end{minipage}}
-\end{quote}
+\begin{table}[t]
+  \centering
+  \caption{Numbered pseudocode for point set embedding.}
+  \label{tab:alg-embedding}
+  \small
+  \begin{tabular}{p{0.08\linewidth}p{0.82\linewidth}}
+    \hline
+    Line & Operation \\
+    \hline
+    1 & \textbf{Input:} $\mathbf X$, $E_{\mathrm{enc}}$, progress $u$ \\
+    2 & \textbf{Output:} $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, $\overline\sigma$ \\
+    3 & $\mathbf h_{o,i}^{(0)} \leftarrow \operatorname{Enc}_X(\mathbf x_i)$ \\
+    4 & \textbf{for} each layer $\ell$ \textbf{do} \\
+    5 & \quad $(\mathbf q_i,\mathbf k_i,\mathbf v_i)\leftarrow
+    \operatorname{Proj}_{\ell}(\mathbf h_{o,i}^{(\ell)})$ \\
+    6 & \quad $e_{si}\leftarrow \operatorname{Energy}(\mathbf q_s,\mathbf k_i)$ \\
+    7 & \quad $\mathbf u_s\leftarrow \operatorname{GlobalAttn}(e_{s:},\mathbf v)$ \\
+    8 & \quad $\alpha_{si}\leftarrow \operatorname{Softmax}_{s\in N_A(i)}(e_{si})$ \\
+    9 & \quad $\mathbf o_i^{(\ell)}\leftarrow
+    \operatorname{Write}(\alpha_{:i},\mathbf u)$ \\
+    10 & \quad \textbf{if} train \textbf{then}
+    $e_{si}\leftarrow e_{si}+\sigma_{si}g(u)\epsilon_{si}$ \\
+    11 & \quad $\mathbf h_i^{(\ell)}\leftarrow
+    \Phi(\mathbf h_{o,i}^{(\ell)}+\mathbf o_i^{(\ell)})$ \\
+    12 & \textbf{end for} \\
+    13 & \textbf{return} $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, $\overline\sigma$ \\
+    \hline
+  \end{tabular}
+\end{table}
 
 \subsection{Approximate equivalence of the point set}
 \label{sec:recovery}
@@ -211,23 +217,27 @@ For graph tasks, we use attention pooling,
 \end{equation}
 where $\beta_i$ is normalized over the graph.
 
-\paragraph{Algorithm 2: downstream prediction over $\Hset$.}
-\begin{quote}\small
-\setlength{\fboxsep}{5pt}%
-\noindent\fbox{%
-\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
-\begin{tabular}{@{}p{0.19\linewidth}@{\hspace{0.5em}}p{0.72\linewidth}@{}}
-\textbf{Input} & $\Hset_{\mathrm{task}}$, task type, reader $R$, labels \\
-\textbf{if node} & $\widehat{\mathbf y}_i\leftarrow
-R_{\mathrm{node}}(\mathbf h_i)$ \\
-\textbf{if graph} & $\mathbf g\leftarrow \operatorname{Pool}(\Hset_{\mathrm{task}})$ \\
-& $\widehat{\mathbf y}_G\leftarrow R_{\mathrm{graph}}(\mathbf g)$ \\
-\textbf{loss} & $\mathcal L_{\mathrm{pred}}\leftarrow
-\operatorname{TaskLoss}(\widehat{\mathbf y},y)$ on training labels \\
-\textbf{return} & prediction scores, $\mathcal L_{\mathrm{pred}}$ \\
-\end{tabular}
-\end{minipage}}
-\end{quote}
+\begin{table}[t]
+  \centering
+  \caption{Numbered pseudocode for downstream prediction over $\Hset$.}
+  \label{tab:alg-prediction}
+  \small
+  \begin{tabular}{p{0.08\linewidth}p{0.82\linewidth}}
+    \hline
+    Line & Operation \\
+    \hline
+    1 & \textbf{Input:} $\Hset_{\mathrm{task}}$, task type, reader $R$, labels \\
+    2 & \textbf{if} task type is node prediction \textbf{then} \\
+    3 & \quad $\widehat{\mathbf y}_i\leftarrow R_{\mathrm{node}}(\mathbf h_i)$ \\
+    4 & \textbf{if} task type is graph prediction \textbf{then} \\
+    5 & \quad $\mathbf g\leftarrow \operatorname{Pool}(\Hset_{\mathrm{task}})$ \\
+    6 & \quad $\widehat{\mathbf y}_G\leftarrow R_{\mathrm{graph}}(\mathbf g)$ \\
+    7 & $\mathcal L_{\mathrm{pred}}\leftarrow
+    \operatorname{TaskLoss}(\widehat{\mathbf y},y)$ on training labels \\
+    8 & \textbf{return} prediction scores, $\mathcal L_{\mathrm{pred}}$ \\
+    \hline
+  \end{tabular}
+\end{table}
 
 For autoregressive graph modeling, the expansion operator maps the current set to
 a larger set, and the same relation decoder recovers the expanded graph:
@@ -240,25 +250,34 @@ Training uses graph rule legality signals for candidate transitions; evaluation
 uses fixed parameters to produce free growth rollouts and then reports terminal
 validity and relational embedding probes.
 
-\paragraph{Algorithm 3: autoregressive graph modeling.}
-\begin{quote}\small
-\setlength{\fboxsep}{5pt}%
-\noindent\fbox{%
-\begin{minipage}{\dimexpr\linewidth-2\fboxsep-2\fboxrule\relax}
-\begin{tabular}{@{}p{0.19\linewidth}@{\hspace{0.5em}}p{0.72\linewidth}@{}}
-\textbf{Input} & $\Hset_0$, $\operatorname{StepSet}$, $D_A$, target size, selector \\
-\textbf{Init} & $\mathcal B\leftarrow\{\Hset_0\}$ \\
-\textbf{while active} & $\mathcal C\leftarrow\emptyset$ \\
-\textbf{for $\Hset_s\in\mathcal B$} & $\Hset_{s+1}\leftarrow
-\operatorname{StepSet}(\Hset_s,\boldsymbol\epsilon_s)$ \\
-& $\widehat E_{s+1}\leftarrow D_A(\Hset_{s+1})$ \\
-& $\operatorname{score}\leftarrow \operatorname{SelectScore}(\widehat E_{s+1})$ \\
-& $\mathcal C\leftarrow\mathcal C\cup\{(\Hset_{s+1},\operatorname{score})\}$ \\
-\textbf{update} & $\mathcal B\leftarrow\operatorname{Select}(\mathcal C)$ \\
-\textbf{return} & terminal graphs, validity, relation probe metrics \\
-\end{tabular}
-\end{minipage}}
-\end{quote}
+\begin{table}[t]
+  \centering
+  \caption{Numbered pseudocode for autoregressive graph modeling.}
+  \label{tab:alg-autoregressive}
+  \small
+  \begin{tabular}{p{0.08\linewidth}p{0.82\linewidth}}
+    \hline
+    Line & Operation \\
+    \hline
+    1 & \textbf{Input:} $\Hset_0$, $\operatorname{StepSet}$, $D_A$, target size, selector \\
+    2 & $\mathcal B\leftarrow\{\Hset_0\}$ \\
+    3 & \textbf{while} active \textbf{do} \\
+    4 & \quad $\mathcal C\leftarrow\emptyset$ \\
+    5 & \quad \textbf{for} each $\Hset_s\in\mathcal B$ \textbf{do} \\
+    6 & \quad\quad $\Hset_{s+1}\leftarrow
+    \operatorname{StepSet}(\Hset_s,\boldsymbol\epsilon_s)$ \\
+    7 & \quad\quad $\widehat E_{s+1}\leftarrow D_A(\Hset_{s+1})$ \\
+    8 & \quad\quad $\operatorname{score}\leftarrow
+    \operatorname{SelectScore}(\widehat E_{s+1})$ \\
+    9 & \quad\quad $\mathcal C\leftarrow
+    \mathcal C\cup\{(\Hset_{s+1},\operatorname{score})\}$ \\
+    10 & \quad \textbf{end for} \\
+    11 & \quad $\mathcal B\leftarrow\operatorname{Select}(\mathcal C)$ \\
+    12 & \textbf{end while} \\
+    13 & \textbf{return} terminal graphs, validity, relation probe metrics \\
+    \hline
+  \end{tabular}
+\end{table}
 
 \subsection{End-to-end training}
 \label{sec:training}
