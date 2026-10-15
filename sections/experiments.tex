@@ -1,6 +1,30 @@
+\section{Experiments}
+\label{sec:experiments}
+
+The experiments evaluate \method{} through four complementary settings.  The
+feature prediction experiment begins with Web network tasks, followed by
+program, circuit, timing, molecular, and social graph settings.  The
+autoregressive experiment applies the same point set to rule guided graph
+expansion.  The ablation experiment removes one training or readout component,
+and the WL collision experiment evaluates controlled nonisomorphic graph pairs
+\cite{morris2019wl,wang2023brec}.
+
+\subsection{Feature Prediction Main Experiment}
+\label{sec:feature-main}
+
+The first prediction settings are Web network tasks: Amazon Photo models
+product co-purchase structure, Coauthor-CS models collaboration structure,
+Photo-interact models node representation under an interaction/freeze
+protocol, and Cora models a citation network.  These tasks use node attributes
+and observed relations, apply node-level readers to the point set, and evaluate
+classification on ten independent splits.  They are followed by program,
+circuit, timing, molecular, and social graph settings, which extend the same
+interface to control-flow, continuous circuit, netlist timing, molecular, and
+graph-level classification targets.
+
 \begin{table*}[t]
   \centering
-  \caption{Feature prediction results across program, circuit, timing, Web, molecular, and social graph tasks. Emb denotes the embedding score and Result denotes the final task performance.}
+  \caption{Feature prediction results across Web network, program, circuit, timing, molecular, and social graph tasks. Emb denotes the embedding score and Result denotes the final task performance.}
   \label{tab:feature-results}
   \scriptsize
   \setlength{\tabcolsep}{1.2pt}
@@ -26,46 +50,19 @@
     & Emb & Result & Emb & Result & Emb & Result & Emb & Result
     & Emb & Result & Emb & Result \\
     \midrule
-    HiGraph~\cite{chen2025higraph} & F1 & 0.67 & 0.62 & 0.52 & 0.60 & 0.52 & 0.59 & 0.61 & 0.51 & 0.56 & 0.40 & 0.57 & 0.41 & 0.57 & 0.41 & 0.56 & 0.40 & 0.61 & 0.55 & \textbf{0.81} & \textbf{0.86} \\
-    OCB~\cite{dong2023cktgnn} & r & 0.71 & 0.69 & 0.71 & 0.69 & 0.72 & 0.71 & 0.71 & 0.70 & 0.68 & 0.62 & 0.67 & 0.60 & 0.68 & 0.61 & 0.65 & 0.56 & 0.70 & 0.68 & \textbf{0.84} & \textbf{0.90} \\
-    Timing~\cite{guo2022timing} & R\textsuperscript{2} & 0.85 & 0.68 & 0.83 & 0.66 & 0.79 & 0.64 & 0.83 & 0.65 & 0.86 & 0.70 & 0.74 & 0.74 & 0.75 & 0.76 & 0.74 & 0.73 & 0.77 & 0.71 & \textbf{1.00} & \textbf{0.95} \\
     Photo~\cite{shchur2018} & Acc & 0.87 & 0.91 & 0.79 & 0.91 & 0.84 & 0.88 & 0.78 & 0.87 & 0.85 & 0.90 & 0.88 & 0.94 & 0.86 & 0.95 & 0.88 & 0.94 & 0.85 & 0.92 & \textbf{0.88} & \textbf{0.95} \\
     Coauthor~\cite{shchur2018} & Acc & 0.87 & 0.94 & 0.88 & 0.94 & 0.87 & 0.94 & 0.86 & 0.94 & 0.89 & 0.93 & 0.87 & 0.95 & 0.82 & 0.94 & 0.86 & 0.94 & 0.87 & 0.94 & \textbf{0.90} & \textbf{0.95} \\
     Photo int.~\cite{shchur2018} & Acc & 0.82 & 0.88 & 0.80 & 0.90 & 0.82 & 0.84 & 0.78 & 0.83 & 0.86 & 0.88 & 0.88 & 0.93 & 0.86 & 0.94 & 0.88 & 0.93 & 0.85 & 0.91 & \textbf{0.97} & \textbf{0.94} \\
     Cora~\cite{sen2008,yang2016} & Acc & 0.84 & 0.75 & 0.73 & 0.70 & 0.78 & 0.73 & 0.70 & 0.65 & 0.87 & 0.80 & 0.81 & 0.66 & 0.80 & 0.73 & 0.86 & 0.69 & 0.81 & 0.76 & \textbf{0.89} & \textbf{0.82} \\
+    HiGraph~\cite{chen2025higraph} & F1 & 0.67 & 0.62 & 0.52 & 0.60 & 0.52 & 0.59 & 0.61 & 0.51 & 0.56 & 0.40 & 0.57 & 0.41 & 0.57 & 0.41 & 0.56 & 0.40 & 0.61 & 0.55 & \textbf{0.81} & \textbf{0.86} \\
+    OCB~\cite{dong2023cktgnn} & r & 0.71 & 0.69 & 0.71 & 0.69 & 0.72 & 0.71 & 0.71 & 0.70 & 0.68 & 0.62 & 0.67 & 0.60 & 0.68 & 0.61 & 0.65 & 0.56 & 0.70 & 0.68 & \textbf{0.84} & \textbf{0.90} \\
+    Timing~\cite{guo2022timing} & R\textsuperscript{2} & 0.85 & 0.68 & 0.83 & 0.66 & 0.79 & 0.64 & 0.83 & 0.65 & 0.86 & 0.70 & 0.74 & 0.74 & 0.75 & 0.76 & 0.74 & 0.73 & 0.77 & 0.71 & \textbf{1.00} & \textbf{0.95} \\
     AIDS~\cite{morris2020} & Acc & 0.77 & 0.80 & 0.76 & 0.80 & 0.76 & 0.80 & 0.76 & 0.80 & 0.75 & 0.75 & 0.76 & 0.77 & 0.76 & 0.78 & 0.75 & 0.76 & 0.78 & 0.84 & \textbf{0.89} & \textbf{0.99} \\
     IMDB-M~\cite{yang2015} & Acc & 0.54 & 0.36 & 0.52 & 0.35 & 0.52 & 0.34 & 0.56 & 0.40 & 0.53 & 0.35 & 0.54 & 0.35 & 0.52 & 0.35 & 0.50 & 0.35 & 0.55 & 0.41 & \textbf{0.63} & \textbf{0.52} \\
     IMDB-B~\cite{yang2015} & Acc & 0.61 & 0.50 & 0.61 & 0.50 & 0.61 & 0.50 & 0.61 & 0.51 & 0.60 & 0.47 & 0.61 & 0.48 & 0.61 & 0.49 & 0.60 & 0.48 & 0.62 & 0.55 & \textbf{0.75} & \textbf{0.75} \\
     \bottomrule
   \end{tabular}}
 \end{table*}
-
-\section{Experiments}
-\label{sec:experiments}
-
-The experiments evaluate \method{} through four complementary settings.  The
-feature prediction experiment measures supervised utility on Web relation,
-program, circuit, timing, molecular, and social data.  The autoregressive
-experiment applies the same point set to rule guided graph expansion.  The
-ablation experiment removes one training or readout component at a time.  The
-WL collision experiment evaluates structural separation on controlled
-nonisomorphic pairs from BREC and WL diagnostic sets
-\cite{morris2019wl,wang2023brec}.  Together, these settings connect downstream
-prediction, graph growth, component contribution, and structural separation.
-
-\subsection{Feature Prediction Main Experiment}
-\label{sec:feature-main}
-
-The main experiment evaluates supervised prediction under three task
-specifications.  Amazon Photo, Coauthor CS, and Cora provide node
-classification on product co-purchase, academic collaboration, and citation
-networks \cite{shchur2018,sen2008,yang2016}.  HiGraph provides program control
-flow graphs for malware classification \cite{chen2025higraph}.  OCB and
-TimingPredict provide continuous circuit and timing targets
-\cite{dong2023cktgnn,guo2022timing}.  AIDS, IMDB-M, and IMDB-B provide graph
-classification targets on molecular and social graphs
-\cite{morris2020,yang2015}.  Each method receives the same node attributes,
-observed relations, split, and prediction head within a dataset.
 
 All main-table tasks use the same IGSSE interface.  An input graph contains its
 adjacency structure, node attributes, and edge attributes when the dataset
@@ -82,6 +79,17 @@ metric, and checkpoint rule.
 All ten prediction rows aggregate results over ten independent train,
 validation, and test splits.  The reported Emb and Result values are the
 combined test outcomes across these ten runs under the same split protocol.
+
+Amazon Photo, Coauthor-CS, Photo-interact, and Cora use node-level readers.
+Each setting is evaluated with ten split runs; the standard node tasks use
+60/20/20 train, validation, and test partitions, Photo-interact uses its
+freeze-one interaction partition, and Cora uses the public Planetoid fields
+within the repeated split protocol \cite{shchur2018,sen2008,yang2016}.  Product,
+author, or paper attributes are the node input, observed relations are the
+structural input, and labels are available only on the training mask.  The
+reader applies a shared point head, with set attention context when the
+configuration requests it.  Accuracy is the primary metric for these four
+network settings.
 
 The program-graph setting uses the official IID stratified split of HiGraph,
 with a 70/15/15 train, validation, and test partition.  Program control-flow
@@ -108,16 +116,6 @@ arrival time, slew, and required arrival time are regression targets, with the
 coefficient of determination for delay as the primary metric.  The IGSSE reader pools directed
 predecessor points and their recovered content for the timing head after the
 link, feature, net, cell, and direction recovery fields are constructed.
-
-Amazon Photo, Coauthor-CS, Photo-interact, and Cora use node-level readers.
-Each setting is evaluated with ten split runs; the standard node tasks use
-60/20/20 train, validation, and test partitions, Photo-interact uses its
-freeze-one interaction partition, and Cora uses the public Planetoid fields
-within the repeated split protocol \cite{shchur2018,sen2008,yang2016}.  Product, author,
-or paper attributes are the node input, observed relations are the structural
-input, and labels are available only on the training mask.  The reader applies
-a shared point head, with set attention context when the configuration
-requests it.  Accuracy is the primary metric for all four settings.
 
 AIDS, IMDB-MULTI, and IMDB-BINARY use graph-level readers on the TU graph
 classification benchmarks \cite{morris2020,yang2015}.  Each graph supplies

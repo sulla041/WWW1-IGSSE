@@ -20,7 +20,7 @@ AIDS、IMDB-MULTI 和 IMDB-BINARY 使用 TU 图分类数据和图级读出。每
 
 基线覆盖邻域计算、传播、长程序列建模和图到点集建模。GCN、GraphSAGE、GAT 和 GIN 使用标准邻域聚合；APPNP 加入 personalized PageRank 传播；SGFormer 与 Polynormer 提供全局传播机制；Graph Mamba 使用选择性状态空间建模长程图依赖；PST 将图映射为点集。表 1 报告每个方法的 Emb 与 Result，并把两者拆成相邻两格。Emb 是嵌入得分，Result 是最终任务指标；Metric 列给出 F1、相关系数、决定系数或准确率。节点分类从点预测训练 mask 中的节点标签，图分类从池化点集预测图标签，电路和时序任务输出图级连续值并使用回归损失。IGSSE 在十个比较行的 Result 和 Emb 上均达到最优，说明该点集能够稳定服务于下游预测。
 
-表 1：跨程序、电路、时序、Web、分子和社会图任务的特征预测结果。每个方法以 Emb 和 Result 两个单独单元格报告，小数保留两位。数据集包括 HiGraph IID、OCB Ckt-Bench-101、TimingPredict、Amazon Photo、Coauthor CS、Amazon Photo interact、Cora、AIDS、IMDB-MULTI 和 IMDB-BINARY。比较方法包括 GCN、GraphSAGE、GAT、GIN、APPNP、SGFormer、Polynormer、Graph-Mamba、PST 和 IGSSE。Emb 表示嵌入得分，Result 表示最终任务性能；表内数据集和 baseline 名称均加入引用，粗体表示每行最大值。
+表 1：跨 Web 网络、程序、电路、时序、分子和社会图任务的特征预测结果。每个方法以 Emb 和 Result 两个单独单元格报告，小数保留两位。数据集按网络任务优先排列，包括 Amazon Photo、Coauthor CS、Amazon Photo interact、Cora、HiGraph IID、OCB Ckt-Bench-101、TimingPredict、AIDS、IMDB-MULTI 和 IMDB-BINARY。比较方法包括 GCN、GraphSAGE、GAT、GIN、APPNP、SGFormer、Polynormer、Graph-Mamba、PST 和 IGSSE。Emb 表示嵌入得分，Result 表示最终任务性能；表内数据集和 baseline 名称均加入引用，粗体表示每行最大值。
 
 4.2 Autoregressive Graph Modeling
 
