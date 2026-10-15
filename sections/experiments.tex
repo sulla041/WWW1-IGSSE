@@ -170,8 +170,10 @@ specifies chordal structure, and Bipartite specifies a two part relation
 constraint.  These task specifications test whether point addition and relation
 formation remain coherent throughout graph growth.
 
-The comparison covers recurrent GraphRNN, attention based GRAN and SPEC,
-flow based BiGG, edge based EDGE, and score based GDSS
+The comparison covers GraphRNN and GRAN for autoregressive graph generation,
+BiGG as a sparse autoregressive generator, SPECTRE as a spectral-conditioned
+one-shot GAN, EDGE as an edge-based diffusion model, and GDSS as a score-based
+generator
 \cite{you2018,liao2019,dai2020,martinkus2022spectre,chen2023edge,jo2022}.
 Emb measures the
 embedding result associated with the rollout, while Valid is the fraction of
@@ -200,7 +202,7 @@ interface supports rule guided graph expansion.
     \shortstack{RNN\\\cite{you2018}} &
     \shortstack{GRAN\\\cite{liao2019}} &
     \shortstack{BiGG\\\cite{dai2020}} &
-    \shortstack{SPEC\\\cite{martinkus2022spectre}} &
+    \shortstack{SPECTRE\\\cite{martinkus2022spectre}} &
     \shortstack{EDGE\\\cite{chen2023edge}} &
     \shortstack{GDSS\\\cite{jo2022}} &
     \shortstack{OURS} \\

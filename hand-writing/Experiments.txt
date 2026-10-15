@@ -26,7 +26,7 @@ AIDS、IMDB-MULTI 和 IMDB-BINARY 使用 TU 图分类数据和图级读出。每
 
 自回归实验在预测所用的同一点集上进行四种规则引导的 rollout。每一步由集合扩展算子提出新点，点对关系解码器确定图关系，规则评价器判断终止图是否满足约束。Planar Legal 与 Planar Net 指定平面图有效性，Chordal 指定弦结构，Bipartite 指定二分关系约束。这些任务检验点增加和关系形成在连续图增长中的一致性。
 
-比较方法包括 GraphRNN、GRAN、SPEC、BiGG、EDGE 和 GDSS，分别覆盖循环式、注意力式、流式、边生成式和 score based 图生成方法。Emb 表示 rollout 关联的嵌入结果，Valid 表示满足指定图规则的终止 rollout 比例。每次 rollout 从规定初始状态开始，反复提出新点，直到达到目标规模或选择器输出终止状态；Valid 只统计终止图，中间候选不计入成功样本。IGSSE 在 Planar、PlanNet、Chordal 和 Bipartite 上均取得最高 Valid，说明同一点集接口能够支持规则引导的图扩展。
+比较方法包括 GraphRNN 和 GRAN 自回归图生成方法、BiGG 稀疏自回归生成方法、SPECTRE 谱条件 one-shot GAN、EDGE 边生成式扩散模型和 GDSS score-based 生成模型。Emb 表示 rollout 关联的嵌入结果，Valid 表示满足指定图规则的终止 rollout 比例。每次 rollout 从规定初始状态开始，反复提出新点，直到达到目标规模或选择器输出终止状态；Valid 只统计终止图，中间候选不计入成功样本。IGSSE 在 Planar、PlanNet、Chordal 和 Bipartite 上均取得最高 Valid，说明同一点集接口能够支持规则引导的图扩展。
 
 表 2：平面、弦和二部约束下的自回归图扩展终止有效性。表格使用单栏和正文字号，任务逐行排列，baseline 和 IGSSE 横向作为列。Metric 说明 Valid 是满足指定规则的终止 rollout 比例；任务包括 Planar、PlanNet、Chordal 和 Bipartite，表内任务和 baseline 名称均加入引用，粗体表示每个任务的最大值。
 
