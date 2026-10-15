@@ -84,6 +84,19 @@ global attention forms the source bias, while observed adjacency selects where
 that bias is written, instead of using global attention as a final node update
 followed by ordinary neighborhood aggregation.
 
+In summary, PST constructs geometric coordinates from an explicit symmetric
+rank decomposition of the graph Laplacian before set encoding, whereas IGSSE
+learns node content coordinates and writes learned structural deviations
+end-to-end.  PST gives topology a geometric representation with algebraic
+orthogonal invariance; IGSSE uses trained pointwise content recovery and
+pairwise relation recovery to make approximate equivalence an empirical
+property of the learned embedding.  IGSSE also separates global structural
+bias formation from adjacency-conditioned writing, and uses the resulting
+relation decoder with set expansion for rule-guided autoregressive graph
+growth.  These differences place PST primarily in static point-set
+representation, while IGSSE extends the point-set route through recovery
+training and graph growth.
+
 Graph autoencoders provide a related recovery perspective.  Variational Graph
 Auto-Encoders and GraphVAE commonly obtain latent node states through message
 passing or graph convolutions and decode links or graph structure from those
