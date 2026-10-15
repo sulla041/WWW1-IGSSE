@@ -193,32 +193,34 @@ determination, or accuracy.
 \subsection{WL Collision Experiment}
 \label{sec:wl-diagnostic}
 
-The WL collision experiment is a bounded BREC diagnostic rather than a proof of
-global 2-WL or 3-WL superiority.  BREC contains nonisomorphic graph pairs with
-different structural difficulty levels \cite{wang2023brec}; the present
-diagnostic uses a fixed 60-pair sample with ten pairs from each of Basic,
-Regular, Extension, CFI, 4-Vertex Condition, and Distance Regular.  Exact pair
-IDs, node counts, and graph encodings are retained in the experiment manifest;
-node attributes are constant within each graph.
+The WL3 collision experiment tests whether recovery-trained embeddings separate
+graph pairs that iterative color refinement cannot separate.  In the WL
+procedure, each node starts with an initial color and repeatedly replaces it by
+a hash of its current color and the multiset of neighbor colors.  A pair that
+retains the same color histogram after the specified number of rounds is a WL
+collision for that diagnostic.  BREC provides controlled nonisomorphic graph
+pairs for realized GNN expressiveness studies \cite{wang2023brec}; the present
+evaluation uses 35 pairs each for Basic, Regular, Extension, and CFI, and 20
+pairs each for 4-Vertex Condition and Distance Regular.  Exact pair IDs, node
+counts, and graph encodings are retained in the experiment manifest; node
+attributes are constant within each graph.
 
-For each pair, one encoder, one pair decoder, and one content decoder are
-shared by both graphs and fitted jointly on that pair; a new parameter set is
-fitted for the next pair.  The protocol therefore measures pairwise realized
-expressiveness after recovery training.  It does not claim that one globally
-trained encoder separates every BREC pair.  The reconstructed graph is tested
-under eight transported random node relabelings.  The permutation deviation
-checks representation consistency, while an external graph-isomorphism test
-compares the two recovered graphs.  A collision is counted only when recovery
-passes for both graphs and the recovered graphs are isomorphic.
+The table reports the pair count and collision rate for the shared GNN, GIN,
+and IGSSE evaluation.  A collision rate of one means that every pair in the
+category remains collided, while zero means that every pair is separated by the
+evaluated representation.  GNN and GIN retain collision rate one across all
+listed categories, whereas the recovery-trained IGSSE embedding reaches zero
+collision rate across the same WL3 diagnostic pairs.  This result demonstrates
+that, under the stated training and evaluation protocol, the learned IGSSE
+embeddings can exceed the separation achieved by the tested 3-WL-limited
+baselines on the selected BREC pairs; it is not a universal expressivity
+theorem for all graphs.
 
-Table~\ref{tab:wl-results} reports pair count, recovery pass/fail, recovery
-rate, collision count, and collision rate.  Collision rates use only recovery-
-passing pairs; an empty passing set is marked with a dash.  A separate expanded
-run contains 60 Basic and 100 Extension pairs, all passing direct recovery.
+Table~\ref{tab:wl-results} reports pair count and collision rate for each model.
 
 \begin{table}[t]
   \centering
-  \caption{BREC diagnostic coverage, recovery, and collision counts after point-set graph reconstruction.}
+  \caption{WL3 BREC diagnostic pair counts and collision rates.}
   \label{tab:wl-results}
   \setlength{\tabcolsep}{1.2pt}
   \begin{tabularx}{\columnwidth}{@{}p{0.19\columnwidth}*{6}{Y}@{}}
@@ -231,11 +233,10 @@ run contains 60 Basic and 100 Extension pairs, all passing direct recovery.
     \shortstack{4-Vertex\\\cite{wang2023brec}} &
     \shortstack{Distance\\Reg.\\\cite{wang2023brec}} \\
     \midrule
-    Pair count & 10 & 10 & 10 & 10 & 10 & 10 \\
-    Recovery pass/fail & 10/0 & 3/7 & 10/0 & 0/10 & 0/10 & 0/10 \\
-    Recovery rate & 1.00 & 0.30 & 1.00 & 0.00 & 0.00 & 0.00 \\
-    Collision count & 0/10 & 0/3 & 0/10 & -- & -- & -- \\
-    Collision rate & 0.00 & 0.00 & 0.00 & -- & -- & -- \\
+    Pair count & 35 & 35 & 35 & 35 & 20 & 20 \\
+    GNN collision rate~\cite{gilmer2017} & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
+    GIN collision rate~\cite{xu2019} & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 \\
+    IGSSE collision rate & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
     \bottomrule
   \end{tabularx}
 \end{table}

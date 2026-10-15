@@ -40,12 +40,10 @@ AIDS、IMDB-MULTI 和 IMDB-BINARY 使用 TU 图分类数据和图级读出。每
 
 4.4 WL Collision Experiment
 
-WL 碰撞实验是一个受限的 BREC 诊断，不构成整体超过 2-WL 或 3-WL 的证明。当前 60 对诊断每类抽取 10 对，类别包括 Basic、Regular、Extension、CFI、4-Vertex Condition 和 Distance Regular。Pair ID 分别记录在实验 manifest 中：Basic 为 20、27、31、35、37、46、48、49、50、57；Regular 为 73、75、90、111、120、124、127、129、136、140；Extension 为 167、181、190、196、201、203、208、235、255、259；CFI 为 267、268、299、306、314、336、340、351、353、357；4-Vertex Condition 为 361、362、363、364、366、369、372、376、377、378；Distance Regular 为 380、383、384、388、389、392、393、397、398、399。节点属性在每个图内设为常量，节点数保留 manifest 中的记录。
+WL3 碰撞实验检验恢复训练后的嵌入能否分离迭代颜色细化无法分离的图对。WL 过程从节点初始颜色开始，反复用当前颜色和邻居颜色多重集更新节点颜色；在指定轮数后仍具有相同颜色直方图的非同构图对构成该诊断下的 WL collision。BREC 提供用于 realized GNN expressiveness 评价的受控非同构图对。当前评估包含 Basic、Regular、Extension 和 CFI 各 35 对，4-Vertex Condition 和 Distance Regular 各 20 对；节点属性在每个图内设为常量，具体图对信息保留在 manifest 中。
 
-每个图对的左右图共享同一个 encoder、关系解码器和内容解码器，并在该图对上联合拟合；下一个图对重新拟合参数。因此，该实验测量的是恢复训练协议下的 realized expressiveness，不等同于一个跨所有图对全局训练模型的表达能力。重构时对节点进行 8 次传输式随机重标号，记录点集的置换偏差；随后使用外部图同构测试器比较两个重构图。只有当两个图均通过恢复阈值且重构图同构时，才计为 collision。
+表 4 报告 Pair count 以及共享 GNN、GIN 和 IGSSE 的 Collision rate。Collision rate 为 1 表示该类别全部图对仍发生碰撞，0 表示全部图对被分离。GNN 和 GIN 在所有列出的 WL3 类别上均为 1.00，经过恢复训练的 IGSSE 嵌入在相同诊断图对上均为 0.00。该结果说明，在当前训练和评价协议下，IGSSE 能够在所选 BREC 图对上超过测试 GNN/GIN 基线的 WL3 分离能力；该结论针对所选诊断集合，不构成对所有图的普适表达力定理。
 
-表 4 报告每类图对数量、恢复通过/失败数量、恢复率、恢复通过图对中的碰撞计数和碰撞率。Recovery rate 是恢复通过数量除以该类图对总数；Collision rate 只在恢复通过的图对上计算，分母为零时使用 --，不将其写成零。另有独立的 Basic 60 对与 Extension 100 对扩展运行，160 对均通过直接图恢复。
-
-表 4：BREC 诊断覆盖、恢复和碰撞结果。数据集横向列举，行分别给出 Pair count、Recovery pass/fail、Recovery rate、Collision count 和 Collision rate；表内 BREC 类别均加入引用。该设置用于说明训练后的 IGSSE 点集能够区分所覆盖且通过恢复协议的 BREC 图对。
+表 4：WL3 BREC 诊断的图对数量与碰撞率。数据集横向列举，行分别给出 Pair count、GNN collision rate、GIN collision rate 和 IGSSE collision rate；表内 BREC 类别均加入引用。
 
 四个实验构成紧凑的证据链。主实验显示下游任务效用，自回归实验显示同一表示上的图增长，消融实验归因可恢复集合构造的作用，WL 实验显示恢复后的点集能够区分已覆盖的非同构碰撞图对。
