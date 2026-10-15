@@ -277,48 +277,61 @@ configuration for downstream prediction.
 \subsection{WL Collision Experiment}
 \label{sec:wl-diagnostic}
 
-The WL collision experiment evaluates structural separation on controlled
-nonisomorphic graph pairs.  The Weisfeiler Leman hierarchy supplies the
-color-refinement reference for graph distinction
-\cite{morris2019wl}.  BREC supplies Basic, Regular, Extension, Vertex, and
-Distance diagnostic settings designed for expressiveness evaluation
-\cite{wang2023brec}.  For each pair, \method{} forms the point set with the
-same embedding pipeline, applies the relation decoder, and compares the
-reconstructed adjacency under consistent node permutations.
+The WL collision experiment is a bounded BREC diagnostic rather than a proof of
+global 2-WL or 3-WL superiority.  BREC contains nonisomorphic graph pairs with
+different structural difficulty levels \cite{wang2023brec}; the present
+diagnostic uses a fixed 60-pair sample with ten pairs from each of Basic,
+Regular, Extension, CFI, 4-Vertex Condition, and Distance Regular.  The pair
+IDs are recorded in the experiment manifest: Basic {20, 27, 31, 35, 37, 46,
+48, 49, 50, 57}, Regular {73, 75, 90, 111, 120, 124, 127, 129, 136, 140},
+Extension {167, 181, 190, 196, 201, 203, 208, 235, 255, 259}, CFI {267,
+268, 299, 306, 314, 336, 340, 351, 353, 357}, 4-Vertex Condition {361,
+362, 363, 364, 366, 369, 372, 376, 377, 378}, and Distance Regular {380,
+383, 384, 388, 389, 392, 393, 397, 398, 399}.  Node attributes are constant
+within each graph, and the node counts are retained from the manifest.
 
-The instruction for this experiment is pair separation: two input graphs are
-processed independently, their recovered graphs are compared, and a collision
-is counted when a nonisomorphic pair becomes indistinguishable after recovery.
-The Metric row in Table~\ref{tab:wl-results} reports Collision rate, defined as
-the proportion of evaluated pairs that collide after the reconstruction step.
-The table keeps the BREC categories as horizontal dataset columns so that every
-category is evaluated under the same metric.
+For each pair, one encoder, one pair decoder, and one content decoder are
+shared by both graphs and fitted jointly on that pair; a new parameter set is
+fitted for the next pair.  The protocol therefore measures pairwise realized
+expressiveness after recovery training.  It does not claim that one globally
+trained encoder separates every BREC pair.  The reconstructed graph is tested
+under eight transported random node relabelings.  The permutation deviation
+checks representation consistency, while an external graph-isomorphism test
+compares the two recovered graphs.  A collision is counted only when recovery
+passes for both graphs and the recovered graphs are isomorphic.
 
-On the reported BREC settings, \method{} obtains zero Collision rate for every
-listed category.  The expanded evaluation also records zero collision on the
-covered Basic and Extension pairs, while the smaller diagnostic contains zero
-collision among its recovery passing pairs.  These results show that the
-recovery trained point set separates the evaluated WL collision pairs after
-graph reconstruction.
+Table~\ref{tab:wl-results} reports pair count, recovery pass/fail count,
+recovery rate, collision count, and collision rate.  The recovery rate is the
+number of pairs passing the fixed reconstruction criteria divided by the pair
+count.  Collision rates are reported only over recovery-passing pairs; an empty
+passing set is marked with a dash rather than zero.  A separate expanded run
+contains 60 Basic and 100 Extension pairs, with 160 of 160 pairs passing direct
+reconstruction.  These diagnostics support a narrower statement: trained IGSSE
+embeddings can separate the evaluated BREC pairs that pass the stated recovery
+protocol.
 
 \begin{table}[t]
   \centering
-  \caption{Collision rates across BREC diagnostic categories after point-set graph reconstruction. Metric reports the fraction of evaluated nonisomorphic pairs that collide.}
+  \caption{BREC diagnostic coverage, recovery, and collision counts after point-set graph reconstruction.}
   \label{tab:wl-results}
-  \setlength{\tabcolsep}{1pt}
-  % 第一列左对齐，后五列固定宽度且自动居中
-  \begin{tabular}{@{} p{0.2\columnwidth} *{5}{>{\centering\arraybackslash}p{0.15\columnwidth}} @{}}
+  \setlength{\tabcolsep}{1.2pt}
+  \begin{tabularx}{\columnwidth}{@{}p{0.19\columnwidth}*{6}{Y}@{}}
     \toprule
     Dataset &
     \shortstack{Basic\\\cite{wang2023brec}} &
     \shortstack{Regular\\\cite{wang2023brec}} &
     \shortstack{Extension\\\cite{wang2023brec}} &
-    \shortstack{Vertex\\\cite{wang2023brec}} &
-    \shortstack{Distance\\\cite{wang2023brec}} \\
+    \shortstack{CFI\\\cite{wang2023brec}} &
+    \shortstack{4-Vertex\\\cite{wang2023brec}} &
+    \shortstack{Distance\\Reg.\\\cite{wang2023brec}} \\
     \midrule
-    Collision rate & \textbf{0.00} & \textbf{0.00} & \textbf{0.00} & \textbf{0.00} & \textbf{0.00} \\
+    Pair count & 10 & 10 & 10 & 10 & 10 & 10 \\
+    Recovery pass/fail & 10/0 & 3/7 & 10/0 & 0/10 & 0/10 & 0/10 \\
+    Recovery rate & 1.00 & 0.30 & 1.00 & 0.00 & 0.00 & 0.00 \\
+    Collision count & 0/10 & 0/3 & 0/10 & -- & -- & -- \\
+    Collision rate & 0.00 & 0.00 & 0.00 & -- & -- & -- \\
     \bottomrule
-  \end{tabular}
+  \end{tabularx}
 \end{table}
 
 These four experiments form a compact evidence chain.  The main experiment
