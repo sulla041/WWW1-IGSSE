@@ -204,52 +204,10 @@ downstream readers:
  \Hset_{\mathrm{dec}}=\mathbf H^{(L)}.
  \label{eq:decoder-state}
 \end{equation}
-The task state is defined by the configured readout depth:
-\begin{equation}
- \Hset_{\mathrm{task}}=
- \begin{cases}
- \operatorname{Concat}(\mathbf H^{(0)},\ldots,\mathbf H^{(L)}),&\text{with jump connections},\\
- \Hset_{\mathrm{dec}},&\text{otherwise}.
- \end{cases}
- \label{eq:task-state}
-\end{equation}
-Thus $\Hset_{\mathrm{dec}}$ is the final state used by recovery decoders,
-while $\Hset_{\mathrm{task}}$ is the task-reader state when intermediate layer
-states are configured for the downstream head.
-Thus each layer implements the data flow from original coordinate to structural
-deviation, fused point, and point set while preserving node row correspondence.
-
-\begin{table}[t]
-  \centering
-  \caption{Numbered pseudocode for point set embedding.}
-  \label{tab:alg-embedding}
-  \small
-  \begin{tabular}{p{0.08\linewidth}p{0.82\linewidth}}
-    \hline
-    Line & Operation \\
-    \hline
-    1 & \textbf{Input:} $\mathbf X$, $E_{\mathrm{enc}}$, progress $u$ \\
-    2 & \textbf{Output:} $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, $\overline\sigma$ \\
-    3 & $\mathbf h_{o,i}^{(0)} \leftarrow \operatorname{Enc}_X(\mathbf x_i)$ \\
-    4 & \textbf{for} each layer $\ell$ \textbf{do} \\
-    5 & \quad $\widetilde{\mathbf h}_{o,i}\leftarrow
-    \mathbf h_{o,i}^{(\ell)}+\sigma_i g(u)\boldsymbol\epsilon_i$ \\
-    6 & \quad $(\mathbf q_i,\mathbf k_i,\mathbf v_i)\leftarrow
-    \operatorname{Proj}_{\ell}(\widetilde{\mathbf h}_{o,i})$ \\
-    7 & \quad $e_{sj}\leftarrow \operatorname{Energy}(\mathbf q_s,\mathbf k_j)$ \\
-    8 & \quad $\mathbf u_s\leftarrow \operatorname{GlobalBias}(e_{s:},\mathbf v)$ \\
-    9 & \quad $r_{si}\leftarrow e_{si}$ for $s\in N_A(i)$ \\
-    10 & \quad $\mathbf o_i^{(\ell)}\leftarrow
-    \operatorname{Write}(\operatorname{Softmax}_{s\in N_A(i)}(r_{si}),\mathbf u)$ \\
-    11 & \quad $\mathbf h_i^{(\ell)}\leftarrow
-    \Phi(\mathbf h_{o,i}^{(\ell)}+\mathbf o_i^{(\ell)})$ \\
-    12 & \quad $\mathbf h_{o,i}^{(\ell+1)}\leftarrow \mathbf h_i^{(\ell)}$ \\
-    13 & \textbf{end for} \\
-    14 & $\Hset_{\mathrm{dec}}\leftarrow \mathbf H^{(L)}$; construct $\Hset_{\mathrm{task}}$ \\
-    15 & \textbf{return} $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, $\overline\sigma$ \\
-    \hline
-  \end{tabular}
-\end{table}
+The final layer yields $\Hset_{\mathrm{dec}}$ for recovery; the configured
+task reader consumes this final state or the selected intermediate states when
+jump connections are enabled.  Thus the core data flow remains
+content coordinate, structural deviation, fused point, and point set.
 
 \subsection{Approximate equivalence of the point set}
 \label{sec:recovery}
@@ -300,28 +258,17 @@ attributes, when present, are predicted by a separate pair decoder over
 the two endpoint points after the binary relation score selects the relevant
 pairs.
 
-\paragraph{Sampling and target hygiene.}
-At each update, undirected edges are canonicalized, self loops are removed, and
-positive pairs are drawn from the complete input graph.  Negative pairs are
-sampled uniformly from nonedges with the same count as the positive pairs.  If
-the positive set exceeds the pair budget, it is uniformly subsampled; small
-graphs use all positive pairs.  Encoder edge dropout affects only the encoded
-input, while relation targets remain defined by the complete graph.  Content
-targets use clean attributes with stopped gradients, and task labels enter only
-the prediction loss.
+For recovery, positive pairs come from the complete input graph and an equal
+number of negative nonedges is sampled.  Input edge dropout affects encoding
+only; clean relation and content targets are retained, while task labels enter
+only the prediction loss.
 
 \paragraph{Trained recoverability.}
-The point set is called trained recoverable when the jointly optimized content
-and relation decoders recover the selected content and adjacency targets with
-the reported reconstruction metrics.  The content objective uses mean squared
-error, while the relation objective uses sampled binary cross entropy; these
-objectives train the representation and provide empirical recovery signals, not
-a universal metric-space error bound or an injectivity theorem.  The resulting
-approximate equivalence is evaluated for the target space used by the model:
-individual points retain content information, point pairs retain relations, and
-the same points support downstream prediction.  Emb scores, recovery
-measurements, and downstream results together quantify this trained property on
-the evaluated data.
+The jointly optimized content MSE and relation BCE provide empirical recovery
+signals for the selected targets.  Thus individual points retain content,
+point pairs retain relations, and the trained point set functions as an
+approximate equivalence class on the evaluated data, measured by Emb, recovery,
+and downstream scores.
 
 \subsection{Downstream modeling over the point set}
 \label{sec:interfaces}
@@ -335,39 +282,10 @@ For graph tasks, we use attention pooling,
  \label{eq:pool}
 \end{equation}
 where $\beta_i$ is normalized over the graph.
-The pooling reader computes a scalar score for each point, normalizes the scores
-within the graph, and uses the resulting weights to collect projected point
-values.  The task loss therefore updates the pooling scorer, the value
-projection, the graph reader, and the encoder parameters that produce the point
-set.  Points that carry information useful to the graph target receive larger
-pooling weights, while the value projection learns what information should enter
-the graph state.
-The same reader interface is used after every embedding run.  A shared MLP
-reads point rows for node prediction, and attention pooling followed by a graph
-reader handles graph prediction.  Thus the task head changes with the output
-type while $\Hset$ remains the common modeling object.
-
-\begin{table}[t]
-  \centering
-  \caption{Numbered pseudocode for downstream prediction over $\Hset$.}
-  \label{tab:alg-prediction}
-  \small
-  \begin{tabular}{p{0.08\linewidth}p{0.82\linewidth}}
-    \hline
-    Line & Operation \\
-    \hline
-    1 & \textbf{Input:} $\Hset_{\mathrm{task}}$, task type, reader $R$, labels \\
-    2 & \textbf{if} task type is node prediction \textbf{then} \\
-    3 & \quad $\widehat{\mathbf y}_i\leftarrow R_{\mathrm{node}}(\mathbf h_i)$ \\
-    4 & \textbf{if} task type is graph prediction \textbf{then} \\
-    5 & \quad $\mathbf g\leftarrow \operatorname{Pool}(\Hset_{\mathrm{task}})$ \\
-    6 & \quad $\widehat{\mathbf y}_G\leftarrow R_{\mathrm{graph}}(\mathbf g)$ \\
-    7 & $\mathcal L_{\mathrm{pred}}\leftarrow
-    \operatorname{TaskLoss}(\widehat{\mathbf y},y)$ on training labels \\
-    8 & \textbf{return} prediction scores, $\mathcal L_{\mathrm{pred}}$ \\
-    \hline
-  \end{tabular}
-\end{table}
+The pooling scores are normalized within each graph and weight projected point
+values.  Node tasks read point rows with a task head; graph tasks apply this
+pooling followed by a graph head.  The task loss updates the reader and the
+encoder that produces the point set.
 
 For autoregressive graph modeling, the expansion operator maps the current set to
 a larger set, and the same relation decoder recovers the expanded graph:
@@ -376,54 +294,14 @@ a larger set, and the same relation decoder recovers the expanded graph:
  \qquad E_{s+1}=\{(i,j):\sigma(D_A(\mathbf h_i,\mathbf h_j))\geq\tau\}.
  \label{eq:grow}
 \end{equation}
-Training uses graph-rule legality signals for candidate transitions.  During
-rollout, the expansion operator appends live points from a learned proposal,
-updates the current set, decodes candidate edges with $D_A$, and ranks the
-candidates with the selector.  The same point set and relation decoder are used
-for recovery and graph growth.
-More specifically, $\operatorname{StepSet}$ pools the current set to obtain a
-state summary, combines that summary with the step noise, proposes a candidate
-point, appends it to the current set, and applies the configured set refinement
-operation.  The relation decoder then produces candidate edges from the refined
-set.  The selector scores each candidate using relation scores and the supplied
-graph-rule legality signal before the beam retains the next rollout states.
-
-\begin{table}[t]
-  \centering
-  \caption{Numbered pseudocode for autoregressive graph modeling.}
-  \label{tab:alg-autoregressive}
-  \small
-  \begin{tabular}{p{0.08\linewidth}p{0.82\linewidth}}
-    \hline
-    Line & Operation \\
-    \hline
-    1 & \textbf{Input:} $\Hset_0$, $\operatorname{StepSet}$, $D_A$, target size, selector \\
-    2 & $\mathcal B\leftarrow\{\Hset_0\}$ \\
-    3 & \textbf{while} active \textbf{do} \\
-    4 & \quad $\mathcal C\leftarrow\emptyset$ \\
-    5 & \quad \textbf{for} each $\Hset_s\in\mathcal B$ \textbf{do} \\
-    6 & \quad\quad $\Hset_{s+1}\leftarrow
-    \operatorname{StepSet}(\Hset_s,\boldsymbol\epsilon_s)$ \\
-    7 & \quad\quad $\widehat E_{s+1}\leftarrow D_A(\Hset_{s+1})$ \\
-    8 & \quad\quad $\operatorname{score}\leftarrow
-    \operatorname{SelectScore}(\widehat E_{s+1})$ \\
-    9 & \quad\quad $\mathcal C\leftarrow
-    \mathcal C\cup\{(\Hset_{s+1},\operatorname{score})\}$ \\
-    10 & \quad \textbf{end for} \\
-    11 & \quad $\mathcal B\leftarrow\operatorname{Select}(\mathcal C)$ \\
-    12 & \textbf{end while} \\
-    13 & \textbf{return} terminal point sets and decoded graphs \\
-    \hline
-  \end{tabular}
-\end{table}
+During rollout, $\operatorname{StepSet}$ summarizes the current set, combines
+the summary with step noise, proposes and appends a point, and refines the
+augmented set.  $D_A$ decodes candidate edges, and the selector ranks candidates
+with relation scores and graph-rule legality before retaining the next states.
 
 \subsection{End to end optimization}
 \label{sec:training}
-Each downstream task is trained end to end by combining task supervision with
-the two recovery losses.  The prediction loss reads labels only on the training
-mask.  The link loss and content loss attach directly to $\Hset_{\mathrm{dec}}$,
-so the point set remains constrained while the downstream reader learns the task.
-The joint objective is
+Each task jointly optimizes prediction and recovery on the point set.  The joint objective is
 \begin{equation}
  \mathcal L=\lambda_{\mathrm{pred}}\mathcal L_{\mathrm{pred}}
  +\lambda_l\mathcal L_l+\lambda_f\mathcal L_f+\lambda_e\mathcal L_e.
@@ -435,23 +313,10 @@ pointwise content MSE, and $\mathcal L_e$ is the survival term
  \mathcal L_e=-\log\bigl(\max(\bar\sigma,\epsilon)\bigr),\qquad \epsilon>0.
  \label{eq:alive-loss}
 \end{equation}
-The notation corresponds to $\mathcal L_{\mathrm{link}}=\mathcal L_l$,
-$\mathcal L_{\mathrm{feat}}=\mathcal L_f$, and
-$\mathcal L_{\mathrm{alive}}=\mathcal L_e$.
-The survival term keeps the learned state-noise scale active.  For an
-embedding only run, the prediction term is disabled and the representation is
-trained only through graph recovery targets; for task runs, the task loss and
-recovery losses are optimized together.
-The objective links the attention mechanisms through the point set.  The
-prediction term updates node readers, set attention pooling, graph readers,
-autoregressive selectors, and the encoder projections that formed the points.
-The link term updates the pair attention decoder and backpropagates through the
-endpoint points into the embedding projections.  The content term updates the
-content decoder and the attribute path into the points.  The survival term
-updates the noise scale network used before structural writes.  Joint
-optimization therefore trains the global structural bias, pair attention
-recovery, and set attention pooling through a shared point set rather than as
-separate modules.
+Here $\mathcal L_l$, $\mathcal L_f$, and $\mathcal L_e$ update the relation
+decoder, content path, and state-noise scale, respectively, while prediction
+updates the task reader and encoder.  Embedding-only runs omit prediction;
+task runs optimize all active terms together.
 Unless otherwise stated, prediction and link recovery losses use unit weight,
 content recovery uses weight 0.1, and the survival term uses weight 0.001.  The
 default encoder uses width 128, three layers, four attention heads, hidden width
@@ -459,7 +324,5 @@ four times the model width, and dropout 0.1.  Relation recovery samples up to
 4096 positive pairs per update and matches them with the same number of negative
 pairs.  Optimization uses AdamW with learning rate 0.001, weight decay 0.0001,
 and gradient clipping at 1.0.
-State perturbations are strongest at the beginning of training and are scheduled
-through the embedding process.  The training objective therefore
-keeps the embedding, recovery decoders, and downstream readers coupled through a
-single point set throughout optimization.
+State perturbations are scheduled through the embedding process, coupling the
+encoder, recovery decoders, and task reader during training.
