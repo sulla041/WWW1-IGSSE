@@ -23,6 +23,11 @@ global structure, scalability, and Web graph modeling.
    Systems, WWW Companion 2025. Useful for shared embedding interfaces,
    multi-objective training, and recommendation-oriented result writing.
 
+5. `WWW2024_Graph_Principal_Flow_Network.pdf`
+   Graph Principal Flow Network for Conditional Graph Generation, WWW 2024.
+   Useful for coarse-to-fine graph generation, spectral structure, and
+   generation-focused ablation and evaluation design.
+
 The local copies were obtained from the public author or preprint pages listed
 below.
 
@@ -30,3 +35,4 @@ below.
 - https://arxiv.org/abs/2202.04936
 - https://yangy.org/works/gnn/WWW24_Graph_Skeleton.pdf
 - https://arxiv.org/abs/2412.04276
+- https://arxiv.org/abs/2402.13532
