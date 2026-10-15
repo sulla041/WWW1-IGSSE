@@ -174,6 +174,17 @@ changing one representation component.  Result is read after the same
 training and evaluation procedure as the Full configuration, so a change in a
 row reflects the contribution of the removed component to the downstream task.
 
+Concretely, the \(-L_f\) column removes the content feature recovery loss, so
+the point content is shaped by the task and the remaining objectives.  The
+\(-\psi\) column removes the global structural deviation branch that writes
+relation-conditioned changes into the points.  The \(-L_l\) column removes the
+pairwise relation recovery loss, and the \(-L_e\) column removes the embedding
+auxiliary loss used to shape the point coordinates.  The \textit{freeze} column
+keeps the learned point set fixed while optimizing the downstream reader.
+Together, these labels identify whether each reported change comes from point
+content, structural writing, pairwise recovery, embedding regularization, or
+task-side adaptation.
+
 The Full configuration gives the highest Result on the listed HiGraph, OCB,
 Timing, Photo, Coauthor, Photo interaction, Cora, AIDS, and IMDB-B rows, and it
 matches the best value on IMDB-M.  This result indicates that the complete

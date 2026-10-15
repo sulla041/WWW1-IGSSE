@@ -22,7 +22,7 @@
 
 消融实验隔离构造和使用点集的主要组件。完整模型包含内容坐标、全局结构偏差、特征恢复损失、关系恢复损失、embedding 辅助项和可训练集合读出。各变体逐项移除一个损失或冻结点集，同时固定数据集、划分、优化器 schedule 和预测头，从而形成受控的组件比较。
 
-表 3 只保留最终 Result 指标。四个损失消融列分别表示移除特征恢复、结构偏差、关系恢复和 embedding 辅助项，freeze 表示下游优化时固定点集。消融指令是保持任务头和训练 schedule 不变，每次只改变一个表示组件。Metric 列保留各数据集原始任务指标，包括 F1、相关系数、决定系数和准确率。完整模型在列出的 HiGraph、OCB、Timing、Photo、Coauthor、Photo interaction、Cora、AIDS 和 IMDB-B 行取得最高 Result，并在 IMDB-M 行达到并列最优，说明完整的内容、结构、恢复和集合读出流程是有效配置。
+表 3 只保留最终 Result 指标。表中的 −L_f 表示移除内容特征恢复损失，−ψ 表示移除写入点集的全局结构偏差分支，−L_l 表示移除点对关系恢复损失，−L_e 表示移除用于塑造点坐标的 embedding 辅助损失，freeze 表示下游优化时固定已经学习到的点集。消融指令是保持任务头和训练 schedule 不变，每次只改变一个表示组件。Metric 列保留各数据集原始任务指标，包括 F1、相关系数、决定系数和准确率。完整模型在列出的 HiGraph、OCB、Timing、Photo、Coauthor、Photo interaction、Cora、AIDS 和 IMDB-B 行取得最高 Result，并在 IMDB-M 行达到并列最优，说明完整的内容、结构、恢复和集合读出流程是有效配置。
 
 表 3：内容、结构、关系、embedding 和点集优化消融的下游任务结果。Result 小数保留两位，字号与正文一致，并保留 Metric 列。列包括 Full、去掉特征恢复损失、去掉结构偏差项、去掉关系恢复损失、去掉 embedding 辅助项和 freeze-H；表内数据集名称均加入引用，行与主实验表一致。
 
