@@ -66,7 +66,8 @@ Search, Recommendation, and Retrieval-Augmented AI 是次级相关方向，可�
 5. checkpoint 选择规则和主指标；
 6. baseline 使用的相同输入、划分、指标和选模规则；
 7. Emb 与 Result 的定义；
-8. 训练时间、推理时间、峰值显存和最大图规模，若这些效率结果用于主张可扩展性。
+8. 预测主表的每个任务均采用 10 次独立 split，并报告综合测试结果；
+9. 训练时间、推理时间、峰值显存和最大图规模，若这些效率结果用于主张可扩展性。
 
 当前主表覆盖 HiGraph、OCB、TimingPredict、Amazon Photo、Coauthor-CS、Photo-interact、Cora、AIDS、IMDB-MULTI 和 IMDB-BINARY。实验正文应保持这些数据集、baseline 和表格列完全一致。
 

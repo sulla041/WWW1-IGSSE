@@ -6,7 +6,7 @@
 
 主实验在三类任务设定下评估监督预测。Amazon Photo、Coauthor CS 和 Cora 对应产品共同购买、学术协作和引文网络上的节点分类。HiGraph 对应恶意软件分类的程序控制流图。OCB 与 TimingPredict 对应模拟电路性能和布线前时序预测。AIDS、IMDB-M 和 IMDB-B 对应分子图与社会图分类。每个数据集中的方法使用相同节点属性、观测关系、数据划分和预测头。
 
-主表所有任务采用统一的 IGSSE 图集合嵌入接口。输入图包含关系结构、节点属性，以及数据集提供的边属性；编码器把图映射为节点对应的点集 H，关系解码器和属性解码器恢复可用的图目标，任务头在 H 上完成分类或回归。Emb 表示嵌入侧恢复得分，覆盖关系、节点属性和边属性恢复；Result 表示下游任务指标。每个任务固定数据版本、预处理、输入字段、划分和随机种子，验证集用于选择 checkpoint，测试集用于报告最终指标；所有 baseline 使用相同输入字段、划分、主指标和选模规则。
+主表所有任务采用统一的 IGSSE 图集合嵌入接口。输入图包含关系结构、节点属性，以及数据集提供的边属性；编码器把图映射为节点对应的点集 H，关系解码器和属性解码器恢复可用的图目标，任务头在 H 上完成分类或回归。Emb 表示嵌入侧恢复得分，覆盖关系、节点属性和边属性恢复；Result 表示下游任务指标。每个任务固定数据版本、预处理、输入字段、划分和随机种子，验证集用于选择 checkpoint，测试集用于报告最终指标；所有 baseline 使用相同输入字段、划分、主指标和选模规则。十个预测任务均在 10 次独立 train/validation/test split 上运行，主表记录十次运行的综合测试结果。
 
 HiGraph 使用官方 IID stratified 70/15/15 划分。程序控制流节点和边构成图输入，程序类别作为二分类监督，主指标为 Macro-F1。IGSSE 通过点对关系恢复控制流链接，通过点级解码恢复节点内容，再由集合读出器和程序图二分类头完成任务读出。
 
@@ -14,7 +14,7 @@ OCB 使用 Ckt-Bench-101 的 8100/900/1000 train、validation、test 划分。�
 
 TimingPredict 使用设计级划分和有向 netlist 输入。节点属性、有向 netlist 链接、net/cell 边属性和方向字段构成完整输入；delay、arrival time、slew 和 required arrival time 作为回归目标，delay R2 作为主指标。IGSSE 使用有向前驱点及其恢复内容完成时序读出，并在嵌入阶段恢复 link、feature、net、cell 和 direction 字段。
 
-Amazon Photo、Coauthor-CS、Photo-interact 和 Cora 使用节点级读出。Photo 与 Coauthor-CS 使用 60/20/20 划分，Photo-interact 使用 freeze-one 交互划分，Cora 使用 Planetoid public split。产品、作者或论文属性构成节点输入，观测关系构成结构输入，标签只在训练 mask 上用于监督；任务头从点集读取节点表示，主指标为 Accuracy。
+Amazon Photo、Coauthor-CS、Photo-interact 和 Cora 使用节点级读出。四个设置均执行 10 次 split；标准节点任务使用 60/20/20 划分，Photo-interact 使用 freeze-one 交互划分，Cora 使用 Planetoid 字段并纳入重复 split 协议。产品、作者或论文属性构成节点输入，观测关系构成结构输入，标签只在训练 mask 上用于监督；任务头从点集读取节点表示，主指标为 Accuracy。
 
 AIDS、IMDB-MULTI 和 IMDB-BINARY 使用 TU 图分类数据和图级读出。每个图提供节点属性、关系和可用的边属性，实验采用 stratified ten-fold，训练折用于优化，内部验证划分用于选模，保留折用于测试。IGSSE 解码节点和点对目标，使用置换不变的 SetAttn 或 PMA 池化后连接图分类头，主指标为 Accuracy。
 

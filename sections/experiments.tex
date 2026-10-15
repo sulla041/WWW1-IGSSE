@@ -79,6 +79,9 @@ preprocessing, input fields, split, and random-seed protocol for every method;
 the validation partition selects the checkpoint and the test partition supplies
 the reported metric.  Baselines use the same input fields, task split, primary
 metric, and checkpoint rule.
+All ten prediction rows aggregate results over ten independent train,
+validation, and test splits.  The reported Emb and Result values are the
+combined test outcomes across these ten runs under the same split protocol.
 
 The program-graph setting uses the official IID stratified split of HiGraph,
 with a 70/15/15 train, validation, and test partition.  Program control-flow
@@ -107,9 +110,10 @@ predecessor points and their recovered content for the timing head after the
 link, feature, net, cell, and direction recovery fields are constructed.
 
 Amazon Photo, Coauthor-CS, Photo-interact, and Cora use node-level readers.
-Photo and Coauthor-CS use 60/20/20 train, validation, and test partitions;
-Photo-interact uses its freeze-one interaction partition, and Cora uses the
-public Planetoid split \cite{shchur2018,sen2008,yang2016}.  Product, author,
+Each setting is evaluated with ten split runs; the standard node tasks use
+60/20/20 train, validation, and test partitions, Photo-interact uses its
+freeze-one interaction partition, and Cora uses the public Planetoid fields
+within the repeated split protocol \cite{shchur2018,sen2008,yang2016}.  Product, author,
 or paper attributes are the node input, observed relations are the structural
 input, and labels are available only on the training mask.  The reader applies
 a shared point head, with set attention context when the configuration
