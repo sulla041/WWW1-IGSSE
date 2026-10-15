@@ -68,25 +68,40 @@ revisits canonization for graph representation learning and studies the
 expressivity and stability tradeoff induced by canonical representatives
 \cite{dong2024canonization}.  Graph as Point Set further shows that a graph can
 be transformed into a set of independent points in a way that preserves graph
-information for set encoders \cite{wang2024graphpointset}.  \method{} follows
-the same mathematical spirit while defining an approximate equivalence relation
-through recoverability: if the content and relation decoders recover the
-prescribed content and adjacency targets, the point set serves as the graph
-representative for downstream modeling.
+information for set encoders \cite{wang2024graphpointset}.  That line of work
+establishes the graph-to-point-set conversion and the corresponding set
+processing formulation.  \method{} uses a different construction: node
+attributes first form an attribute-only coordinate, global attention forms a
+structural bias, and adjacency selects how that bias is written into each
+node-aligned point.  A point decoder recovers node content and a pair decoder
+recovers relations, with both objectives optimized while the point set is
+trained for the downstream task.  The distinction is therefore in the
+coordinate construction, the explicit relation-conditioned structural write,
+and the recovery-trained embedding procedure, rather than in using a set
+encoder alone.
+The structural branch also separates global interaction from relation writing:
+global attention forms the source bias, while observed adjacency selects where
+that bias is written, instead of using global attention as a final node update
+followed by ordinary neighborhood aggregation.
+
+Graph autoencoders provide a related recovery perspective.  Variational Graph
+Auto-Encoders and GraphVAE commonly obtain latent node states through message
+passing or graph convolutions and decode links or graph structure from those
+states \cite{kipf2016vgae,simonyan2018graphvae}.  Their reconstruction objective
+is typically an auxiliary autoencoding loss attached to a message-passing
+latent state.  IGSSE makes recovery part of the embedding construction itself:
+the attribute coordinate and adjacency-conditioned structural deviation are
+trained together with pointwise content and pairwise relation decoders.  The
+comparison is therefore between a message-passing latent autoencoder and a
+node-aligned point-set embedding whose coordinates are explicitly written for
+content and relation recovery.
 
 \paragraph{Algorithms for set modeling.}
-Set modeling supplies the neural interface used after this transformation.  Deep
-Sets characterizes permutation invariant set functions through a shared element
-map followed by invariant aggregation \cite{zaheer2017}.  Set Transformer
-extends this interface with attention over set elements and inducing point
-attention to reduce self attention cost \cite{lee2019}.  Graph as Point Set uses
-this foundation to process converted graph objects with set encoders
-\cite{wang2024graphpointset}.  \method{} builds on the same permutation
-principles while retaining row correspondence to graph nodes, decoding relations
-from point pairs, and using feature and link recovery to support the empirical
-approximate equivalence that downstream prediction and autoregressive graph
-modeling consume.
-Taken together, these lines of work motivate the route followed by \method{}:
-the graph is first mapped to a node aligned point set, recoverability makes that
-set an approximate equivalence class under content and relation targets, and all
-downstream readers operate on the same set object.
+Set modeling supplies the neural operations used after the embedding is trained.
+Deep Sets characterizes permutation invariant set functions through a shared
+element map followed by invariant aggregation \cite{zaheer2017}.  Set
+Transformer extends this formulation with attention over set elements and
+inducing point attention \cite{lee2019}.  \method{} uses these operations after
+constructing node-aligned coordinates and training content and relation
+decoders.  Taken together, the route is embedding, graph-target recovery,
+joint optimization, and task-specific reading of the resulting point set.

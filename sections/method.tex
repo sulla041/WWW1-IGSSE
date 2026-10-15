@@ -135,9 +135,9 @@ content coordinates and then uses adjacency to select the writes to each target
 point.  For each attention head, query, key, and value vectors are computed as
 follows:
 \begin{equation}
-\mathbf q_i^{(m)}=\mathbf W_Q^{(m)}\mathbf h_{o,i}^{(\ell)},\quad
-\mathbf k_i^{(m)}=\mathbf W_K^{(m)}\mathbf h_{o,i}^{(\ell)},\quad
-\mathbf v_i^{(m)}=\mathbf W_V^{(m)}\mathbf h_{o,i}^{(\ell)}.
+\mathbf q_i^{(m)}=\mathbf W_Q^{(m)}\widetilde{\mathbf h}_{o,i}^{(\ell)},\quad
+\mathbf k_i^{(m)}=\mathbf W_K^{(m)}\widetilde{\mathbf h}_{o,i}^{(\ell)},\quad
+\mathbf v_i^{(m)}=\mathbf W_V^{(m)}\widetilde{\mathbf h}_{o,i}^{(\ell)}.
 \label{eq:qkv}
 \end{equation}
 The projections form the point compatibility field.  Dense attention over all

@@ -22,7 +22,7 @@ recovers relations between points, and downstream readers model points and point
 pair relations.  After recovery training, the point set approximates the
 original graph on the selected content and relation targets and converts graph modeling into neural set
 modeling over vectors.  A set expansion module further supports rule preserving
-autoregressive graph growth on the same representation interface.  We evaluate
+autoregressive graph growth through the same embedding and recovery route.  We evaluate
 \method{} on public datasets covering product purchase relations,
 collaboration, citation, program, circuit, timing, molecular, and social graphs,
 and on rule preserving growth for planar, chordal, and bipartite graphs.  Across
@@ -33,6 +33,6 @@ selected BREC graph pairs that are indistinguishable under the corresponding
 2-WL or 3-WL diagnostic, and rule
 preserving autoregressive generation shows that the framework captures global
 graph regularities while improving over the message passing generation baselines
-used in the comparison.  These results establish \method{} as an efficient,
+used in the comparison.  These results establish \method{} as an effective,
 trained-recoverable framework for graph embedding, downstream prediction, and
 autoregressive graph modeling.
