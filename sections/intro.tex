@@ -95,29 +95,14 @@ set operations.  Points keep correspondence to nodes, point pairs carry relation
 scores, invariant set readouts support graph level prediction, and set expansion
 supports graph growth.
 
-We propose \method{} (Invertible Graph Set Space Embedding), a recoverable graph
-set space embedding that implements this approximate equivalence class view.
-\method{} realizes the idea by separating content formation, structural
-deviation writing, recovery, and downstream reading over one point set.
-Figure~\ref{fig:mp-igsse} organizes the comparison as two pipelines.  The upper
-pipeline represents the conventional message passing paradigm: an input graph is
-processed by message passing, feature aggregation, and a feature matrix, then the
-representation enters an irreversible embedding stage before downstream tasks.
-This row visualizes the main bottleneck described above: irreversible
-aggregation can discard global structural information and amplify over smoothing
-as depth increases \cite{li2018deeper,oono2020}.  The lower pipeline represents
-the \method{} mechanism.  The input graph is first mapped by node feature
-encoding into an original point set without structural deviation.  The feature
-and structure deviation encoder then combines local neighborhoods, global
-structural bias, and adjacency based writing to produce a point set carrying
-global structural deviations.  Content and relation decoders verify that this
-point set preserves node features and links after recovery training, providing
-empirical evidence for its approximate equivalence to the original graph.  Downstream
-modeling then operates on the point set for element prediction, graph
-prediction, and autoregressive growth.
-Here, global interaction forms a structural bias, observed adjacency decides
-where this bias is written, and recovery fixes the point set as the
-representation object before task readout.
+We propose \method{} (Invertible Graph Set Space Embedding) to realize this
+approximate equivalence view.  As shown in Figure~\ref{fig:mp-igsse}, message
+passing compresses graph signals into a task state, whereas \method{} separates
+content encoding, structural deviation writing, recovery, and task readout over
+one node-aligned point set.  Node attributes form content coordinates; dense
+attention forms global structural bias; observed adjacency selects its writes;
+and pointwise and pairwise decoders train content and relation recovery before
+prediction or graph growth.
 
 The method follows one embedding-recovery-training route.  The encoder forms a
 node-aligned point set, content and relation decoders train it against graph

@@ -99,6 +99,14 @@ global graph processing as well as a point set representation.
 The table reports Emb recovery quality and the task-specific Result; all methods
 use the same input fields, split, checkpoint rule, and primary metric.
 
+Across the ten rows, the complete IGSSE configuration attains the highest
+reported Result in each task and the strongest Emb value in the corresponding
+comparison.  The pattern spans Web node classification, program and circuit
+graphs, directed timing graphs, and graph classification, so the observed gain
+is associated with the joint content-structure representation rather than a
+single task head.  The comparison is empirical: each dataset is trained and
+selected independently under its stated split protocol.
+
 \subsection{Autoregressive Graph Modeling}
 \label{sec:ar-results}
 
@@ -167,6 +175,13 @@ and \textit{freeze} fixes the trained point set while optimizing the task
 reader.  Metric retains each dataset's native F1, correlation, coefficient of
 determination, or accuracy.
 
+The complete configuration is the reference point for every ablation row.  The
+largest changes occur when relation recovery or structural writing is removed
+on topology-sensitive tasks such as OCB and Cora, while freezing the point set
+removes task-side adaptation.  These comparisons indicate that content
+preservation, relation recovery, and learned structural writing contribute
+jointly to the reported downstream scores.
+
 \begin{table}[t]
   \centering
   \caption{Downstream task results for content, structural, relation, embedding, and point-set optimization ablations. Metric identifies the task measure used in each dataset.}
@@ -215,8 +230,6 @@ that, under the stated training and evaluation protocol, the learned IGSSE
 embeddings can exceed the separation achieved by the tested 3-WL-limited
 baselines on the selected BREC pairs; it is not a universal expressivity
 theorem for all graphs.
-
-Table~\ref{tab:wl-results} reports pair count and collision rate for each model.
 
 \begin{table}[t]
   \centering

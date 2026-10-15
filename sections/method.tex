@@ -331,3 +331,14 @@ pairs.  Optimization uses AdamW with learning rate 0.001, weight decay 0.0001,
 and gradient clipping at 1.0.
 State perturbations are scheduled through the embedding process, coupling the
 encoder, recovery decoders, and task reader during training.
+
+\paragraph{Complexity.}
+With width $d$, attribute projection and feedforward fusion cost
+$O(nd^2)$ per layer, while adjacency-conditioned writing costs
+$O((n+|E|)d)$.  Sampled pair recovery uses at most $S$ positive and negative
+pairs per update and costs $O(Sd)$ for decoding, avoiding materialization of a
+dense $n\times n$ reconstruction matrix.  The dense global bias is
+$O(n^2d)$; it is the explicit long-range interaction term and can be replaced
+by a linear or inducing-point attention implementation when graph scale
+requires it.  IGSSE therefore controls structural coordinate width through the
+fixed model dimension $d$ rather than a rank-sized precomputed coordinate.
