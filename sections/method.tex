@@ -83,9 +83,9 @@ The shared attribute MLP uses layer normalization and outputs the model width.
 This attribute-only mapping preserves the node row correspondence and supplies
 the input for all structural projections.
 
-When several original coordinates are identical or nearly identical, the
-training path adds an independent zero-mean perturbation before the attention
-projections:
+When several original coordinates are identical or nearly identical, each
+encoding layer applies an independent zero-mean perturbation before the
+attention projections:
 \begin{equation}
  \widetilde{\mathbf h}_{o,i}^{(\ell)}=\mathbf h_{o,i}^{(\ell)}+
  \sigma_i g(u)\boldsymbol\epsilon_i,
@@ -94,10 +94,9 @@ projections:
 \end{equation}
 The perturbed states produce distinct query, key, and value vectors, so the
 global bias and adjacency selected writes can move initially coincident points
-in different directions.  The perturbation is an encoding component rather
-than a node identifier or a structural target.  Its learned scale and a
-reproducible noise realization are retained in the inference path, so this
-separation mechanism is not an optional training-only mode.
+in different directions.  The perturbation is an intrinsic encoding component,
+not a node identifier or a structural target.  Its scale and noise realization
+are part of the encoded representation at every forward pass.
 
 \paragraph{Structural deviation $\mathbf o_i$.}
 The structural branch first forms a global structural bias from the current
@@ -157,10 +156,10 @@ The multihead write defines the deviation:
 \end{equation}
 The deviation is added to the original coordinate.  The self term keeps
 isolated nodes active, and the softmax controls incoming write strength.  The
-state perturbation above is applied before the projections, so it changes both
+The state perturbation is applied before the projections, so it changes both
 the values being written and the write weights.  This is the mechanism that
-separates compressed point states during embedding and inference; the learned
-structural deviations and replayable perturbation are used together.
+separates compressed point states as part of the embedding algorithm; the
+learned structural deviations and perturbation are used together.
 
 \paragraph{Fusion into $\mathbf h_i$.}
 The fusion branch adds the content coordinate and structural deviation, applies
@@ -329,9 +328,8 @@ four times the model width, and dropout 0.1.  Relation recovery samples up to
 4096 positive pairs per update and matches them with the same number of negative
 pairs.  Optimization uses AdamW with learning rate 0.001, weight decay 0.0001,
 and gradient clipping at 1.0.
-State perturbations are scheduled through the embedding process and retained
-with their learned scale and replayable realization during inference, coupling
-the encoder, recovery decoders, and task reader throughout the representation
+The state perturbation is applied throughout the embedding process, coupling
+the encoder, recovery decoders, and task reader through the same representation
 path.
 
 \paragraph{Complexity.}
