@@ -8,7 +8,7 @@
 
 基线覆盖邻域计算、传播、长程序列建模和图到点集建模。GCN、GraphSAGE、GAT 和 GIN 使用标准邻域聚合；APPNP 加入 personalized PageRank 传播；SGFormer 与 Polynormer 提供全局传播机制；Graph Mamba 使用选择性状态空间建模长程图依赖；PST 将图映射为点集。表 1 报告每个方法的 Emb 与 Result，并把两者拆成相邻两格。Emb 是嵌入得分，Result 是最终任务指标；Metric 列给出 F1、相关系数、决定系数或准确率。节点分类从点预测训练 mask 中的节点标签，图分类从池化点集预测图标签，电路和时序任务输出图级连续值并使用回归损失。IGSSE 在十个比较行的 Result 和 Emb 上均达到最优，说明该点集能够稳定服务于下游预测。
 
-表 1：特征预测主实验结果。每个方法以 Emb 和 Result 两个单独单元格报告，小数保留两位。数据集包括 HiGraph IID、OCB Ckt-Bench-101、TimingPredict、Amazon Photo、Coauthor CS、Amazon Photo interact、Cora、AIDS、IMDB-MULTI 和 IMDB-BINARY。比较方法包括 GCN、GraphSAGE、GAT、GIN、APPNP、SGFormer、Polynormer、Graph-Mamba、PST 和 IGSSE。表内数据集和 baseline 名称均加入引用，粗体表示每行最大值。
+表 1：跨程序、电路、时序、Web、分子和社会图任务的特征预测结果。每个方法以 Emb 和 Result 两个单独单元格报告，小数保留两位。数据集包括 HiGraph IID、OCB Ckt-Bench-101、TimingPredict、Amazon Photo、Coauthor CS、Amazon Photo interact、Cora、AIDS、IMDB-MULTI 和 IMDB-BINARY。比较方法包括 GCN、GraphSAGE、GAT、GIN、APPNP、SGFormer、Polynormer、Graph-Mamba、PST 和 IGSSE。Emb 表示嵌入得分，Result 表示最终任务性能；表内数据集和 baseline 名称均加入引用，粗体表示每行最大值。
 
 4.2 Autoregressive Graph Modeling
 
@@ -16,7 +16,7 @@
 
 比较方法包括 GraphRNN、GRAN、SPECTRE、BiGG、EDGE 和 GDSS，分别覆盖循环式、注意力式、流式、边生成式和 score based 图生成方法。GraphAF 与 DiGress 纳入完整评价，表格因单栏布局省略。Emb 表示 rollout 关联的嵌入结果，Valid 表示满足指定图规则的终止 rollout 比例。每次 rollout 从规定初始状态开始，反复提出新点，直到达到目标规模或选择器输出终止状态；Valid 只统计终止图，中间候选不计入成功样本。IGSSE 在 Planar Legal、Planar Net、Chordal 和 Bipartite 上均取得最高 Valid，说明同一点集接口能够支持规则引导的图扩展。
 
-表 2：自回归图建模结果。表格使用单栏和正文字号，并保留 Metric 列。为避免压缩字号，表内按任务逐行排列，baseline 和 IGSSE 横向作为列，仅报告 Valid 指标，省略 ER/BA、GraphAF 和 DiGress。任务包括 Planar Legal、Planar Net、Chordal 和 Bipartite。表内任务和 baseline 名称均加入引用，粗体表示每个任务的最大值。
+表 2：平面、弦和二部约束下的自回归图扩展终止有效性。表格使用单栏和正文字号，任务逐行排列，baseline 和 IGSSE 横向作为列。Metric 说明 Valid 是满足指定规则的终止 rollout 比例；任务包括 Planar Legal、Planar Net、Chordal 和 Bipartite，表内任务和 baseline 名称均加入引用，粗体表示每个任务的最大值。
 
 4.3 Ablation Experiment
 
@@ -24,7 +24,7 @@
 
 表 3 只保留最终 Result 指标。四个损失消融列分别表示移除特征恢复、结构偏差、关系恢复和 embedding 辅助项，freeze 表示下游优化时固定点集。消融指令是保持任务头和训练 schedule 不变，每次只改变一个表示组件。Metric 列保留各数据集原始任务指标，包括 F1、相关系数、决定系数和准确率。完整模型在列出的 HiGraph、OCB、Timing、Photo、Coauthor、Photo interaction、Cora、AIDS 和 IMDB-B 行取得最高 Result，并在 IMDB-M 行达到并列最优，说明完整的内容、结构、恢复和集合读出流程是有效配置。
 
-表 3：消融结果。表格只报告 Result，小数保留两位，字号与正文一致，并保留 Metric 列。列包括 Full、去掉特征恢复损失、去掉结构偏差项、去掉关系恢复损失、去掉 embedding 辅助项和 freeze-H。去掉 mean-pool 和 point-MLP 两列。表内数据集名称均加入引用，行与主实验表甲一致。
+表 3：内容、结构、关系、embedding 和点集优化消融的下游任务结果。Result 小数保留两位，字号与正文一致，并保留 Metric 列。列包括 Full、去掉特征恢复损失、去掉结构偏差项、去掉关系恢复损失、去掉 embedding 辅助项和 freeze-H；表内数据集名称均加入引用，行与主实验表一致。
 
 4.4 WL Collision Experiment
 
@@ -36,6 +36,6 @@ WL 碰撞实验在受控非同构图对上评价结构分离。Weisfeiler Leman 
 
 IGSSE 在表中所有 BREC 设定上取得零 Collision rate。扩展工作簿中的 Basic 与 Extension 覆盖图对保持零碰撞率，较小诊断中通过恢复的图对也保持零碰撞率，说明恢复训练后的点集能够分离所评估的 WL 碰撞图对。
 
-表 4：WL 碰撞结果。表格展示 expanded BREC 评价。数据集横向列举，第二行只保留 Collision rate；表内 BREC 类别均加入引用。Basic 与 Extension 保持零碰撞率，其余数据集按当前评价结果保留为未报告状态。
+表 4：点集图重构后的 BREC 诊断类别碰撞率。数据集横向列举，第二行给出 Collision rate，表示评价非同构图对发生碰撞的比例；表内 BREC 类别均加入引用。Basic 与 Extension 保持零碰撞率，其余数据集按当前评价结果保留为未报告状态。
 
 四个实验构成紧凑的证据链。主实验显示下游任务效用，自回归实验显示同一表示上的图增长，消融实验归因可恢复集合构造的作用，WL 实验显示恢复后的点集能够区分已覆盖的非同构碰撞图对。

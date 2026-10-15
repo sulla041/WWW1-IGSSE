@@ -13,7 +13,7 @@ prediction, graph growth, component contribution, and structural separation.
 
 \begin{table*}[t]
   \centering
-  \caption{Feature prediction main results. Each method keeps Emb and Result as separate columns.}
+  \caption{Feature prediction results across program, circuit, timing, Web, molecular, and social graph tasks. Emb denotes the embedding score and Result denotes the final task performance.}
   \label{tab:feature-results}
   \scriptsize
   \setlength{\tabcolsep}{1.2pt}
@@ -132,7 +132,7 @@ interface supports rule guided graph expansion.
 
 \begin{table}[t]
   \centering
-  \caption{Autoregressive validity. Baselines are arranged horizontally and only the final Valid metric is reported.}
+  \caption{Terminal validity of autoregressive graph expansion under planar, chordal, and bipartite constraints. Baseline methods are arranged horizontally and Valid denotes the fraction of legal terminal rollouts.}
   \label{tab:autoregressive-results}
   \setlength{\tabcolsep}{1.2pt} % 紧凑列间距
   \begin{tabularx}{\columnwidth}{@{} l c *{7}{Y} @{}}
@@ -183,7 +183,7 @@ configuration for downstream prediction.
 
 \begin{table}[t]
   \centering
-  \caption{Ablation results. Only the final Result metric is reported.}
+  \caption{Downstream task results for content, structural, relation, embedding, and point-set optimization ablations. Metric identifies the task measure used in each dataset.}
   \label{tab:ablation-results}
   \setlength{\tabcolsep}{2pt} % 8列在单栏中较密，适当收窄列间距
   \begin{tabularx}{\columnwidth}{@{} ll *{6}{Y} @{}}
@@ -233,7 +233,7 @@ graph reconstruction.
 
 \begin{table}[t]
   \centering
-  \caption{WL recovery and collision results on the expanded BREC evaluation.}
+  \caption{Collision rates across BREC diagnostic categories after point-set graph reconstruction. Metric reports the fraction of evaluated nonisomorphic pairs that collide.}
   \label{tab:wl-results}
   \setlength{\tabcolsep}{1pt}
   % 第一列左对齐，后五列固定宽度且自动居中
