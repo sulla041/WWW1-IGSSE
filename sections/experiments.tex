@@ -238,7 +238,7 @@ row reflects the contribution of the removed component to the downstream task.
 
 Concretely, the \(-L_f\) column removes the content feature recovery loss, so
 the point content is shaped by the task and the remaining objectives.  The
-\(-\psi\) column removes the global structural deviation branch that writes
+\(-\Psi\) column removes the global structural deviation branch that writes
 relation-conditioned changes into the points.  The \(-L_l\) column removes the
 pairwise relation recovery loss, and the \(-L_e\) column removes the embedding
 auxiliary loss used to shape the point coordinates.  The \textit{freeze} column
@@ -260,7 +260,7 @@ configuration for downstream prediction.
   \setlength{\tabcolsep}{2pt} % 8列在单栏中较密，适当收窄列间距
   \begin{tabularx}{\columnwidth}{@{} ll *{6}{Y} @{}}
     \toprule
-    Dataset & Metric & Full & \(-L_f\) & \(-\psi\) & \(-L_l\) & \(-L_e\) & freeze \\
+    Dataset & Metric & Full & \(-L_f\) & \(-\Psi\) & \(-L_l\) & \(-L_e\) & freeze \\
     \midrule
     HiGraph~\cite{chen2025higraph} & F1 & \textbf{0.86} & 0.82 & 0.84 & 0.83 & 0.83 & 0.83 \\
     OCB~\cite{dong2023cktgnn} & r & \textbf{0.90} & 0.62 & 0.63 & 0.64 & 0.64 & 0.50 \\
