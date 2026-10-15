@@ -47,29 +47,6 @@ constructs $\Hset$, the recovery decoders define what graph information
 $\Hset$ must preserve, and the downstream reader consumes the same $\Hset$ for
 prediction.
 
-\begin{table}[t]
-  \centering
-  \caption{Notation used by the \method{} algorithm.}
-  \label{tab:notation}
-  \small
-  \begin{tabular}{lp{0.62\columnwidth}}
-    \hline
-    Symbol & Meaning \\
-    \hline
-    $G=(V,E,\mathbf X)$ & Attributed input graph \\
-    $\mathbf A$ & Adjacency recovery target \\
-    $\mathbf C$ & Content recovery target \\
-    $\mathbf h_{o,i}$ & Original content coordinate for node $i$ \\
-    $\mathbf o_i$ & Structural deviation written to node $i$ \\
-    $\mathbf h_i$ & Final point for node $i$ after fusion \\
-    $\Hset$ & Point set used for recovery and downstream modeling \\
-    $D_A$ & Relation decoder over point pairs \\
-    $D_C$ & Content decoder over single points \\
-    $R$ & Downstream reader over $\Hset$ \\
-    \hline
-  \end{tabular}
-\end{table}
-
 \subsection{Embedding as a point set}
 \label{sec:fsde}
 \begin{figure*}[t]
@@ -88,17 +65,10 @@ prediction.
   \label{fig:algorithm-core}
 \end{figure*}
 
-The embedding stage computes three quantities in sequence.  First, it maps node
-attributes to the original coordinate $\mathbf h_{o,i}$, which preserves the
-row wise node identity before structural writing.  Second, it computes the
-structural deviation $\mathbf o_i$ by forming a global structural bias and
-writing adjacency selected components into each target point.  Third, it fuses
-the two terms into the final point $\mathbf h_i$ and stacks all points into
-$\Hset$.  The data flow is therefore:
-\[
-\mathbf h_{o,i}\quad\longrightarrow\quad \mathbf o_i\quad\longrightarrow\quad
-\mathbf h_i\quad\longrightarrow\quad \Hset .
-\]
+Following Figure~\ref{fig:algorithm-core}, embedding maps node attributes to
+$\mathbf h_{o,i}$, writes adjacency-conditioned structural deviation
+$\mathbf o_i$, fuses the two into $\mathbf h_i$, and stacks the points into
+$\Hset$.
 
 \paragraph{Original coordinate $\mathbf h_{o,i}$.}
 At layer $\ell$, $\mathbf h_{o,i}^{(\ell)}$ denotes the point state before

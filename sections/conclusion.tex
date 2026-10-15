@@ -1,24 +1,10 @@
 \section{Conclusion}
 \label{sec:conclusion}
 
-\method{} establishes a graph modeling interface in which a node aligned point
-set serves as an approximate equivalence class of an attributed graph.  The
-central idea is that trained recoverability gives this representative its
-operational meaning: when content and relations are decoded successfully from
-the learned point set, downstream tasks can model the set while relying on graph
-information preserved by the embedding.
-
-The method realizes this idea through three connected components.  The embedding
-stage constructs each point by adding a content coordinate and a structural
-deviation.  The recovery stage decodes node content and pair relations from the
-same point set, making approximate equivalence an empirically measured property of the
-representation.  The downstream stage reads or expands the point set for
-prediction and graph growth.  Across Web relation, program, circuit, timing,
-molecular, and social graph settings, the experiments evaluate task utility,
-recoverability, and rule guided growth through their corresponding metrics.
-
-Overall, \method{} turns graph modeling into recoverable set modeling.  This
-view connects embedding, recovery training, prediction, and generation through
-the same learned point representation,
-and it highlights the role of the point set as a controlled representative of
-the original graph rather than a task specific hidden state alone.
+\method{} maps an attributed graph to a node-aligned point set by combining
+content coordinates with adjacency-conditioned structural deviations.  Joint
+content and relation recovery trains this point set as an empirical approximate
+equivalence class, while prediction and rule-guided growth read the resulting
+representation.  Across Web, program, circuit, timing, molecular, and social
+graph tasks, this embedding-recovery route provides a common basis for
+downstream modeling and graph generation.
