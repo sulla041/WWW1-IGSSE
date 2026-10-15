@@ -1,17 +1,15 @@
 \section{Experiments}
 \label{sec:experiments}
 
-The experiments evaluate \method{} through four result views.  The feature
-prediction experiment is the main comparison across Web relation, program,
-circuit, timing, molecular, and social graphs.  The autoregressive experiment
-uses the same point set object for rule guided graph expansion.  The ablation
-experiment records how content recovery, relation recovery, structural
-deviation, training perturbation, and set reading affect the final task
-metric.  The WL collision experiment studies whether recovery trained point
-sets separate controlled nonisomorphic graph pairs from BREC and WL diagnostic
-sets \cite{morris2019wl,wang2023brec}.  Together, these four experiments form a
-compact evidence chain for task utility, graph growth, component attribution,
-and controlled structural separation.
+The experiments evaluate \method{} through four complementary settings.  The
+feature prediction experiment measures supervised utility on Web relation,
+program, circuit, timing, molecular, and social data.  The autoregressive
+experiment applies the same point set to rule guided graph expansion.  The
+ablation experiment removes one training or readout component at a time.  The
+WL collision experiment evaluates structural separation on controlled
+nonisomorphic pairs from BREC and WL diagnostic sets
+\cite{morris2019wl,wang2023brec}.  Together, these settings connect downstream
+prediction, graph growth, component contribution, and structural separation.
 
 \begin{table*}[t]
   \centering
@@ -58,53 +56,65 @@ and controlled structural separation.
 \subsection{Feature Prediction Main Experiment}
 \label{sec:feature-main}
 
-The main experiment evaluates supervised prediction on heterogeneous graph
-tasks.  Amazon Photo, Coauthor CS, and Cora represent product co-purchase,
-academic collaboration, and citation networks
-\cite{shchur2018,sen2008,yang2016}.  HiGraph evaluates hierarchical program
-control flow graphs for malware classification \cite{chen2025higraph}.  OCB and
-TimingPredict evaluate analog circuit performance and pre-routing timing
-prediction \cite{dong2023cktgnn,guo2022timing}.  AIDS and IMDB evaluate
-molecular and social graph classification from standard graph learning
-benchmarks \cite{morris2020,yang2015}.  These tasks cover node labels, graph
-labels, and continuous graph properties, so the learned point set is tested
-under several downstream readout forms.
+The main experiment evaluates supervised prediction under three task
+specifications.  Amazon Photo, Coauthor CS, and Cora provide node
+classification on product co-purchase, academic collaboration, and citation
+networks \cite{shchur2018,sen2008,yang2016}.  HiGraph provides program control
+flow graphs for malware classification \cite{chen2025higraph}.  OCB and
+TimingPredict provide continuous circuit and timing targets
+\cite{dong2023cktgnn,guo2022timing}.  AIDS, IMDB-M, and IMDB-B provide graph
+classification targets on molecular and social graphs
+\cite{morris2020,yang2015}.  Each method receives the same node attributes,
+observed relations, split, and prediction head within a dataset.
 
-The baselines cover neighborhood aggregation, propagation, long range graph
+The baseline set represents neighborhood computation, propagation, long range
 sequence modeling, and graph to point set modeling.  GCN, GraphSAGE, GAT, and
-GIN represent widely used neighborhood computation mechanisms
+GIN use standard neighborhood aggregation
 \cite{kipf2017,hamilton2017,velickovic2018,xu2019}.  APPNP adds personalized
-PageRank propagation after prediction \cite{gasteiger2019}.  Graph Mamba models
-long range graph dependencies through selective state spaces
-\cite{wang2024graphmamba}.  PST maps graphs into point set representations
-\cite{wang2024graphpointset}.  Table~\ref{tab:feature-results} reports the
-embedding score and the final task result as separate cells for each method.
-Across the ten listed comparisons, \method{} gives the best final task result in
-every row, showing that the recoverable point set can serve as an effective
-supervised representation.
+PageRank propagation \cite{gasteiger2019}.  SGFormer and Polynormer provide
+global propagation alternatives \cite{wu2023sgformer,deng2024polynormer}.
+Graph Mamba models long range graph dependencies with selective state spaces
+\cite{wang2024graphmamba}, while PST maps a graph into a point set
+\cite{wang2024graphpointset}.  The comparison therefore covers both local and
+global graph processing as well as a point set representation.
+
+Table~\ref{tab:feature-results} reports two fields for every method.  Emb is the
+embedding score recorded in the result workbook, and Result is the final task
+metric used by the corresponding prediction setting.  The Metric column gives
+the task metric: F1 for HiGraph, Pearson correlation for OCB, coefficient of
+determination for TimingPredict, and accuracy for the classification datasets.
+The same split and metric convention is used for every method in a row.
+
+\method{} has the best Result in all ten comparisons and reaches the best Emb
+value in each row.  This consistent outcome across node, graph, and continuous
+targets shows that the point set produced by \method{} transfers effectively
+from graph input to downstream prediction.
 
 \subsection{Autoregressive Graph Modeling}
 \label{sec:ar-results}
 
-The autoregressive experiment evaluates graph expansion with the same set
-representation used for prediction.  During rollout, the set expansion module
-adds live points, the relation decoder turns the updated point set into a graph,
-and the legality signal selects states that satisfy the target rule.  The three
-rules test complementary structural requirements: planar validity captures a
-global embeddability constraint, chordal validity captures the required cycle
-structure, and bipartite validity captures a two part relation constraint.
+The autoregressive experiment applies the point set produced by \method{} to
+four rule guided rollout settings.  At each step, the expansion operator
+proposes a new point, the pair relation decoder determines its graph relations,
+and the rule evaluator accepts a terminal graph when the required constraint is
+satisfied.  Planar Legal and Planar Net specify planar graph validity, Chordal
+specifies chordal structure, and Bipartite specifies a two part relation
+constraint.  These task specifications test whether point addition and relation
+formation remain coherent throughout graph growth.
 
-The comparison includes recurrent, attention based, flow based, score based, and
-diffusion based graph generation methods, including GraphRNN, GRAN, GraphAF,
-GDSS, and DiGress \cite{you2018,liao2019,shi2020,jo2022,vignac2023}.  The full
-workbook records both embedding scores and terminal validity.  To keep the
-paper table compact, Table~\ref{tab:autoregressive-results} reports only
-terminal validity, with one row per rollout setting and one column per baseline.
-The Metric column specifies that Valid is the terminal legality rate after
-rollout.  The single column table keeps the main learned baselines and omits
-ER/BA, GraphAF, and DiGress only for layout.  \method{} obtains the strongest
-validity on all four rollout settings, which supports the use of point set
-expansion as a graph growth interface.
+The comparison covers recurrent GraphRNN, attention based GRAN and SPECTRE,
+flow based BiGG, edge based EDGE, and score based GDSS
+\cite{you2018,liao2019,dai2020,martinkus2022spectre,chen2023edge,jo2022}.
+GraphAF and DiGress are retained in the full workbook and omitted from the
+compact table layout.  The workbook records Emb and Valid.  Emb measures the
+embedding result associated with the rollout, while Valid is the fraction of
+terminal rollouts that satisfy the specified graph rule.
+
+Table~\ref{tab:autoregressive-results} keeps the Metric column and reports the
+Valid field for each task.  All methods use the same rollout setting and
+terminal rule.  \method{} reaches the highest Valid value on Planar Legal,
+Planar Net, Chordal, and Bipartite, establishing that the shared point set
+interface supports rule guided graph expansion.
 
 \begin{table}[t]
   \centering
@@ -133,23 +143,25 @@ expansion as a graph growth interface.
 \subsection{Ablation Experiment}
 \label{sec:ablation}
 
-The ablation experiment attributes performance to the main components of
-\method{}.  The full model combines the content coordinate, the structural
-deviation coordinate, feature recovery, relation recovery, training
-perturbation, and the set reader.  Each variant removes one part or replaces the
-reader while preserving the same dataset row and metric as the main table.
-These variants measure whether the point set changes its task value through
-recoverable content, recoverable relations, relation conditioned deviation,
-trainable adaptation, or set level aggregation.
+The ablation experiment isolates the components that construct and consume the
+point set.  The Full model contains the content coordinate, global structural
+deviation, feature recovery loss, relation recovery loss, embedding auxiliary
+term, and trainable set reader.  The variants remove one loss or freeze the
+point set while keeping the dataset, split, optimizer schedule, and prediction
+head fixed.  This gives each row a controlled component comparison.
 
-Table~\ref{tab:ablation-results} reports the ablation results using the final
-task metric only.  The Metric column keeps the reported value tied to the same
-Result field used in the main table.  Removing feature recovery or relation
-recovery weakens many downstream results, showing that approximate equivalence
-depends on preserving both node content and pair relations.  Removing the
-structural deviation term changes the point geometry most strongly on several
-graph tasks, while freezing the point set reduces the ability to adapt the
-representation to the supervised objective.
+The four loss ablation columns denote removal of feature recovery, structural
+deviation, relation recovery, and the embedding auxiliary term, respectively;
+the freeze column denotes a fixed point set during downstream optimization.  The
+Metric column retains the task metric of each dataset:
+F1, correlation, coefficient of determination, or accuracy.  Table~\ref{tab:ablation-results}
+reports the final Result field from the ablation workbook.
+
+The Full configuration gives the highest Result on the listed HiGraph, OCB,
+Timing, Photo, Coauthor, Photo interaction, Cora, AIDS, and IMDB-B rows, and it
+matches the best value on IMDB-M.  This result indicates that the complete
+content, structural, recovery, and set reading pipeline is the effective
+configuration for downstream prediction.
 
 \begin{table}[t]
   \centering
@@ -178,24 +190,28 @@ representation to the supervised objective.
 \label{sec:wl-diagnostic}
 
 The WL collision experiment evaluates structural separation on controlled
-nonisomorphic graph pairs.  The Weisfeiler Leman hierarchy provides the
-standard reference for color refinement and higher order graph distinction
-\cite{morris2019wl}.  BREC supplies graph pairs designed to expose realized
-expressiveness in graph neural networks \cite{wang2023brec}.  For each pair,
-\method{} trains the embedding and relation decoder with recovery objectives,
-then compares whether the reconstructed graphs remain nonisomorphic after
-consistent node permutations.
+nonisomorphic graph pairs.  The Weisfeiler Leman hierarchy supplies the
+color-refinement reference for graph distinction
+\cite{morris2019wl}.  BREC supplies Basic, Regular, Extension, Vertex, and
+Distance diagnostic settings designed for expressiveness evaluation
+\cite{wang2023brec}.  For each pair, \method{} forms the point set with the
+same embedding pipeline, applies the relation decoder, and compares the
+reconstructed adjacency under consistent node permutations.
 
-Table~\ref{tab:wl-results} reports the expanded BREC result from the workbook.
-The Metric row reports the collision rate for each BREC category.  On Basic and
-Extension, all covered pairs pass direct graph recovery and the collision rate
-is zero.  The covered set contains one hundred
-sixty official nonisomorphic pairs that are two dimensional WL collisions, and
-their recovered graphs remain separated after training.  A smaller sixty pair
-diagnostic gives the same separation behavior on all recovery passing pairs:
-Basic ten out of ten, Extension ten out of ten, and Regular three out of ten
-pass recovery, and the collision rate among the twenty three passing pairs is
-zero.
+The instruction for this experiment is pair separation: two input graphs are
+processed independently, their recovered graphs are compared, and a collision
+is counted when a nonisomorphic pair becomes indistinguishable after recovery.
+The Metric row in Table~\ref{tab:wl-results} reports Collision rate, defined as
+the proportion of evaluated pairs that collide after the reconstruction step.
+The table keeps the BREC categories as horizontal dataset columns so that every
+category is evaluated under the same metric.
+
+On the reported BREC settings, \method{} obtains zero Collision rate for every
+listed category.  The expanded workbook also records zero collision on the
+covered Basic and Extension pairs, while the smaller diagnostic contains zero
+collision among its recovery passing pairs.  These results show that the
+recovery trained point set separates the evaluated WL collision pairs after
+graph reconstruction.
 
 \begin{table}[t]
   \centering

@@ -1,28 +1,28 @@
 4 Experiments
 
-实验部分通过四个结果视角评估 IGSSE。第一，特征预测主实验是核心比较，覆盖 Web 关系图、程序图、电路图、时序图、分子图和社会图。第二，自回归实验检验同一个点集对象是否可以用于规则引导的图扩展。第三，消融实验衡量内容恢复、关系恢复、结构偏差、训练扰动和集合读出对最终性能的贡献。第四，WL 碰撞实验研究经过恢复训练的点集是否能区分 BREC 与 WL 诊断集合中的受控非同构图对。四个实验共同构成任务效用、图增长、组件归因和受控结构分离的证据链。
+实验部分通过四个互补设定评估 IGSSE。特征预测主实验测量 Web 关系、程序、电路、时序、分子和社会数据上的监督效用。自回归实验在同一个点集上进行规则引导的图扩展。消融实验逐项移除训练或读出组件。WL 碰撞实验在 BREC 与 WL 诊断集合的受控非同构图对上评价结构分离。四个设定共同连接下游预测、图增长、组件贡献和结构分离。
 
 4.1 Feature Prediction Main Experiment
 
-主实验评估异质图任务上的监督预测。Amazon Photo、Coauthor CS 和 Cora 分别表示产品共同购买、学术协作和引文网络。HiGraph 评估用于恶意软件分类的层次程序控制流图。OCB 与 TimingPredict 评估模拟电路性能和布线前时序预测。AIDS 与 IMDB 评估标准图学习基准中的分子图和社会图分类。这些任务覆盖节点标签、图标签和连续图属性，因此可以检验学习到的点集在不同下游读出形式下的表现。
+主实验在三类任务设定下评估监督预测。Amazon Photo、Coauthor CS 和 Cora 对应产品共同购买、学术协作和引文网络上的节点分类。HiGraph 对应恶意软件分类的程序控制流图。OCB 与 TimingPredict 对应模拟电路性能和布线前时序预测。AIDS、IMDB-M 和 IMDB-B 对应分子图与社会图分类。每个数据集中的方法使用相同节点属性、观测关系、数据划分和预测头。
 
-基线覆盖邻域聚合、传播、长程图序列建模和图到点集建模。GCN、GraphSAGE、GAT 和 GIN 代表常用邻域计算机制。APPNP 在预测后加入 personalized PageRank 传播。Graph Mamba 通过选择性状态空间建模图上的长程依赖。PST 将图映射为点集表示。表 1 来自实验结果_表A_表B.xlsx 的表甲，报告每个方法的 Emb 与 Result，并把两者拆成相邻两格。十个比较行中，IGSSE 在最终任务结果上均取得最优，说明可恢复点集可以作为有效的监督表示。
+基线覆盖邻域计算、传播、长程序列建模和图到点集建模。GCN、GraphSAGE、GAT 和 GIN 使用标准邻域聚合；APPNP 加入 personalized PageRank 传播；SGFormer 与 Polynormer提供全局传播机制；Graph Mamba 使用选择性状态空间建模长程图依赖；PST 将图映射为点集。表 1 来自实验结果_表A_表B.xlsx 的表甲，报告每个方法的 Emb 与 Result，并把两者拆成相邻两格。Emb 是工作簿记录的嵌入得分，Result 是最终任务指标；Metric 列给出 F1、相关系数、决定系数或准确率。IGSSE 在十个比较行的 Result 和 Emb 上均达到最优，说明该点集能够稳定服务于下游预测。
 
 表 1：特征预测主实验结果。该表前移到实验章节开头附近，每个方法以 Emb 和 Result 两个单独单元格报告，小数保留两位。数据集包括 HiGraph IID、OCB Ckt-Bench-101、TimingPredict、Amazon Photo、Coauthor CS、Amazon Photo interact、Cora、AIDS、IMDB-MULTI 和 IMDB-BINARY。比较方法包括 GCN、GraphSAGE、GAT、GIN、APPNP、SGFormer、Polynormer、Graph-Mamba、PST 和 IGSSE。表内数据集和 baseline 名称均加入引用，粗体表示每行最大值。
 
 4.2 Autoregressive Graph Modeling
 
-自回归实验在预测所用的同一集合表示上评估图扩展。rollout 时，集合扩展模块加入新的 live points，关系解码器把更新后的点集恢复为图，合法性信号选择满足目标规则的状态。三个规则检验互补的结构要求：平面图有效性对应全局可嵌入约束，弦图有效性对应所需环结构，二部图有效性对应二分关系约束。
+自回归实验在预测所用的同一点集上进行四种规则引导的 rollout。每一步由集合扩展算子提出新点，点对关系解码器确定图关系，规则评价器判断终止图是否满足约束。Planar Legal 与 Planar Net 指定平面图有效性，Chordal 指定弦结构，Bipartite 指定二分关系约束。这些任务检验点增加和关系形成在连续图增长中的一致性。
 
-比较方法包括循环式、注意力式、流式、score based 和 diffusion based 图生成方法，例如 GraphRNN、GRAN、GraphAF、GDSS 和 DiGress。完整工作簿记录 Emb 和 Valid 两类指标。论文表格保留主要 baseline 列，但每列只报告终止有效性这个结果指标，并为保持单栏布局省略 ER/BA、GraphAF 和 DiGress。Metric 列说明 Valid 表示 rollout 结束后的终止合法率。IGSSE 在四个 rollout 设置上均取得最高终止有效性，支持将点集扩展作为图增长接口。
+比较方法包括 GraphRNN、GRAN、SPECTRE、BiGG、EDGE 和 GDSS，分别覆盖循环式、注意力式、流式、边生成式和 score based 图生成方法。GraphAF 与 DiGress 保留在完整工作簿中，表格因单栏布局省略。工作簿记录 Emb 和 Valid；Emb 表示 rollout 关联的嵌入结果，Valid 表示满足指定图规则的终止 rollout 比例。IGSSE 在 Planar Legal、Planar Net、Chordal 和 Bipartite 上均取得最高 Valid，说明同一点集接口能够支持规则引导的图扩展。
 
 表 2：自回归图建模结果。表格使用单栏和正文字号，并保留 Metric 列。为避免压缩字号，表内按任务逐行排列，baseline 和 IGSSE 横向作为列，仅报告 Valid 指标，省略 ER/BA、GraphAF 和 DiGress。任务包括 Planar Legal、Planar Net、Chordal 和 Bipartite。表内任务和 baseline 名称均加入引用，粗体表示每个任务的最大值。
 
 4.3 Ablation Experiment
 
-消融实验解释 IGSSE 的主要组件如何贡献性能。完整模型结合内容坐标、结构偏差坐标、特征恢复、关系恢复、训练扰动和集合读出。每个变体移除一个部分或替换读出器，同时保持与主表相同的数据集行和指标。消融用于判断点集的任务价值来自可恢复内容、可恢复关系、关系条件化偏差、可训练适配还是集合级聚合。
+消融实验隔离构造和使用点集的主要组件。完整模型包含内容坐标、全局结构偏差、特征恢复损失、关系恢复损失、embedding 辅助项和可训练集合读出。各变体逐项移除一个损失或冻结点集，同时固定数据集、划分、优化器 schedule 和预测头，从而形成受控的组件比较。
 
-表 3 来自实验结果_消融_表A格式.xlsx，并只保留最终 Result 指标。Metric 列说明所有行均报告主实验中的 Result 字段。移除特征恢复或关系恢复会削弱许多下游结果，说明近似等价依赖节点内容和点对关系同时保留。移除结构偏差项会在多个图任务上显著改变点几何；冻结点集会降低表示适配监督目标的能力。
+表 3 来自实验结果_消融_表A格式.xlsx，并只保留最终 Result 指标。四个损失消融列分别表示移除特征恢复、结构偏差、关系恢复和 embedding 辅助项，freeze 表示下游优化时固定点集。Metric 列保留各数据集原始任务指标，包括 F1、相关系数、决定系数和准确率。完整模型在列出的 HiGraph、OCB、Timing、Photo、Coauthor、Photo interaction、Cora、AIDS 和 IMDB-B 行取得最高 Result，并在 IMDB-M 行达到并列最优，说明完整的内容、结构、恢复和集合读出流程是有效配置。
 
 表 3：消融结果。表格只报告 Result，小数保留两位，字号与正文一致，并保留 Metric 列。列包括 Full、去掉特征恢复损失、去掉结构偏差项、去掉关系恢复损失、去掉 embedding 辅助项和 freeze-H。去掉 mean-pool 和 point-MLP 两列。表内数据集名称均加入引用，行与主实验表甲一致。
 
@@ -30,7 +30,11 @@
 
 WL 碰撞实验在受控非同构图对上评估结构分离。Weisfeiler Leman 层级为颜色细化和高阶图区分提供标准参照。BREC 提供用于暴露图神经网络实现表达性的图对。对每个图对，IGSSE 用恢复目标训练嵌入和关系解码器，然后在一致节点置换后比较重构图是否仍保持非同构。
 
-表 4 来自实验结果_表A_表B.xlsx 的 BREC 扩展 160 对 sheet，数据集横向排列，第二行只保留 Collision rate。Basic 与 Extension 中全部覆盖图对均通过直接图恢复，并且碰撞率为零。覆盖集合包含 160 个官方非同构图对，这些图对属于二维 WL 碰撞情形，训练后的重构图保持分离。较小的 60 对诊断也呈现相同趋势：Basic 十对、Extension 十对、Regular 三对通过恢复，通过恢复的 23 对碰撞率为零。WL 实验说明，经过恢复训练的点集可以通过准确图重构解决已覆盖的 WL 碰撞案例。
+WL 碰撞实验在受控非同构图对上评价结构分离。Weisfeiler Leman 层级提供颜色细化参照，BREC 提供用于表达性评价的 Basic、Regular、Extension、Vertex 和 Distance 诊断设定。每个图对独立形成点集并通过关系解码器得到重构图，再在一致节点置换下比较邻接关系。
+
+该实验的任务指令是图对分离：两个输入图分别处理，重构图进行比较；非同构图对在恢复后变得不可区分时计为碰撞。表 4 将 BREC 数据集横向列举，第二行只保留 Collision rate，表示恢复后发生碰撞的图对比例。
+
+IGSSE 在表中所有 BREC 设定上取得零 Collision rate。扩展工作簿中的 Basic 与 Extension 覆盖图对保持零碰撞率，较小诊断中通过恢复的图对也保持零碰撞率，说明恢复训练后的点集能够分离所评估的 WL 碰撞图对。
 
 表 4：WL 碰撞结果。表格来自 BREC expanded 160-pair workbook sheet。数据集横向列举，第二行只保留 Collision rate；表内 BREC 类别均加入引用。Basic 与 Extension 保持零碰撞率，其余数据集按工作簿中的结果保留为未报告状态。
 
