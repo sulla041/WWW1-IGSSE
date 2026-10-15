@@ -28,6 +28,28 @@ global structure, scalability, and Web graph modeling.
    Useful for coarse-to-fine graph generation, spectral structure, and
    generation-focused ablation and evaluation design.
 
+## WWW 2026
+
+6. `WWW2026_RLSTG_Riemannian_Liquid_ST_GNN.pdf`
+   Riemannian Liquid Spatio-Temporal Graph Network. Useful for non-Euclidean
+   geometry, continuous-time graph dynamics, and representation of structured
+   systems beyond flat vector spaces.
+
+7. `WWW2026_RAG_GFM.pdf`
+   RAG-GFM: Overcoming In-Memory Bottlenecks in Graph Foundation Models via
+   Retrieval-Augmented Generation. Useful for discussing lossy parameter
+   compression, external structural memory, and cross-domain graph modeling.
+
+8. `WWW2026_ScaleGNN.pdf`
+   ScaleGNN: Towards Scalable Graph Neural Networks via Adaptive High-order
+   Neighboring Feature Fusion. Useful for high-order structure, over-smoothing,
+   selective neighbor retention, and Web-scale efficiency.
+
+9. `WWW2026_ReaLM.pdf`
+   ReaLM: Residual Quantization Bridges Knowledge Graph Embeddings and Large
+   Language Models. Useful for quantized graph embeddings and interfaces between
+   structural representations and language models.
+
 The local copies were obtained from the public author or preprint pages listed
 below.
 
@@ -36,3 +58,7 @@ below.
 - https://yangy.org/works/gnn/WWW24_Graph_Skeleton.pdf
 - https://arxiv.org/abs/2412.04276
 - https://arxiv.org/abs/2402.13532
+- https://arxiv.org/abs/2601.14115
+- https://arxiv.org/abs/2601.15124
+- https://arxiv.org/abs/2504.15920
+- https://arxiv.org/abs/2510.09711
