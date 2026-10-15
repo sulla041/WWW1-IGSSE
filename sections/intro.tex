@@ -88,7 +88,11 @@ If an attributed graph is mapped to a set of vectors that recovers content and
 adjacency targets after training, graph modeling can be formulated as set
 modeling under explicit recovery objectives
 \cite{zaheer2017,lee2019,wang2024graphpointset}.  The important step is to make
-the point set an approximate equivalence class of the graph.  Attention based
+the point set an approximate equivalence class of the graph.  Explicit coordinate
+construction can increase graph-processing complexity and cause the structural
+dimension to grow sharply, whereas IGSSE aligns node features with learned
+structural deviations in a common representation space for downstream modeling.
+Attention based
 decoders give this equivalence class an operational meaning: a single point
 decoder recovers node content, and a pair decoder recovers relations.  When
 these decoders recover the content and relation targets after training, the point set can

@@ -79,6 +79,11 @@ trained for the downstream task.  The distinction is therefore in the
 coordinate construction, the explicit relation-conditioned structural write,
 and the recovery-trained embedding procedure, rather than in using a set
 encoder alone.
+Explicit coordinates can increase graph-processing complexity and cause the
+structural dimension to grow with the decomposed matrix rank.  IGSSE instead
+aligns node features with learned structural deviations in a common coordinate
+space, so the representation width is selected by the model rather than by a
+full-rank structural decomposition.
 The structural branch also separates global interaction from relation writing:
 global attention forms the source bias, while observed adjacency selects where
 that bias is written, instead of using global attention as a final node update

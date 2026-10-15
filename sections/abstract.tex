@@ -15,7 +15,10 @@ We propose \method{} (Invertible Graph Set Space Embedding), a recoverable set
 space embedding for attributed graphs.  \method{} maps node attributes to an
 attribute only content embedding, then writes structural deviations through a
 feature and structure deviation encoder that combines local graph neighborhoods,
-global structural bias, and relation conditions.  The resulting point set, with
+global structural bias, and relation conditions.  Explicit algebraic coordinates
+can increase graph-processing complexity and make the structural dimension grow
+sharply on large graphs.  IGSSE instead aligns node features with learned
+structural deviations in a common representation space.  The resulting point set, with
 rows corresponding to graph nodes, becomes an approximate equivalence class of
 the graph: single point decoding recovers node content, pair attention decoding
 recovers relations between points, and downstream readers model points and point
