@@ -67,6 +67,64 @@ classification targets on molecular and social graphs
 \cite{morris2020,yang2015}.  Each method receives the same node attributes,
 observed relations, split, and prediction head within a dataset.
 
+All main-table tasks use the same IGSSE interface.  An input graph contains its
+adjacency structure, node attributes, and edge attributes when the dataset
+provides them.  The encoder maps this input to the node-aligned point set
+$\Hset$.  The relation decoder and attribute decoder are trained on the
+available graph targets, while a task head reads $\Hset$ for classification or
+regression.  Emb denotes the embedding-side recovery score, including relation,
+node-attribute, and edge-attribute recovery where applicable.  Result denotes
+the downstream task score.  Training uses the fixed dataset version,
+preprocessing, input fields, split, and random-seed protocol for every method;
+the validation partition selects the checkpoint and the test partition supplies
+the reported metric.  Baselines use the same input fields, task split, primary
+metric, and checkpoint rule.
+
+The program-graph setting uses the official IID stratified split of HiGraph,
+with a 70/15/15 train, validation, and test partition.  Program control-flow
+nodes and edges form the graph input, program categories provide the binary
+task labels, and Macro-F1 is the primary metric.  IGSSE applies pairwise
+relation recovery to control-flow links, pointwise recovery to node content,
+and a set reader followed by a binary program-graph head.
+
+The OCB setting uses the Ckt-Bench-101 circuit collection and its
+8100/900/1000 train, validation, and test partition
+\cite{dong2023cktgnn}.  Circuit topology, device and port node attributes,
+edge directions, and connection attributes form the input.  The regression
+targets include FoM, gain, bandwidth, and phase margin; Pearson correlation
+is reported for these specifications.  IGSSE uses pairwise recovery for
+connections and node or edge attributes, attention pooling for the circuit
+point set, and a multi-output regression head with targets standardized during
+training and restored to physical units for evaluation.
+
+The TimingPredict setting uses design-level partitions for directed netlists
+and evaluates xtea, spm, and the other supplied designs under the same design
+boundary \cite{guo2022timing}.  Node attributes, directed netlist links, net
+and cell edge attributes, and direction fields form the input.  Delay,
+arrival time, slew, and required arrival time are regression targets, with the
+coefficient of determination for delay as the primary metric.  The IGSSE reader pools directed
+predecessor points and their recovered content for the timing head after the
+link, feature, net, cell, and direction recovery fields are constructed.
+
+Amazon Photo, Coauthor-CS, Photo-interact, and Cora use node-level readers.
+Photo and Coauthor-CS use 60/20/20 train, validation, and test partitions;
+Photo-interact uses its freeze-one interaction partition, and Cora uses the
+public Planetoid split \cite{shchur2018,sen2008,yang2016}.  Product, author,
+or paper attributes are the node input, observed relations are the structural
+input, and labels are available only on the training mask.  The reader applies
+a shared point head, with set attention context when the configuration
+requests it.  Accuracy is the primary metric for all four settings.
+
+AIDS, IMDB-MULTI, and IMDB-BINARY use graph-level readers on the TU graph
+classification benchmarks \cite{morris2020,yang2015}.  Each graph supplies
+its node attributes, relations, and edge attributes when available.  The
+experiments use stratified ten-fold evaluation, with the training folds used
+for optimization, an internal validation split used for checkpoint selection,
+and the held-out fold used for testing.  IGSSE decodes node and pair targets,
+applies permutation-invariant set attention or PMA pooling, and sends the
+pooled state to the graph classification head.  Accuracy is the primary metric
+for these molecular and social graph tasks.
+
 The baseline set represents neighborhood computation, propagation, long range
 sequence modeling, and graph to point set modeling.  GCN, GraphSAGE, GAT, and
 GIN use standard neighborhood aggregation
