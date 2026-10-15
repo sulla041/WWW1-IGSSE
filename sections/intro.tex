@@ -22,6 +22,24 @@ provides an operational criterion for this role: when the learned decoders
 recover the graph targets used in modeling, the point set can serve as an
 empirical approximate equivalence class of the original graph.
 
+This requirement is especially important when a network is viewed as a stable
+operating system whose behavior emerges from many interacting components.  The
+relevant interaction between two nodes is then determined by latent global
+regularities in the system, rather than by hop count alone.  For example, two
+products separated by several co-purchase links may participate in the same
+customer intent and seasonal demand pattern; two circuit components may jointly
+determine timing through reconvergent paths even when their shortest path is
+long; and two software modules may interact through a shared API, data format,
+or execution phase despite a long dependency chain.  In social or fraud
+networks, accounts that are distant in the observed graph can still be linked
+by a common coordinator, organization, or transaction motif.  These examples
+show why a representation should capture global latent regularities and
+component interactions as part of the network state.  Local aggregation can
+access such effects only through repeated propagation, which is vulnerable to
+oversquashing and oversmoothing as the interaction range grows
+\cite{alon2021bottleneck,topping2022oversquashing,dong2023cktgnn,guo2022timing,
+wang2024graphmamba}.
+
 The dominant graph neural network paradigm builds node states by repeated
 message passing and neighborhood aggregation
 \cite{gilmer2017,kipf2017,hamilton2017,velickovic2018,xu2019}.  This paradigm
