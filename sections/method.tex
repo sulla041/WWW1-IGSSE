@@ -9,12 +9,13 @@
 \end{equation}
 Here $G$ is an attributed graph, $\Hset$ is a point set whose rows correspond to nodes, and
 $\widehat Y$ denotes the downstream prediction.  The central design choice is to
-make $\Hset$ both a prediction object and a recoverable representative of $G$.
+make $\Hset$ both a prediction object and a trained recoverable representative
+of $G$.
 The algorithm therefore has three parts.  First, the embedding stage constructs a
 point set by combining an original content coordinate $\mathbf h_{o,i}$ with a
 structural deviation $\mathbf o_i$.  Second, graph recovery decodes content and
-relations from $\Hset$, making recoverability the guarantee of approximate
-equivalence.  Third, downstream readers operate directly on $\Hset$ for node
+relations from $\Hset$, making trained recoverability the operational evidence
+for approximate equivalence.  Third, downstream readers operate directly on $\Hset$ for node
 prediction, graph prediction, and autoregressive graph modeling.
 This route is defined through local operations: every point starts from its own
 content coordinate, every structural update writes an adjacency selected
@@ -224,8 +225,10 @@ deviation, fused point, and point set while preserving node row correspondence.
 Recovery uses $\Hset$ as the modeling object.  The relation decoder reads two
 points and recovers whether a graph relation exists; the content decoder reads
 one point and recovers its content target.  Together, the two decoders make the
-learned point set an approximate equivalence class of the graph under the chosen
-recovery targets.
+trained point set an approximate equivalence class of the graph under the chosen
+recovery targets.  This approximate equivalence is an empirical property of the
+trained encoder and decoders, assessed by recovery behavior and embedding scores
+on the evaluated data.
 
 The relation decoder projects final point rows to head specific queries and
 keys, scores their scaled inner product, symmetrizes undirected relations, and
@@ -271,24 +274,18 @@ input, while relation targets remain defined by the complete graph.  Content
 targets use clean attributes with stopped gradients, and task labels enter only
 the prediction loss.
 
-\paragraph{Recovery implication.}
-Let $D$ be a deterministic decoder and let $d_T$ be a distance on the target
-space.  The recovery condition is
-\begin{equation}
- d_T(D(\operatorname{Enc}(G)),T(G))\leq\epsilon .
- \label{eq:recovery-condition}
-\end{equation}
-Under this condition, two graphs with the same representation satisfy
-\begin{equation}
- d_T(T(G_1),T(G_2))\leq \epsilon_{\triangle}.
- \label{eq:recoverability}
-\end{equation}
-Both targets lie within the recovery tolerance of the same decoded
-representation, so the result follows from the triangle inequality.  Direct
-recovery metrics therefore bound how much input information a shared embedding
-can merge.  Relation recovery constrains pair geometry, content recovery
-constrains single point information, and together they provide the guarantee
-that $\Hset$ functions as an approximate equivalence class.
+\paragraph{Trained recoverability.}
+The point set is called trained recoverable when the jointly optimized content
+and relation decoders recover the selected content and adjacency targets with
+the reported reconstruction metrics.  The content objective uses mean squared
+error, while the relation objective uses sampled binary cross entropy; these
+objectives train the representation and provide empirical recovery signals, not
+a universal metric-space error bound or an injectivity theorem.  The resulting
+approximate equivalence is evaluated for the target space used by the model:
+individual points retain content information, point pairs retain relations, and
+the same points support downstream prediction.  Emb scores, recovery
+measurements, and downstream results together quantify this trained property on
+the evaluated data.
 
 \subsection{Downstream modeling over the point set}
 \label{sec:interfaces}

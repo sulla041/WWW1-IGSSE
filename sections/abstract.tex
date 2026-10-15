@@ -19,8 +19,8 @@ global structural bias, and relation conditions.  The resulting point set, with
 rows corresponding to graph nodes, becomes an approximate equivalence class of
 the graph: single point decoding recovers node content, pair attention decoding
 recovers relations between points, and downstream readers model points and point
-pair relations.  Because the representation is recoverable, the point set
-approximates the original graph and converts graph modeling into neural set
+pair relations.  After recovery training, the point set approximates the
+original graph on the selected content and relation targets and converts graph modeling into neural set
 modeling over vectors.  A set expansion module further supports rule preserving
 autoregressive graph growth on the same representation interface.  We evaluate
 \method{} on public datasets covering product purchase relations,
@@ -32,6 +32,6 @@ collision diagnostic shows that reconstruction trained point sets separate the
 evaluated second order and third order WL collision graph pairs, and rule
 preserving autoregressive generation shows that the framework captures global
 graph regularities while improving over the message passing generation baselines
-used in the comparison.  These results establish \method{} as an efficient and
-invertible framework for graph embedding, downstream prediction, and
+used in the comparison.  These results establish \method{} as an efficient,
+trained-recoverable framework for graph embedding, downstream prediction, and
 autoregressive graph modeling.

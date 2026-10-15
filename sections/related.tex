@@ -39,8 +39,8 @@ as oversquashing and linked to graph curvature and bottlenecks
 \cite{alon2021bottleneck,topping2022oversquashing}.  Recent long range graph
 models, including Graph Mamba, reduce locality by processing graph derived
 sequences with selective state spaces, yet the learned state still needs an
-explicit guarantee that graph content and relations remain recoverable before
-task readout \cite{wang2024graphmamba}.  These limitations motivate
+empirical recovery assessment showing how graph content and relations are
+retained before task readout \cite{wang2024graphmamba}.  These limitations motivate
 representations that preserve graph content and relations before task readout
 and make the retained information directly recoverable.
 
@@ -55,9 +55,9 @@ NeuralWalker combines random walk sequences with local message passing so that
 sequence models can carry long range graph information \cite{chen2025neuralwalker}.
 These advances improve interaction range and efficiency, and they still leave a
 central representation question: how the learned state preserves graph content
-and relations before task readout.  \method{} addresses this question by making
-recoverability the guarantee that the learned point set is an approximate
-equivalence class of the input graph.
+and relations before task readout.  \method{} addresses this question by using
+trained recovery to evaluate whether the learned point set functions as an
+approximate equivalence class of the input graph.
 
 \paragraph{Equivalence classes and graph representation.}
 Equivalence classes provide a mathematical language for replacing an object by a
@@ -83,7 +83,7 @@ attention to reduce self attention cost \cite{lee2019}.  Graph as Point Set uses
 this foundation to process converted graph objects with set encoders
 \cite{wang2024graphpointset}.  \method{} builds on the same permutation
 principles while retaining row correspondence to graph nodes, decoding relations
-from point pairs, and using feature and link recoverability to guarantee the
+from point pairs, and using feature and link recovery to support the empirical
 approximate equivalence that downstream prediction and autoregressive graph
 modeling consume.
 Taken together, these lines of work motivate the route followed by \method{}:

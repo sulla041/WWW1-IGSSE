@@ -17,10 +17,10 @@ interface especially demanding: their content is heterogeneous, their relations
 are organized by global structural regularities, and their tasks may change as
 the graph evolves \cite{sen2008,yang2016,shchur2018}.  A useful representation
 must therefore expose graph information to neural computation while preserving
-the content and relations needed by downstream tasks.  Recoverability provides a
-concrete guarantee for this role: if the embedded object reconstructs the graph
-targets required by modeling, it can act as an approximate equivalence class of
-the original graph.
+the content and relations needed by downstream tasks.  Trained recoverability
+provides an operational criterion for this role: when the learned decoders
+recover the graph targets used in modeling, the point set can serve as an
+empirical approximate equivalence class of the original graph.
 
 The dominant graph neural network paradigm builds node states by repeated
 message passing and neighborhood aggregation
@@ -66,14 +66,14 @@ reconstruction is usually introduced through a separate autoencoding objective
 
 The core challenge is to define a graph representation that is convenient for
 neural modeling and still carries enough graph information for downstream tasks.
-If an attributed graph is mapped to a set of vectors that preserves content and
-adjacency targets, graph modeling can be formulated as set modeling under
-explicit recoverability conditions
+If an attributed graph is mapped to a set of vectors that recovers content and
+adjacency targets after training, graph modeling can be formulated as set
+modeling under explicit recovery objectives
 \cite{zaheer2017,lee2019,wang2024graphpointset}.  The important step is to make
 the point set an approximate equivalence class of the graph.  Attention based
 decoders give this equivalence class an operational meaning: a single point
-decoder recovers node content, and a pair decoder recovers relations.  Once
-these decoders preserve the content and relation targets, the point set can
+decoder recovers node content, and a pair decoder recovers relations.  When
+these decoders recover the content and relation targets after training, the point set can
 stand in for the graph in downstream modeling.  This transformation converts a
 graph into a point set that neural architectures can process through point and
 set operations.  Points keep correspondence to nodes, point pairs carry relation
@@ -96,8 +96,8 @@ encoding into an original point set without structural deviation.  The feature
 and structure deviation encoder then combines local neighborhoods, global
 structural bias, and adjacency based writing to produce a point set carrying
 global structural deviations.  Content and relation decoders verify that this
-point set preserves node features and links, so recoverability guarantees its
-approximate equivalence to the original graph.  Downstream
+point set preserves node features and links after recovery training, providing
+empirical evidence for its approximate equivalence to the original graph.  Downstream
 modeling then operates on the point set for element prediction, graph
 prediction, and autoregressive growth.
 Here, global interaction forms a structural bias, observed adjacency decides
@@ -120,7 +120,7 @@ Our contributions are:
   \item \textbf{Approximate equivalence set embedding.} We construct a graph
   embedding route that maps an attributed graph to a point set whose rows
   correspond to graph nodes,
-  using feature and link recoverability to guarantee its approximate equivalence
+  using feature and link recovery to support its approximate equivalence
   to the graph.
   \item \textbf{Downstream task interfaces.} On top of the learned point set,
   we design task readers for element feature prediction, graph property

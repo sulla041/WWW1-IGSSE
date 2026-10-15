@@ -3,15 +3,15 @@
 
 \method{} establishes a graph modeling interface in which a node aligned point
 set serves as an approximate equivalence class of an attributed graph.  The
-central idea is that recoverability gives this representative its meaning: if
-content and relations can be decoded from the point set, downstream tasks can
-model the set while still relying on graph information preserved by the
-embedding.
+central idea is that trained recoverability gives this representative its
+operational meaning: when content and relations are decoded successfully from
+the learned point set, downstream tasks can model the set while relying on graph
+information preserved by the embedding.
 
 The method realizes this idea through three connected components.  The embedding
 stage constructs each point by adding a content coordinate and a structural
 deviation.  The recovery stage decodes node content and pair relations from the
-same point set, making approximate equivalence a measurable property of the
+same point set, making approximate equivalence an empirically measured property of the
 representation.  The downstream stage reads or expands the point set for
 prediction and graph growth.  Across Web relation, program, circuit, timing,
 molecular, and social graph settings, the experiments evaluate task utility,
