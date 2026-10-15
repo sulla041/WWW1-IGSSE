@@ -14,9 +14,9 @@
 
 自回归实验在预测所用的同一集合表示上评估图扩展。rollout 时，集合扩展模块加入新的 live points，关系解码器把更新后的点集恢复为图，合法性信号选择满足目标规则的状态。三个规则检验互补的结构要求：平面图有效性对应全局可嵌入约束，弦图有效性对应所需环结构，二部图有效性对应二分关系约束。
 
-比较方法包括循环式、注意力式、流式、score based 和 diffusion based 图生成方法，例如 GraphRNN、GRAN、GraphAF、GDSS 和 DiGress。完整工作簿记录 Emb 和 Valid 两类指标。论文表格保留所有 baseline 列，但每列只报告终止有效性这个结果指标。Metric 列说明 Valid 表示 rollout 结束后的终止合法率。IGSSE 在四个 rollout 设置上均取得最高终止有效性，支持将点集扩展作为图增长接口。
+比较方法包括循环式、注意力式、流式、score based 和 diffusion based 图生成方法，例如 GraphRNN、GRAN、GraphAF、GDSS 和 DiGress。完整工作簿记录 Emb 和 Valid 两类指标。论文表格保留主要 baseline 列，但每列只报告终止有效性这个结果指标，并为保持单栏布局省略 ER/BA、GraphAF 和 DiGress。Metric 列说明 Valid 表示 rollout 结束后的终止合法率。IGSSE 在四个 rollout 设置上均取得最高终止有效性，支持将点集扩展作为图增长接口。
 
-表 2：自回归图建模结果。表格使用单栏和正文字号，并保留 Metric 列。为避免压缩字号，表内按任务逐行排列，baseline 和 IGSSE 横向作为列，仅报告 Valid 指标，省略 ER/BA 和 GraphAF 两项。任务包括 Planar Legal、Planar Net、Chordal 和 Bipartite。表内任务和 baseline 名称均加入引用，粗体表示每个任务的最大值。
+表 2：自回归图建模结果。表格使用单栏和正文字号，并保留 Metric 列。为避免压缩字号，表内按任务逐行排列，baseline 和 IGSSE 横向作为列，仅报告 Valid 指标，省略 ER/BA、GraphAF 和 DiGress。任务包括 Planar Legal、Planar Net、Chordal 和 Bipartite。表内任务和 baseline 名称均加入引用，粗体表示每个任务的最大值。
 
 4.3 Ablation Experiment
 
@@ -30,8 +30,8 @@
 
 WL 碰撞实验在受控非同构图对上评估结构分离。Weisfeiler Leman 层级为颜色细化和高阶图区分提供标准参照。BREC 提供用于暴露图神经网络实现表达性的图对。对每个图对，IGSSE 用恢复目标训练嵌入和关系解码器，然后在一致节点置换后比较重构图是否仍保持非同构。
 
-表 4 来自实验结果_表A_表B.xlsx 的 BREC 扩展 160 对 sheet，并报告覆盖数量、恢复率和碰撞率。Metric 列说明 Covered 是覆盖图对数量，Recovery 是恢复率，Collision 是碰撞率。Basic 与 Extension 中全部覆盖图对均通过直接图恢复，并且碰撞率为零。覆盖集合包含 160 个官方非同构图对，这些图对属于二维 WL 碰撞情形，训练后的重构图保持分离。较小的 60 对诊断也呈现相同趋势：Basic 十对、Extension 十对、Regular 三对通过恢复，通过恢复的 23 对碰撞率为零。WL 实验说明，经过恢复训练的点集可以通过准确图重构解决已覆盖的 WL 碰撞案例。
+表 4 来自实验结果_表A_表B.xlsx 的 BREC 扩展 160 对 sheet，数据集横向排列，第二行只保留 Collision rate。Basic 与 Extension 中全部覆盖图对均通过直接图恢复，并且碰撞率为零。覆盖集合包含 160 个官方非同构图对，这些图对属于二维 WL 碰撞情形，训练后的重构图保持分离。较小的 60 对诊断也呈现相同趋势：Basic 十对、Extension 十对、Regular 三对通过恢复，通过恢复的 23 对碰撞率为零。WL 实验说明，经过恢复训练的点集可以通过准确图重构解决已覆盖的 WL 碰撞案例。
 
-表 4：WL 碰撞结果。表格来自 BREC expanded 160-pair workbook sheet。表格使用正文字号并保留 Metric 列，加回 covered pairs、recovery rate 和 collision rate，同时加回 Regular、CFI、4-Vertex Condition 和 Distance Regular。表内 BREC 类别均加入引用。Basic 60 对与 Extension 100 对均通过恢复并保持零碰撞率。
+表 4：WL 碰撞结果。表格来自 BREC expanded 160-pair workbook sheet。数据集横向列举，第二行只保留 Collision rate；表内 BREC 类别均加入引用。Basic 与 Extension 保持零碰撞率，其余数据集按工作簿中的结果保留为未报告状态。
 
 四个实验构成紧凑的证据链。主实验显示下游任务效用，自回归实验显示同一表示上的图增长，消融实验归因可恢复集合构造的作用，WL 实验显示恢复后的点集能够区分已覆盖的非同构碰撞图对。
