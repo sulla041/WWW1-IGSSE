@@ -112,6 +112,22 @@ The shared attribute MLP uses layer normalization and outputs the model width.
 This attribute-only mapping preserves the node row correspondence and supplies
 the input for all structural projections.
 
+When several original coordinates are identical or nearly identical, the
+training path adds an independent zero-mean perturbation before the attention
+projections:
+\begin{equation}
+ \widetilde{\mathbf h}_{o,i}^{(\ell)}=\mathbf h_{o,i}^{(\ell)}+
+ \sigma_i g(u)\boldsymbol\epsilon_i,
+ \qquad \boldsymbol\epsilon_i\sim\mathcal N(\mathbf 0,\mathbf I).
+ \label{eq:state-noise}
+\end{equation}
+The perturbed states produce distinct query, key, and value vectors, so the
+global bias and adjacency selected writes can move initially coincident points
+in different directions.  The perturbation is an exploration device rather
+than a node identifier or a structural target.  Its scheduled scale guides the
+embedding toward separated structural states, and the learned structural
+deviations are then used by the deterministic encoder path.
+
 \paragraph{Structural deviation $\mathbf o_i$.}
 The structural branch first forms a global structural bias from the current
 content coordinates and then uses adjacency to select the writes to each target
@@ -148,9 +164,11 @@ $\alpha_{si}^{(m)}$, and the multihead write defines the deviation:
  \label{eq:deviation}
 \end{equation}
 The deviation is added to the original coordinate.  The self term keeps
-isolated nodes active, and the softmax controls incoming write strength.  During
-training, scheduled noise may perturb write logits; the deterministic forward
-path uses the unperturbed logits.
+isolated nodes active, and the softmax controls incoming write strength.  The
+state perturbation above is applied before the projections, so it changes both
+the values being written and the write weights.  This is the mechanism that
+separates compressed point states during embedding; the deterministic encoder
+path uses the structural deviations learned from these separated states.
 
 \paragraph{Fusion into $\mathbf h_i$.}
 The fusion branch adds the content coordinate and structural deviation, applies
@@ -182,13 +200,13 @@ deviation, fused point, and point set while preserving node row correspondence.
     2 & \textbf{Output:} $\Hset_{\mathrm{dec}}$, $\Hset_{\mathrm{task}}$, $\overline\sigma$ \\
     3 & $\mathbf h_{o,i}^{(0)} \leftarrow \operatorname{Enc}_X(\mathbf x_i)$ \\
     4 & \textbf{for} each layer $\ell$ \textbf{do} \\
-    5 & \quad $(\mathbf q_i,\mathbf k_i,\mathbf v_i)\leftarrow
-    \operatorname{Proj}_{\ell}(\mathbf h_{o,i}^{(\ell)})$ \\
-    6 & \quad $e_{sj}\leftarrow \operatorname{Energy}(\mathbf q_s,\mathbf k_j)$ \\
-    7 & \quad $\mathbf u_s\leftarrow \operatorname{GlobalBias}(e_{s:},\mathbf v)$ \\
-    8 & \quad $r_{si}\leftarrow e_{si}$ for $s\in N_A(i)$ \\
-    9 & \quad \textbf{if} train \textbf{then} perturb $r_{si}$ by
-    $\sigma_{si}g(u)\epsilon_{si}$ before write \\
+    5 & \quad $\widetilde{\mathbf h}_{o,i}\leftarrow
+    \mathbf h_{o,i}^{(\ell)}+\sigma_i g(u)\boldsymbol\epsilon_i$ \\
+    6 & \quad $(\mathbf q_i,\mathbf k_i,\mathbf v_i)\leftarrow
+    \operatorname{Proj}_{\ell}(\widetilde{\mathbf h}_{o,i})$ \\
+    7 & \quad $e_{sj}\leftarrow \operatorname{Energy}(\mathbf q_s,\mathbf k_j)$ \\
+    8 & \quad $\mathbf u_s\leftarrow \operatorname{GlobalBias}(e_{s:},\mathbf v)$ \\
+    9 & \quad $r_{si}\leftarrow e_{si}$ for $s\in N_A(i)$ \\
     10 & \quad $\mathbf o_i^{(\ell)}\leftarrow
     \operatorname{Write}(\operatorname{Softmax}_{s\in N_A(i)}(r_{si}),\mathbf u)$ \\
     11 & \quad $\mathbf h_i^{(\ell)}\leftarrow
@@ -371,7 +389,7 @@ The joint objective is
  \mathcal L=\sum\nolimits_{t\in\{\mathrm{pred},\mathrm{link},\mathrm{feat},\mathrm{alive}\}}\lambda_t\mathcal L_t.
  \label{eq:objective}
 \end{equation}
-The survival term keeps the learned training noise scale active.  For an
+The survival term keeps the learned state-noise scale active.  For an
 embedding only run, the prediction term is disabled and the representation is
 trained only through graph recovery targets; for task runs, the task loss and
 recovery losses are optimized together.
@@ -381,7 +399,7 @@ autoregressive selectors, and the encoder projections that formed the points.
 The link term updates the pair attention decoder and backpropagates through the
 endpoint points into the embedding projections.  The content term updates the
 content decoder and the attribute path into the points.  The survival term
-updates the noise scale network used during structural writes.  Joint
+updates the noise scale network used before structural writes.  Joint
 optimization therefore trains the global structural bias, pair attention
 recovery, and set attention pooling through a shared point set rather than as
 separate modules.
@@ -392,7 +410,7 @@ four times the model width, and dropout 0.1.  Relation recovery samples up to
 4096 positive pairs per update and matches them with the same number of negative
 pairs.  Optimization uses AdamW with learning rate 0.001, weight decay 0.0001,
 and gradient clipping at 1.0.
-Relation perturbations are strongest at the beginning of training and vanish as
-the deterministic encoder path takes over.  The training objective therefore
+State perturbations are strongest at the beginning of training and are scheduled
+through the embedding process.  The training objective therefore
 keeps the embedding, recovery decoders, and downstream readers coupled through a
 single point set throughout optimization.
