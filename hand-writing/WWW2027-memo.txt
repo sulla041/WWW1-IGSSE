@@ -1,0 +1,97 @@
+WWW 2027 Research Track 备忘录
+
+页面：
+https://www2027.thewebconf.org/research-track-papers/
+
+更新时间：2026-10-15
+
+一、关键时间
+
+Abstract submission deadline：2026 年 10 月 18 日，AoE 日终。
+Full paper submission deadline：2026 年 10 月 25 日，AoE 日终。
+Results release：2026 年 12 月 15 日。
+Rebuttal：2026 年 12 月 15 日至 20 日。
+Notification：2027 年 1 月 4 日。
+Final version：2027 年 1 月 31 日。
+会议时间：2027 年 5 月 10 日至 14 日，Dublin。
+
+二、最匹配的投稿方向
+
+IGSSE 最适合 Graph Algorithms and Modeling for the Web track。该 track 明确包含：
+
+1. 异质、属性、多关系、时序和高阶 Web 图；
+2. 不完整、噪声和部分观测图；
+3. 图表示、图重构、子图和模体发现；
+4. Web-scale 图的高效、并行、分布式和流式处理；
+5. Web 图的随机图模型和生成模型；
+6. Web 图嵌入、表示学习和图神经网络；
+7. 图基础模型、图语言模型以及 AI agent、tool 和 service interaction graph。
+
+Search, Recommendation, and Retrieval-Augmented AI 是次级相关方向，可用于强调共购图、推荐和图检索场景。若论文保留知识图或结构化语义接口，也可与 Semantics and Knowledge track 建立联系。
+
+三、IGSSE 必须明确的 Web relevance
+
+第一页必须明确说明论文如何回答 Web 相关科学问题。仅仅使用 Amazon、Cora、社交图或其它 Web artifact 不足以满足要求；页面明确指出，仅使用 Web 数据集或 API 而没有解决具体 Web scientific challenge 可能被 desk reject。
+
+建议在摘要和引言第一页明确提出：
+
+1. Web 网络是持续运行的关系系统，节点交互由全局潜在规律、跨跳数依赖和组件间隐含关系共同决定；
+2. 推荐、协作、引用、程序依赖、电子设计和社交网络中的有效交互不能由局部邻域聚合充分表示；
+3. IGSSE 把图映射为节点对应点集，并通过训练后的内容与关系恢复，使点集成为图的经验性近似等价类；
+4. 同一点集接口统一支持节点/图预测、结构恢复和规则引导图增长；
+5. 这些能力直接对应 Web 图的表示、重构、全局建模和生成需求。
+
+四、论文定位
+
+方法贡献应围绕一个清晰的问题展开：如何在连续点集空间中建模 Web 图的全局潜在规律，同时保留下游任务所需的节点内容和关系结构。
+
+“Invertible”保留为方法名称和缩写来源；正文使用“trained recoverability”“empirical approximate equivalence”和“recovery-trained representation”等表述，不声称编码器严格单射、统一误差界或数学上对所有图成立的可逆性。
+
+近似等价的证据应来自：
+
+1. Emb 恢复指标；
+2. 节点属性、关系和边属性恢复；
+3. 下游分类和回归 Result；
+4. WL collision 试验；
+5. 自回归图增长的 Valid 指标。
+
+五、实验设置要求
+
+主文中需要清楚说明每个任务的：
+
+1. 图输入字段，包括 A、X 和可用的 E；
+2. 任务标签和节点级/图级读出方式；
+3. 关系、节点属性和边属性恢复目标；
+4. 数据版本、预处理、train/validation/test 划分和随机种子；
+5. checkpoint 选择规则和主指标；
+6. baseline 使用的相同输入、划分、指标和选模规则；
+7. Emb 与 Result 的定义；
+8. 训练时间、推理时间、峰值显存和最大图规模，若这些效率结果用于主张可扩展性。
+
+当前主表覆盖 HiGraph、OCB、TimingPredict、Amazon Photo、Coauthor-CS、Photo-interact、Cora、AIDS、IMDB-MULTI 和 IMDB-BINARY。实验正文应保持这些数据集、baseline 和表格列完全一致。
+
+六、格式与匿名要求
+
+1. 使用英文、双栏 ACM 格式和匿名 review 模板：\documentclass[sigconf, anonymous, review]{acmart}。
+2. Long paper 主文为 8 页；参考文献和可选附录在内最多 12 页。
+3. 前 8 页必须自洽，审稿人不一定阅读附录。
+4. 当前版本删除了附录，需确保算法、实验设置、指标定义和关键复现信息都在前 8 页内。
+5. 论文提交为单个 PDF，通过 OpenReview 提交。
+6. 所有作者在 abstract deadline 前完成 OpenReview profile、机构经历和 conflict 信息。
+7. Abstract deadline 后不能新增、删除或调整作者顺序，只能修正拼写或新机构信息。
+8. 双盲稿删除作者、机构、致谢和可识别的自引信息，使用第三人称描述已有工作。
+9. 论文必须是原创工作，不能同时在已发表或正在审稿的有正式 proceedings 的会议/期刊投稿。
+10. 需要时加入数据伦理、知情同意和 ACM Publications Policy 相关说明。
+
+七、提交前检查清单
+
+1. Abstract 和 Introduction 第一页出现明确的 Web scientific challenge。
+2. Graph Algorithms and Modeling for the Web 的匹配关系写清楚。
+3. 标题、摘要、引言、方法和实验统一使用 IGSSE、H、Emb、Result 等定义。
+4. 正文不使用严格可逆、统一误差界、编码器单射等未经证明的结论。
+5. 表格中的 baseline、数据集、任务名和正文描述逐项一致。
+6. 所有结论性外部陈述有引用，实验结论与实际表格数据一致。
+7. 主文 8 页内包含完整算法流程、训练目标、实验协议和 Metric 定义。
+8. 删除写作计划、协作说明、数据文件来源式表述和未解释的内部简称。
+9. 编译使用 Overleaf 可用的 ACM LaTeX 模板，检查 PDF 无空白页、截断表格、超栏和未定义引用。
+10. 在提交前重新核对 AoE 截止时间、OpenReview 作者信息和冲突声明。
