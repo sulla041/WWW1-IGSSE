@@ -99,53 +99,34 @@ diffusion based graph generation methods, including GraphRNN, GRAN, GraphAF,
 GDSS, and DiGress \cite{you2018,liao2019,shi2020,jo2022,vignac2023}.  The full
 workbook records both embedding scores and terminal validity.  To keep the
 paper table compact, Table~\ref{tab:autoregressive-results} reports only
-terminal validity for each baseline.  The Metric column specifies that Valid is
-the terminal legality rate after rollout.  The single column table keeps the
-main learned baselines and omits ER/BA and GraphAF only for layout.  \method{}
-obtains the strongest validity on all four rollout settings, which supports the
-use of point set expansion as a graph growth interface.
+terminal validity, with one row per rollout setting and one column per baseline.
+The Metric column specifies that Valid is the terminal legality rate after
+rollout.  The single column table keeps the main learned baselines and omits
+ER/BA and GraphAF only for layout.  \method{} obtains the strongest validity on
+all four rollout settings, which supports the use of point set expansion as a
+graph growth interface.
 
 \begin{table}[t]
   \centering
-  \caption{Autoregressive validity from Experiment Result Table B. Only the final Valid metric is reported.}
+  \caption{Autoregressive validity from Experiment Result Table B. Baselines are arranged horizontally and only the final Valid metric is reported.}
   \label{tab:autoregressive-results}
-  \setlength{\tabcolsep}{3.0pt}
-  \begin{tabular}{@{}lllc@{}}
+  \setlength{\tabcolsep}{1.2pt}
+  \begin{tabular}{@{}p{0.20\columnwidth}c*{8}{p{0.075\columnwidth}}@{}}
     \toprule
-    Task & Metric & Method & Value \\
+    Task & Metric &
+    \parbox[c]{0.075\columnwidth}{\centering RNN\\\cite{you2018}} &
+    \parbox[c]{0.075\columnwidth}{\centering GRAN\\\cite{liao2019}} &
+    \parbox[c]{0.075\columnwidth}{\centering BiGG\\\cite{dai2020}} &
+    \parbox[c]{0.075\columnwidth}{\centering SPECT\\RE\\\cite{martinkus2022spectre}} &
+    \parbox[c]{0.075\columnwidth}{\centering DiG\\ress\\\cite{vignac2023}} &
+    \parbox[c]{0.075\columnwidth}{\centering EDGE\\\cite{chen2023edge}} &
+    \parbox[c]{0.075\columnwidth}{\centering GDSS\\\cite{jo2022}} &
+    \parbox[c]{0.075\columnwidth}{\centering IGS\\SE} \\
     \midrule
-    Planar Legal~\cite{diestel2017} & Valid & RNN~\cite{you2018} & 0.00 \\
-    Planar Legal~\cite{diestel2017} & Valid & GRAN~\cite{liao2019} & 0.00 \\
-    Planar Legal~\cite{diestel2017} & Valid & BiGG~\cite{dai2020} & 0.85 \\
-    Planar Legal~\cite{diestel2017} & Valid & SPECTRE~\cite{martinkus2022spectre} & 0.00 \\
-    Planar Legal~\cite{diestel2017} & Valid & DiGress~\cite{vignac2023} & 0.00 \\
-    Planar Legal~\cite{diestel2017} & Valid & EDGE~\cite{chen2023edge} & 0.00 \\
-    Planar Legal~\cite{diestel2017} & Valid & GDSS~\cite{jo2022} & 0.00 \\
-    Planar Legal~\cite{diestel2017} & Valid & \method{} & \textbf{0.94} \\
-    Planar Net~\cite{diestel2017} & Valid & RNN~\cite{you2018} & 0.00 \\
-    Planar Net~\cite{diestel2017} & Valid & GRAN~\cite{liao2019} & 0.00 \\
-    Planar Net~\cite{diestel2017} & Valid & BiGG~\cite{dai2020} & 0.85 \\
-    Planar Net~\cite{diestel2017} & Valid & SPECTRE~\cite{martinkus2022spectre} & 0.00 \\
-    Planar Net~\cite{diestel2017} & Valid & DiGress~\cite{vignac2023} & 0.00 \\
-    Planar Net~\cite{diestel2017} & Valid & EDGE~\cite{chen2023edge} & 0.00 \\
-    Planar Net~\cite{diestel2017} & Valid & GDSS~\cite{jo2022} & 0.00 \\
-    Planar Net~\cite{diestel2017} & Valid & \method{} & \textbf{0.97} \\
-    Chordal~\cite{golumbic2004} & Valid & RNN~\cite{you2018} & 0.00 \\
-    Chordal~\cite{golumbic2004} & Valid & GRAN~\cite{liao2019} & 0.00 \\
-    Chordal~\cite{golumbic2004} & Valid & BiGG~\cite{dai2020} & 0.05 \\
-    Chordal~\cite{golumbic2004} & Valid & SPECTRE~\cite{martinkus2022spectre} & 0.01 \\
-    Chordal~\cite{golumbic2004} & Valid & DiGress~\cite{vignac2023} & 0.00 \\
-    Chordal~\cite{golumbic2004} & Valid & EDGE~\cite{chen2023edge} & 0.24 \\
-    Chordal~\cite{golumbic2004} & Valid & GDSS~\cite{jo2022} & 0.00 \\
-    Chordal~\cite{golumbic2004} & Valid & \method{} & \textbf{0.83} \\
-    Bipartite~\cite{diestel2017} & Valid & RNN~\cite{you2018} & 0.00 \\
-    Bipartite~\cite{diestel2017} & Valid & GRAN~\cite{liao2019} & 0.00 \\
-    Bipartite~\cite{diestel2017} & Valid & BiGG~\cite{dai2020} & 0.18 \\
-    Bipartite~\cite{diestel2017} & Valid & SPECTRE~\cite{martinkus2022spectre} & 0.00 \\
-    Bipartite~\cite{diestel2017} & Valid & DiGress~\cite{vignac2023} & 0.00 \\
-    Bipartite~\cite{diestel2017} & Valid & EDGE~\cite{chen2023edge} & 0.00 \\
-    Bipartite~\cite{diestel2017} & Valid & GDSS~\cite{jo2022} & 0.00 \\
-    Bipartite~\cite{diestel2017} & Valid & \method{} & \textbf{0.74} \\
+    Planar Legal~\cite{diestel2017} & Valid & 0.00 & 0.00 & 0.85 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.94} \\
+    Planar Net~\cite{diestel2017} & Valid & 0.00 & 0.00 & 0.85 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.97} \\
+    Chordal~\cite{golumbic2004} & Valid & 0.00 & 0.00 & 0.05 & 0.01 & 0.00 & 0.24 & 0.00 & \textbf{0.83} \\
+    Bipartite~\cite{diestel2017} & Valid & 0.00 & 0.00 & 0.18 & 0.00 & 0.00 & 0.00 & 0.00 & \textbf{0.74} \\
     \bottomrule
   \end{tabular}
 \end{table}
