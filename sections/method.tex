@@ -100,79 +100,61 @@ $\Hset$.  The data flow is therefore:
 \]
 
 \paragraph{Original coordinate $\mathbf h_{o,i}$.}
-The purpose of this step is to construct the content coordinate that enters the
-structural write.  At layer $\ell$, $\mathbf h_{o,i}^{(\ell)}$ denotes the point
-state before relation information is added.  At the first layer it is produced
-only from the attribute row of node $i$:
+At layer $\ell$, $\mathbf h_{o,i}^{(\ell)}$ denotes the point state before
+relation information is added.  At the first layer it is produced only from
+the attribute row of node $i$:
 \begin{equation}
   \mathbf h_{o,i}^{(0)}=\operatorname{Enc}_X(\mathbf x_i).
   \label{eq:baseline}
 \end{equation}
 For later layers, the previous fused point becomes the new original coordinate.
-The attribute encoder is a shared multilayer perceptron with layer normalization,
-and its output dimension is the model width.  This original coordinate records
-the node content before relation information is written into the point.  The
-data flow at this stage is row preserving: the input row for node $i$ is mapped
-to the point row for the same node, and no edge information is consumed by this
-attribute only transformation.  The result is a content coordinate matrix that
-supplies the input to the structural write.  Thus, this step outputs the
-row aligned content state on which all later attention projections operate.
+The shared attribute MLP uses layer normalization and outputs the model width.
+This attribute-only mapping preserves the node row correspondence and supplies
+the input for all structural projections.
 
 \paragraph{Structural deviation $\mathbf o_i$.}
-The purpose of this step is to convert relation information into an additive
-deviation for each point.  The computation first forms a global structural bias
-from the current content coordinates, and then uses adjacency to decide which
-parts of that bias are written into each target point.  Query, key, and value
-vectors are obtained from the original coordinate.  For each attention head, we
-compute
+The structural branch first forms a global structural bias from the current
+content coordinates and then uses adjacency to select the writes to each target
+point.  For each attention head, query, key, and value vectors are computed as
+follows:
 \begin{equation}
 \mathbf q_i^{(m)}=\mathbf W_Q^{(m)}\mathbf h_{o,i}^{(\ell)},\quad
 \mathbf k_i^{(m)}=\mathbf W_K^{(m)}\mathbf h_{o,i}^{(\ell)},\quad
 \mathbf v_i^{(m)}=\mathbf W_V^{(m)}\mathbf h_{o,i}^{(\ell)}.
 \label{eq:qkv}
 \end{equation}
-These projections produce a complete point to point compatibility field.  For
-each source point, dense attention over all points collects node information into
-a global structural bias:
+The projections form the point compatibility field.  Dense attention over all
+points then produces the global structural bias:
 \begin{equation}
 \mathbf u_s^{(m)}=\sum_j\operatorname{softmax}_j\!\left(
 \frac{(\mathbf q_s^{(m)})^\top\mathbf k_j^{(m)}}{\sqrt{d_h}}\right)
 \mathbf v_j^{(m)}.
 \label{eq:source-summary}
 \end{equation}
-The query and key projections determine which points interact in the global
-bias, while the value projection determines what information is carried by that
-bias.  Since the bias is later written into the final point set, gradients from
-recovery losses and prediction losses flow through the fused points back to
-these three projection matrices.  In this way, the attention field is trained to
-produce structural bias that is useful for both graph reconstruction and the
-downstream reader.
+Query and key projections determine interaction weights, while the value
+projection determines the carried information.  Recovery and prediction losses
+backpropagate through the fused points to these projections, so the bias is
+learned for both graph reconstruction and downstream prediction.
 The adjacency defines the write set for each target:
 \begin{equation}
  N_A(i)=\{s:(s,i)\in E\}\cup\{i\}.
  \label{eq:write-set}
 \end{equation}
-Thus, the structural bias already contains global attention information, while
-the adjacency decides which components are written to each target point.  For
-each target, a softmax over the write set gives $\alpha_{si}^{(m)}$.  The
-projected multihead write defines the structural deviation:
+The bias already contains global attention information, while adjacency selects
+the source points written to each target.  A softmax over the write set gives
+$\alpha_{si}^{(m)}$, and the multihead write defines the deviation:
 \begin{equation}
  \mathbf o_i^{(\ell)}=\mathbf W_O\Vert_m\sum_{s\in N_A(i)}\alpha_{si}^{(m)}\mathbf u_s^{(m)}.
  \label{eq:deviation}
 \end{equation}
-This deviation is the relation conditioned structural correction added to the
-original coordinate.  The self term keeps isolated nodes active, and the
-softmax controls the incoming write strength for each target.  A scheduled noise
-term can perturb write logits during optimization to encourage separate
-exploration when nodes have identical content; the deterministic forward path
-uses the unperturbed write logits.  Thus, this step outputs $\mathbf o_i$ as the
-structure aware correction aligned with the same row as $\mathbf h_{o,i}$.
+The deviation is added to the original coordinate.  The self term keeps
+isolated nodes active, and the softmax controls incoming write strength.  During
+training, scheduled noise may perturb write logits; the deterministic forward
+path uses the unperturbed logits.
 
 \paragraph{Fusion into $\mathbf h_i$.}
-The purpose of this step is to combine content and structure into the final
-point representation.  The original coordinate and structural deviation are
-added, regularized through dropout on the deviation branch, and passed through a
-normalized feedforward update:
+The fusion branch adds the content coordinate and structural deviation, applies
+dropout to the deviation branch, and uses a normalized feedforward update:
 \begin{equation}
  \mathbf h_i^{(\ell)}=\Phi\!\left(\mathbf h_{o,i}^{(\ell)}+\operatorname{Dropout}(\mathbf o_i^{(\ell)})\right).
  \label{eq:fusion}
@@ -184,14 +166,8 @@ downstream readers:
  \Hset_{\mathrm{dec}}=\mathbf H^{(L)}.
  \label{eq:decoder-state}
 \end{equation}
-The core embedding relation is therefore the sum of the original coordinate and
-the structural deviation followed by fusion, producing a node aligned point set
-$\Hset$ for graph recovery, prediction, and autoregressive graph modeling.  The
-layer data flow is closed: the output matrix of one layer becomes the content
-coordinate matrix of the next layer, so repeated layers refine the same
-node aligned point set without changing its row correspondence.  Thus, this step
-outputs $\mathbf h_i$ at each row and the full point set $\Hset$ at the graph
-level.
+Thus each layer implements the data flow from original coordinate to structural
+deviation, fused point, and point set while preserving node row correspondence.
 
 \begin{table}[t]
   \centering
@@ -270,17 +246,12 @@ pairs.
 \paragraph{Sampling and target hygiene.}
 At each update, undirected edges are canonicalized, self loops are removed, and
 positive pairs are drawn from the complete input graph.  Negative pairs are
-sampled by rejection from nonedges.  If edge dropout is active in the encoder,
-it affects only $E_{\mathrm{enc}}$; link positives still come from the undropped
-input graph.  Content targets follow the same boundary: $\mathbf C$ is computed
-from clean attributes, and labels appear only in the task loss.  This separation
-prevents the recovery path from observing the target that downstream prediction
-must learn.
-The sampler uses the same number of negative and positive pairs by default.  If
-the number of positives exceeds the pair budget, positives are uniformly
-subsampled and an equal number of negatives is drawn.  If the graph is small,
-all positives are used.  This keeps each update efficient while preserving a
-balanced relation recovery objective.
+sampled uniformly from nonedges with the same count as the positive pairs.  If
+the positive set exceeds the pair budget, it is uniformly subsampled; small
+graphs use all positive pairs.  Encoder edge dropout affects only the encoded
+input, while relation targets remain defined by the complete graph.  Content
+targets use clean attributes with stopped gradients, and task labels enter only
+the prediction loss.
 
 \paragraph{Recovery implication.}
 Let $D$ be a deterministic decoder and let $d_T$ be a distance on the target
@@ -320,12 +291,10 @@ projection, the graph reader, and the encoder parameters that produce the point
 set.  Points that carry information useful to the graph target receive larger
 pooling weights, while the value projection learns what information should enter
 the graph state.
-The same reader interface is used after every embedding run.  For point
-prediction, a shared multilayer perceptron reads each row of
-the point set prepared for the task.  For graph prediction, attention pooling
-computes point weights, normalizes them within each graph, and then applies the
-graph reader to the pooled state.  This keeps the task head small and makes the
-recoverable point set the common object for all prediction types.
+The same reader interface is used after every embedding run.  A shared MLP
+reads point rows for node prediction, and attention pooling followed by a graph
+reader handles graph prediction.  Thus the task head changes with the output
+type while $\Hset$ remains the common modeling object.
 
 \begin{table}[t]
   \centering
@@ -356,18 +325,11 @@ a larger set, and the same relation decoder recovers the expanded graph:
  \qquad E_{s+1}=\{(i,j):\sigma(D_A(\mathbf h_i,\mathbf h_j))\geq\tau\}.
  \label{eq:grow}
 \end{equation}
-Training uses graph rule legality signals for candidate transitions.  During
-rollout, fixed parameters repeatedly expand the live set and decode relations
-from the current point set.
-In the autoregressive case, the set expansion operator appends one or more live
-points sampled from a learned proposal distribution and updates existing points
-through the same set interface.  The relation decoder then converts the expanded
-set into candidate edges.  The selector ranks candidates using legality signals
-in supervised training and learned scores in free rollout, so generation reuses
-the same point representation and relation decoder as recovery.  Thus, point
-prediction, graph prediction, and autoregressive graph modeling are different
-readers over one object.  The task head changes with the output type, while the
-representation target remains the same point set $\Hset$.
+Training uses graph-rule legality signals for candidate transitions.  During
+rollout, the expansion operator appends live points from a learned proposal,
+updates the current set, decodes candidate edges with $D_A$, and ranks the
+candidates with the selector.  The same point set and relation decoder are used
+for recovery and graph growth.
 
 \begin{table}[t]
   \centering

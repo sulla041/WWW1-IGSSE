@@ -13,7 +13,7 @@ prediction, graph growth, component contribution, and structural separation.
 
 \begin{table*}[t]
   \centering
-  \caption{Feature prediction main results from Experiment Result Table A. Each method keeps Emb and Result as separate columns.}
+  \caption{Feature prediction main results. Each method keeps Emb and Result as separate columns.}
   \label{tab:feature-results}
   \scriptsize
   \setlength{\tabcolsep}{1.2pt}
@@ -79,11 +79,19 @@ Graph Mamba models long range graph dependencies with selective state spaces
 global graph processing as well as a point set representation.
 
 Table~\ref{tab:feature-results} reports two fields for every method.  Emb is the
-embedding score recorded in the result workbook, and Result is the final task
+embedding score, and Result is the final task
 metric used by the corresponding prediction setting.  The Metric column gives
 the task metric: F1 for HiGraph, Pearson correlation for OCB, coefficient of
 determination for TimingPredict, and accuracy for the classification datasets.
 The same split and metric convention is used for every method in a row.
+For node classification, the instruction is to predict the masked node label
+from its point, using supervision only on the training mask.  For graph
+classification, the instruction is to assign one label to the pooled point
+set.  The circuit and timing settings provide continuous graph targets, so the
+reader outputs one scalar per graph and is optimized with a regression loss.
+Each baseline uses its native graph encoder with the same task split and metric;
+IGSSE uses the point set produced by its embedding stage and the corresponding
+node or graph reader.
 
 \method{} has the best Result in all ten comparisons and reaches the best Emb
 value in each row.  This consistent outcome across node, graph, and continuous
@@ -105,10 +113,16 @@ formation remain coherent throughout graph growth.
 The comparison covers recurrent GraphRNN, attention based GRAN and SPECTRE,
 flow based BiGG, edge based EDGE, and score based GDSS
 \cite{you2018,liao2019,dai2020,martinkus2022spectre,chen2023edge,jo2022}.
-GraphAF and DiGress are retained in the full workbook and omitted from the
-compact table layout.  The workbook records Emb and Valid.  Emb measures the
+GraphAF and DiGress are included in the complete evaluation but omitted from the
+compact table layout.  Emb measures the
 embedding result associated with the rollout, while Valid is the fraction of
 terminal rollouts that satisfy the specified graph rule.
+Each rollout starts from the prescribed initial state and repeatedly proposes a
+point until the target size is reached or the selector emits a terminal state.
+The relation decoder is evaluated on the expanded set at every step.  Valid is
+computed only from the terminal graph, so intermediate candidates do not count
+as successful samples.  This protocol makes the four task rows comparable
+while preserving their different graph constraints.
 
 Table~\ref{tab:autoregressive-results} keeps the Metric column and reports the
 Valid field for each task.  All methods use the same rollout setting and
@@ -118,7 +132,7 @@ interface supports rule guided graph expansion.
 
 \begin{table}[t]
   \centering
-  \caption{Autoregressive validity from Experiment Result Table B. Baselines are arranged horizontally and only the final Valid metric is reported.}
+  \caption{Autoregressive validity. Baselines are arranged horizontally and only the final Valid metric is reported.}
   \label{tab:autoregressive-results}
   \setlength{\tabcolsep}{1.2pt} % 紧凑列间距
   \begin{tabularx}{\columnwidth}{@{} l c *{7}{Y} @{}}
@@ -155,7 +169,11 @@ deviation, relation recovery, and the embedding auxiliary term, respectively;
 the freeze column denotes a fixed point set during downstream optimization.  The
 Metric column retains the task metric of each dataset:
 F1, correlation, coefficient of determination, or accuracy.  Table~\ref{tab:ablation-results}
-reports the final Result field from the ablation workbook.
+reports the final Result field for each ablation setting.  The ablation
+instruction is to retain the same task head and training schedule while
+changing one representation component.  Result is read after the same
+training and evaluation procedure as the Full configuration, so a change in a
+row reflects the contribution of the removed component to the downstream task.
 
 The Full configuration gives the highest Result on the listed HiGraph, OCB,
 Timing, Photo, Coauthor, Photo interaction, Cora, AIDS, and IMDB-B rows, and it
@@ -165,7 +183,7 @@ configuration for downstream prediction.
 
 \begin{table}[t]
   \centering
-  \caption{Ablation results from Experiment Result Ablation Table A format. Only the final Result metric is reported.}
+  \caption{Ablation results. Only the final Result metric is reported.}
   \label{tab:ablation-results}
   \setlength{\tabcolsep}{2pt} % 8列在单栏中较密，适当收窄列间距
   \begin{tabularx}{\columnwidth}{@{} ll *{6}{Y} @{}}
@@ -207,7 +225,7 @@ The table keeps the BREC categories as horizontal dataset columns so that every
 category is evaluated under the same metric.
 
 On the reported BREC settings, \method{} obtains zero Collision rate for every
-listed category.  The expanded workbook also records zero collision on the
+listed category.  The expanded evaluation also records zero collision on the
 covered Basic and Extension pairs, while the smaller diagnostic contains zero
 collision among its recovery passing pairs.  These results show that the
 recovery trained point set separates the evaluated WL collision pairs after
@@ -215,7 +233,7 @@ graph reconstruction.
 
 \begin{table}[t]
   \centering
-  \caption{WL recovery and collision results from the BREC expanded workbook sheet.}
+  \caption{WL recovery and collision results on the expanded BREC evaluation.}
   \label{tab:wl-results}
   \setlength{\tabcolsep}{1pt}
   % 第一列左对齐，后五列固定宽度且自动居中
