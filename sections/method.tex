@@ -94,10 +94,10 @@ projections:
 \end{equation}
 The perturbed states produce distinct query, key, and value vectors, so the
 global bias and adjacency selected writes can move initially coincident points
-in different directions.  The perturbation is an exploration device rather
-than a node identifier or a structural target.  Its scheduled scale guides the
-embedding toward separated structural states, and the learned structural
-deviations are then used by the deterministic encoder path.
+in different directions.  The perturbation is an encoding component rather
+than a node identifier or a structural target.  Its learned scale and a
+reproducible noise realization are retained in the inference path, so this
+separation mechanism is not an optional training-only mode.
 
 \paragraph{Structural deviation $\mathbf o_i$.}
 The structural branch first forms a global structural bias from the current
@@ -159,8 +159,8 @@ The deviation is added to the original coordinate.  The self term keeps
 isolated nodes active, and the softmax controls incoming write strength.  The
 state perturbation above is applied before the projections, so it changes both
 the values being written and the write weights.  This is the mechanism that
-separates compressed point states during embedding; the deterministic encoder
-path uses the structural deviations learned from these separated states.
+separates compressed point states during embedding and inference; the learned
+structural deviations and replayable perturbation are used together.
 
 \paragraph{Fusion into $\mathbf h_i$.}
 The fusion branch adds the content coordinate and structural deviation, applies
@@ -329,8 +329,10 @@ four times the model width, and dropout 0.1.  Relation recovery samples up to
 4096 positive pairs per update and matches them with the same number of negative
 pairs.  Optimization uses AdamW with learning rate 0.001, weight decay 0.0001,
 and gradient clipping at 1.0.
-State perturbations are scheduled through the embedding process, coupling the
-encoder, recovery decoders, and task reader during training.
+State perturbations are scheduled through the embedding process and retained
+with their learned scale and replayable realization during inference, coupling
+the encoder, recovery decoders, and task reader throughout the representation
+path.
 
 \paragraph{Complexity.}
 With width $d$, attribute projection and feedforward fusion cost
